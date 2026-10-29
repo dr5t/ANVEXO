@@ -199,3 +199,48 @@ export class ToolExecutionError extends AnvexoError {
     this.name = 'ToolExecutionError';
   }
 }
+
+export enum MemoryMode {
+  ZERO_PERSISTENT = 'mode_a_zero_persistent',
+  LOCAL_CONTEXT = 'mode_b_local_context',
+  PERSISTENT_INTELLIGENCE = 'mode_c_persistent_intelligence',
+  USER_CLOUD = 'mode_d_user_cloud',
+}
+
+export interface HistoricalInvestigationRecord {
+  id: string;
+  objective: string;
+  timestamp: Date;
+  commitHash: string;
+  findingsCount: number;
+  success: boolean;
+}
+
+export interface KnownBugRecord {
+  id: string;
+  title: string;
+  rootCause: string;
+  affectedFiles: string[];
+  discoveredAt: Date;
+  resolved: boolean;
+}
+
+export interface ContradictionRecord {
+  id: string;
+  claim: string;
+  previousEvidence: string;
+  conflictingEvidence: string;
+  detectedAt: Date;
+}
+
+export interface ProjectContext {
+  repoRoot: string;
+  lastCommitHash: string;
+  lastAnalyzedAt: Date;
+  mode: MemoryMode;
+  dependencies: Record<string, string>;
+  dependencyGraph: Record<string, string[]>;
+  historicalInvestigations: HistoricalInvestigationRecord[];
+  knownBugs: KnownBugRecord[];
+  contradictions: ContradictionRecord[];
+}

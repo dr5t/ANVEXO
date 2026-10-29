@@ -12,6 +12,10 @@ export type {
   ToolResult,
   InvestigationReport,
   Finding,
+  HistoricalInvestigationRecord,
+  KnownBugRecord,
+  ContradictionRecord,
+  ProjectContext,
 } from './types.js';
 export {
   LogLevel,
@@ -20,5 +24,6 @@ export {
   EvidenceType,
   VerificationStatus,
   DEFAULT_CONFIG,
+  MemoryMode,
 } from './types.js';
 export * as logger from './logger.js';
