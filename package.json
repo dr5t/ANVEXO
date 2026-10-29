@@ -17,7 +17,7 @@
     "investigate": "node --enable-source-maps dist/cli/index.js investigate",
     "discover": "node --enable-source-maps dist/cli/index.js discover",
     "lint": "tsc --noEmit",
-    "clean": "rm -rf dist",
+    "clean": "rm -rf dist coverage",
     "prepublishOnly": "npm run build"
   },
   "keywords": [
