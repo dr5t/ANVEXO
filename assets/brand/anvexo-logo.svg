@@ -1,44 +1,54 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 180" width="880" height="180" fill="none">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 120" width="100%" height="100%" fill="none">
   <defs>
-    <linearGradient id="bgGrad" x1="0" y1="0" x2="880" y2="180" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#0C0D0E"/>
-      <stop offset="100%" stop-color="#141618"/>
+    <linearGradient id="pLeftOuter" x1="52" y1="10" x2="12" y2="84" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#2D323A"/>
+      <stop offset="50%" stop-color="#20232A"/>
+      <stop offset="100%" stop-color="#14161A"/>
     </linearGradient>
-    <linearGradient id="prismTop" x1="50" y1="30" x2="130" y2="110" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#E54D2E"/>
-      <stop offset="100%" stop-color="#B83A20"/>
+    <linearGradient id="pLeftInner" x1="52" y1="10" x2="38" y2="72" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#4F5664"/>
+      <stop offset="45%" stop-color="#3C424E"/>
+      <stop offset="100%" stop-color="#262A32"/>
     </linearGradient>
-    <linearGradient id="prismLeft" x1="50" y1="70" x2="90" y2="140" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#24272A"/>
-      <stop offset="100%" stop-color="#181A1D"/>
+    <linearGradient id="pLeftBevel" x1="12" y1="82" x2="32" y2="84" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#101114"/>
+      <stop offset="100%" stop-color="#1C1E24"/>
     </linearGradient>
-    <linearGradient id="prismRight" x1="90" y1="70" x2="130" y2="140" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#32363B"/>
-      <stop offset="100%" stop-color="#24272A"/>
+    <linearGradient id="pRightTop" x1="52" y1="10" x2="76" y2="84" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FF7A38"/>
+      <stop offset="35%" stop-color="#FF5A1E"/>
+      <stop offset="100%" stop-color="#E84410"/>
+    </linearGradient>
+    <linearGradient id="pRightSide" x1="72" y1="36" x2="94" y2="84" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#D63A12"/>
+      <stop offset="50%" stop-color="#B02608"/>
+      <stop offset="100%" stop-color="#7C1602"/>
     </linearGradient>
   </defs>
 
-  <rect width="880" height="180" rx="8" fill="url(#bgGrad)" stroke="#24272A" stroke-width="1.5"/>
-
-  <g transform="translate(48, 25)">
-    <polygon points="65,15 115,44 65,73 15,44" fill="url(#prismTop)" stroke="#E54D2E" stroke-width="1.5"/>
-    <polygon points="15,44 65,73 65,105 15,76" fill="url(#prismLeft)" stroke="#32363B" stroke-width="1.5"/>
-    <polygon points="65,73 115,44 115,76 65,105" fill="url(#prismRight)" stroke="#32363B" stroke-width="1.5"/>
-
-    <polyline points="15,86 65,115 115,86" fill="none" stroke="#E54D2E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-    <polyline points="15,96 65,125 115,96" fill="none" stroke="#58A6FF" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.8"/>
-
-    <circle cx="65" cy="15" r="3" fill="#EDEDED"/>
-    <circle cx="115" cy="44" r="3" fill="#EDEDED"/>
-    <circle cx="15" cy="44" r="3" fill="#EDEDED"/>
-    <circle cx="65" cy="73" r="3" fill="#EDEDED"/>
+  <g id="brand-symbol" transform="translate(15, 15) scale(0.9)">
+    <polygon points="52,10 20,52 12,82 32,84" fill="url(#pLeftOuter)"/>
+    <polygon points="52,10 32,84 38,72 50,46" fill="url(#pLeftInner)"/>
+    <polygon points="12,82 32,84 26,88" fill="url(#pLeftBevel)"/>
+    <polygon points="52,10 50,46 62,68 76,84" fill="url(#pRightTop)"/>
+    <polygon points="52,10 76,84 94,74 78,44" fill="url(#pRightSide)"/>
+    <polygon points="76,84 94,74 86,84" fill="#7C1602"/>
   </g>
 
-  <text x="200" y="82" fill="#EDEDED" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif" font-size="44" font-weight="700" letter-spacing="4">ANVEXO</text>
+  <g id="brand-wordmark" transform="translate(125, 12)">
+    <path d="M 3 56 L 19 22 L 35 56" stroke="#EDEDED" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M 52 56 L 52 22 L 80 56 L 80 22" stroke="#EDEDED" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M 97 22 L 112 56 L 127 22" stroke="#EDEDED" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M 168 22 L 144 22 L 144 56 L 168 56 M 144 39 L 164 39" stroke="#EDEDED" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M 185 22 L 213 56 M 213 22 L 185 56" stroke="#FF5C28" stroke-width="6.5" stroke-linecap="round"/>
+    <rect x="230" y="22" width="28" height="34" rx="8" stroke="#EDEDED" stroke-width="6.5" fill="none"/>
 
-  <rect x="424" y="52" width="92" height="22" rx="4" fill="#1E2227" stroke="#32363B" stroke-width="1"/>
-  <text x="470" y="67" fill="#E54D2E" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', monospace" font-size="11" font-weight="600" letter-spacing="1" text-anchor="middle">v0.1.0 CORE</text>
-
-  <text x="200" y="116" fill="#8A9096" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif" font-size="15" font-weight="400" letter-spacing="0.5">Autonomous Software Investigation &amp; Codebase Intelligence Platform</text>
-  <text x="200" y="138" fill="#58A6FF" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace" font-size="12" font-weight="500" letter-spacing="0.2">ANVESHAN (Autonomous Hypothesis Engine) + ECHO (Persistent Context Matrix)</text>
+    <g id="brand-tagline" transform="translate(2, 80)">
+      <text x="0" y="0" fill="#9BA1AB" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, Roboto, sans-serif" font-size="9" font-weight="600" letter-spacing="2.8">INVESTIGATE</text>
+      <circle cx="98" cy="-3.5" r="2" fill="#FF5C28"/>
+      <text x="111" y="0" fill="#9BA1AB" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, Roboto, sans-serif" font-size="9" font-weight="600" letter-spacing="2.8">VERIFY</text>
+      <circle cx="178" cy="-3.5" r="2" fill="#FF5C28"/>
+      <text x="191" y="0" fill="#9BA1AB" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, Roboto, sans-serif" font-size="9" font-weight="600" letter-spacing="2.8">UNDERSTAND</text>
+    </g>
+  </g>
 </svg>

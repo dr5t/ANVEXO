@@ -1,3 +1,38 @@
+const DEFAULT_SETTINGS = {
+  theme: 'obsidian-slate',
+  fontFamily: 'JetBrains Mono',
+  fontSize: 12.5,
+  lineHeight: 1.55,
+  fontWeight: '400',
+  tabSize: '2',
+  wordWrap: true,
+  lineNumbers: true,
+  showSidebar: true,
+  showBottomDrawer: true,
+  sidebarWidth: 340,
+  defaultPath: '.',
+};
+
+const FONT_MAP = {
+  'JetBrains Mono': '"JetBrains Mono", "SF Mono", Menlo, Consolas, monospace',
+  'IBM Plex Mono': '"IBM Plex Mono", Menlo, Consolas, monospace',
+  'Fira Code': '"Fira Code", Menlo, Consolas, monospace',
+  'Inter': '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+  'System Monospace': 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+};
+
+const VALID_THEMES = [
+  'obsidian-slate',
+  'midnight-graphite',
+  'nord',
+  'solarized-dark',
+  'light-studio',
+  'high-contrast',
+];
+
+const STORAGE_KEY = 'anvexo_ide_settings_v1';
+
+let currentSettings = { ...DEFAULT_SETTINGS };
 let currentJobId = null;
 let pollTimer = null;
 let activeTab = 'report';
@@ -14,13 +49,174 @@ function escapeHtml(str) {
     .replace(/'/g, '&#039;');
 }
 
+function loadStoredSettings() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return { ...DEFAULT_SETTINGS };
+    const parsed = JSON.parse(raw);
+    const validated = { ...DEFAULT_SETTINGS };
+
+    if (VALID_THEMES.includes(parsed.theme)) {
+      validated.theme = parsed.theme;
+    }
+    if (Object.prototype.hasOwnProperty.call(FONT_MAP, parsed.fontFamily)) {
+      validated.fontFamily = parsed.fontFamily;
+    }
+    if (typeof parsed.fontSize === 'number' && parsed.fontSize >= 11 && parsed.fontSize <= 18) {
+      validated.fontSize = parsed.fontSize;
+    }
+    if (typeof parsed.lineHeight === 'number' && parsed.lineHeight >= 1.2 && parsed.lineHeight <= 2.0) {
+      validated.lineHeight = parsed.lineHeight;
+    }
+    if (['400', '500', '600'].includes(String(parsed.fontWeight))) {
+      validated.fontWeight = String(parsed.fontWeight);
+    }
+    if (['2', '4', '8'].includes(String(parsed.tabSize))) {
+      validated.tabSize = String(parsed.tabSize);
+    }
+    if (typeof parsed.wordWrap === 'boolean') {
+      validated.wordWrap = parsed.wordWrap;
+    }
+    if (typeof parsed.lineNumbers === 'boolean') {
+      validated.lineNumbers = parsed.lineNumbers;
+    }
+    if (typeof parsed.showSidebar === 'boolean') {
+      validated.showSidebar = parsed.showSidebar;
+    }
+    if (typeof parsed.showBottomDrawer === 'boolean') {
+      validated.showBottomDrawer = parsed.showBottomDrawer;
+    }
+    if (typeof parsed.sidebarWidth === 'number' && parsed.sidebarWidth >= 240 && parsed.sidebarWidth <= 650) {
+      validated.sidebarWidth = parsed.sidebarWidth;
+    }
+    if (typeof parsed.defaultPath === 'string' && parsed.defaultPath.trim().length > 0) {
+      validated.defaultPath = parsed.defaultPath.trim();
+    }
+    return validated;
+  } catch {
+    return { ...DEFAULT_SETTINGS };
+  }
+}
+
+function saveCurrentSettings() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(currentSettings));
+  } catch {}
+}
+
+function applySettings(settings) {
+  document.documentElement.setAttribute('data-theme', settings.theme);
+
+  const fontCss = FONT_MAP[settings.fontFamily] || FONT_MAP['JetBrains Mono'];
+  document.documentElement.style.setProperty('--editor-font', fontCss);
+  document.documentElement.style.setProperty('--editor-font-size', `${settings.fontSize}px`);
+  document.documentElement.style.setProperty('--editor-line-height', String(settings.lineHeight));
+  document.documentElement.style.setProperty('--editor-font-weight', settings.fontWeight);
+  document.documentElement.style.setProperty('--editor-tab-size', settings.tabSize);
+
+  const lineNumbers = document.getElementById('codeLineNumbers');
+  if (lineNumbers) {
+    lineNumbers.classList.toggle('hidden', !settings.lineNumbers);
+  }
+
+  const codeEditor = document.getElementById('codeEditor');
+  if (codeEditor) {
+    codeEditor.classList.toggle('wrap-enabled', settings.wordWrap);
+  }
+
+  const leftPane = document.getElementById('paneLeft');
+  if (leftPane) {
+    leftPane.classList.toggle('collapsed', !settings.showSidebar);
+    if (settings.showSidebar && settings.sidebarWidth) {
+      leftPane.style.width = `${settings.sidebarWidth}px`;
+    }
+  }
+
+  const bottomDrawer = document.getElementById('bottomDrawer');
+  if (bottomDrawer) {
+    bottomDrawer.classList.toggle('hidden', !settings.showBottomDrawer);
+  }
+
+  const footerTheme = document.getElementById('footerTheme');
+  if (footerTheme) {
+    footerTheme.innerText = settings.theme.replace(/-/g, ' ').toUpperCase();
+  }
+
+  const footerFont = document.getElementById('footerFont');
+  if (footerFont) {
+    footerFont.innerText = settings.fontFamily.toUpperCase();
+  }
+
+  syncModalControls(settings);
+}
+
+function syncModalControls(settings) {
+  document.querySelectorAll('.theme-card').forEach(card => {
+    const choice = card.getAttribute('data-theme-choice');
+    card.classList.toggle('active', choice === settings.theme);
+  });
+
+  const fontSelect = document.getElementById('fontFamilySelect');
+  if (fontSelect) fontSelect.value = settings.fontFamily;
+
+  const fontSlider = document.getElementById('fontSizeSlider');
+  const fontBadge = document.getElementById('fontSizeValue');
+  if (fontSlider) fontSlider.value = settings.fontSize;
+  if (fontBadge) fontBadge.innerText = `${settings.fontSize}px`;
+
+  const lhSlider = document.getElementById('lineHeightSlider');
+  const lhBadge = document.getElementById('lineHeightValue');
+  if (lhSlider) lhSlider.value = settings.lineHeight;
+  if (lhBadge) lhBadge.innerText = String(settings.lineHeight);
+
+  const weightSelect = document.getElementById('fontWeightSelect');
+  if (weightSelect) weightSelect.value = settings.fontWeight;
+
+  const tabSelect = document.getElementById('tabSizeSelect');
+  if (tabSelect) tabSelect.value = settings.tabSize;
+
+  const wrapToggle = document.getElementById('wordWrapToggle');
+  if (wrapToggle) wrapToggle.checked = settings.wordWrap;
+
+  const numToggle = document.getElementById('lineNumbersToggle');
+  if (numToggle) numToggle.checked = settings.lineNumbers;
+
+  const sideToggle = document.getElementById('sidebarToggle');
+  if (sideToggle) sideToggle.checked = settings.showSidebar;
+
+  const drawToggle = document.getElementById('drawerToggle');
+  if (drawToggle) drawToggle.checked = settings.showBottomDrawer;
+
+  const defaultPathInput = document.getElementById('defaultPathInput');
+  if (defaultPathInput) defaultPathInput.value = settings.defaultPath;
+
+  const previewBox = document.getElementById('settingsPreviewBox');
+  if (previewBox) {
+    previewBox.style.fontFamily = FONT_MAP[settings.fontFamily] || FONT_MAP['JetBrains Mono'];
+    previewBox.style.fontSize = `${settings.fontSize}px`;
+    previewBox.style.lineHeight = String(settings.lineHeight);
+    previewBox.style.fontWeight = settings.fontWeight;
+    previewBox.style.tabSize = settings.tabSize;
+    previewBox.style.whiteSpace = settings.wordWrap ? 'pre-wrap' : 'pre';
+  }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
+  currentSettings = loadStoredSettings();
+  applySettings(currentSettings);
+
+  const pathInput = document.getElementById('pathInput');
+  if (pathInput && currentSettings.defaultPath && currentSettings.defaultPath !== '.') {
+    pathInput.value = currentSettings.defaultPath;
+  }
+
   initResizer();
   initActivityBar();
   initTabs();
   initDrawer();
   initCommandPresets();
   initEvents();
+  initSettingsModal();
   loadInitialProject();
 });
 
@@ -44,6 +240,7 @@ function initResizer() {
     const maxWidth = containerRect.width - 320;
     if (newWidth >= minWidth && newWidth <= maxWidth) {
       leftPane.style.width = `${newWidth}px`;
+      currentSettings.sidebarWidth = Math.round(newWidth);
     }
   });
 
@@ -52,6 +249,7 @@ function initResizer() {
       isResizing = false;
       document.body.style.cursor = '';
       document.body.style.userSelect = '';
+      saveCurrentSettings();
     }
   });
 }
@@ -70,6 +268,13 @@ function initActivityBar() {
     toggleBottom.addEventListener('click', () => {
       const drawer = document.getElementById('bottomDrawer');
       drawer.classList.toggle('collapsed');
+    });
+  }
+
+  const openSettingsBtn = document.querySelector('.activity-btn[data-action="openSettings"]');
+  if (openSettingsBtn) {
+    openSettingsBtn.addEventListener('click', () => {
+      openSettingsModal();
     });
   }
 }
@@ -191,12 +396,32 @@ function initEvents() {
   const cancelBtn = document.getElementById('cancelBtn');
   const objectiveInput = document.getElementById('objectiveInput');
   const pathInput = document.getElementById('pathInput');
+  const scanPathBtn = document.getElementById('scanPathBtn');
+  const brandHome = document.getElementById('brandHome');
   const copyReportBtn = document.getElementById('copyReportBtn');
   const exportJsonBtn = document.getElementById('exportJsonBtn');
   const clearConsoleBtn = document.getElementById('clearConsoleBtn');
+  const settingsBtn = document.getElementById('settingsBtn');
 
   runBtn.addEventListener('click', triggerInvestigation);
   cancelBtn.addEventListener('click', cancelActiveJob);
+
+  if (settingsBtn) {
+    settingsBtn.addEventListener('click', openSettingsModal);
+  }
+
+  if (scanPathBtn) {
+    scanPathBtn.addEventListener('click', () => {
+      loadProjectInfo(pathInput.value.trim());
+    });
+  }
+
+  if (brandHome) {
+    brandHome.addEventListener('click', () => {
+      switchActivityView('investigation');
+      switchTab('report');
+    });
+  }
 
   objectiveInput.addEventListener('keydown', (e) => {
     if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
@@ -209,6 +434,39 @@ function initEvents() {
     if (e.key === 'Enter') {
       e.preventDefault();
       loadProjectInfo(pathInput.value.trim());
+    }
+  });
+
+  window.addEventListener('keydown', (e) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === ',') {
+      e.preventDefault();
+      toggleSettingsModal();
+      return;
+    }
+    if ((e.metaKey || e.ctrlKey) && (e.key === 'b' || e.key === 'B')) {
+      e.preventDefault();
+      currentSettings.showSidebar = !currentSettings.showSidebar;
+      saveCurrentSettings();
+      applySettings(currentSettings);
+      return;
+    }
+    if ((e.metaKey || e.ctrlKey) && (e.key === 'j' || e.key === 'J')) {
+      e.preventDefault();
+      currentSettings.showBottomDrawer = !currentSettings.showBottomDrawer;
+      saveCurrentSettings();
+      applySettings(currentSettings);
+      return;
+    }
+    if (e.key === 'Escape') {
+      const modal = document.getElementById('settingsModalOverlay');
+      if (modal && modal.classList.contains('open')) {
+        closeSettingsModal();
+        return;
+      }
+      const drawer = document.getElementById('bottomDrawer');
+      if (drawer && !drawer.classList.contains('collapsed')) {
+        drawer.classList.add('collapsed');
+      }
     }
   });
 
@@ -238,6 +496,200 @@ function initEvents() {
     clearConsoleBtn.addEventListener('click', () => {
       document.getElementById('terminalView').innerText = 'Console cleared.';
     });
+  }
+}
+
+function initSettingsModal() {
+  const overlay = document.getElementById('settingsModalOverlay');
+  const closeBtn = document.getElementById('settingsCloseBtn');
+  const searchInput = document.getElementById('settingsSearchInput');
+
+  if (closeBtn) {
+    closeBtn.addEventListener('click', closeSettingsModal);
+  }
+
+  if (overlay) {
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) {
+        closeSettingsModal();
+      }
+    });
+  }
+
+  const navBtns = document.querySelectorAll('.settings-nav-btn');
+  navBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const cat = btn.getAttribute('data-cat');
+      navBtns.forEach(b => b.classList.toggle('active', b === btn));
+      document.querySelectorAll('.settings-category').forEach(panel => {
+        panel.classList.toggle('active', panel.id === `cat-${cat}`);
+      });
+    });
+  });
+
+  document.querySelectorAll('.theme-card').forEach(card => {
+    card.addEventListener('click', () => {
+      const theme = card.getAttribute('data-theme-choice');
+      if (theme) {
+        currentSettings.theme = theme;
+        saveCurrentSettings();
+        applySettings(currentSettings);
+        appendTelemetryLog(`[SETTINGS] Switched theme to: ${theme}`);
+      }
+    });
+  });
+
+  const fontSelect = document.getElementById('fontFamilySelect');
+  if (fontSelect) {
+    fontSelect.addEventListener('change', () => {
+      currentSettings.fontFamily = fontSelect.value;
+      saveCurrentSettings();
+      applySettings(currentSettings);
+    });
+  }
+
+  const fontSlider = document.getElementById('fontSizeSlider');
+  if (fontSlider) {
+    fontSlider.addEventListener('input', () => {
+      currentSettings.fontSize = parseFloat(fontSlider.value);
+      saveCurrentSettings();
+      applySettings(currentSettings);
+    });
+  }
+
+  const lhSlider = document.getElementById('lineHeightSlider');
+  if (lhSlider) {
+    lhSlider.addEventListener('input', () => {
+      currentSettings.lineHeight = parseFloat(lhSlider.value);
+      saveCurrentSettings();
+      applySettings(currentSettings);
+    });
+  }
+
+  const weightSelect = document.getElementById('fontWeightSelect');
+  if (weightSelect) {
+    weightSelect.addEventListener('change', () => {
+      currentSettings.fontWeight = weightSelect.value;
+      saveCurrentSettings();
+      applySettings(currentSettings);
+    });
+  }
+
+  const tabSelect = document.getElementById('tabSizeSelect');
+  if (tabSelect) {
+    tabSelect.addEventListener('change', () => {
+      currentSettings.tabSize = tabSelect.value;
+      saveCurrentSettings();
+      applySettings(currentSettings);
+    });
+  }
+
+  const wrapToggle = document.getElementById('wordWrapToggle');
+  if (wrapToggle) {
+    wrapToggle.addEventListener('change', () => {
+      currentSettings.wordWrap = wrapToggle.checked;
+      saveCurrentSettings();
+      applySettings(currentSettings);
+    });
+  }
+
+  const numToggle = document.getElementById('lineNumbersToggle');
+  if (numToggle) {
+    numToggle.addEventListener('change', () => {
+      currentSettings.lineNumbers = numToggle.checked;
+      saveCurrentSettings();
+      applySettings(currentSettings);
+    });
+  }
+
+  const sideToggle = document.getElementById('sidebarToggle');
+  if (sideToggle) {
+    sideToggle.addEventListener('change', () => {
+      currentSettings.showSidebar = sideToggle.checked;
+      saveCurrentSettings();
+      applySettings(currentSettings);
+    });
+  }
+
+  const drawToggle = document.getElementById('drawerToggle');
+  if (drawToggle) {
+    drawToggle.addEventListener('change', () => {
+      currentSettings.showBottomDrawer = drawToggle.checked;
+      saveCurrentSettings();
+      applySettings(currentSettings);
+    });
+  }
+
+  const resetLayoutBtn = document.getElementById('resetLayoutBtn');
+  if (resetLayoutBtn) {
+    resetLayoutBtn.addEventListener('click', () => {
+      currentSettings.sidebarWidth = 340;
+      currentSettings.showSidebar = true;
+      currentSettings.showBottomDrawer = true;
+      saveCurrentSettings();
+      applySettings(currentSettings);
+      appendTelemetryLog('[SETTINGS] Reset workspace layout to defaults');
+    });
+  }
+
+  const defaultPathInput = document.getElementById('defaultPathInput');
+  if (defaultPathInput) {
+    defaultPathInput.addEventListener('change', () => {
+      currentSettings.defaultPath = defaultPathInput.value.trim() || '.';
+      saveCurrentSettings();
+    });
+  }
+
+  const restoreDefaultsBtn = document.getElementById('restoreDefaultsBtn');
+  if (restoreDefaultsBtn) {
+    restoreDefaultsBtn.addEventListener('click', () => {
+      if (confirm('Restore all ANVEXO settings to factory defaults?')) {
+        currentSettings = { ...DEFAULT_SETTINGS };
+        saveCurrentSettings();
+        applySettings(currentSettings);
+        appendTelemetryLog('[SETTINGS] Restored all settings to factory defaults');
+      }
+    });
+  }
+
+  if (searchInput) {
+    searchInput.addEventListener('input', () => {
+      const q = searchInput.value.trim().toLowerCase();
+      document.querySelectorAll('.settings-category').forEach(cat => {
+        const scope = (cat.getAttribute('data-search-scope') || '') + ' ' + cat.innerText.toLowerCase();
+        if (!q || scope.includes(q)) {
+          cat.style.display = '';
+        } else {
+          cat.style.display = 'none';
+        }
+      });
+    });
+  }
+}
+
+function openSettingsModal() {
+  const overlay = document.getElementById('settingsModalOverlay');
+  if (overlay) {
+    syncModalControls(currentSettings);
+    overlay.classList.add('open');
+  }
+}
+
+function closeSettingsModal() {
+  const overlay = document.getElementById('settingsModalOverlay');
+  if (overlay) {
+    overlay.classList.remove('open');
+  }
+}
+
+function toggleSettingsModal() {
+  const overlay = document.getElementById('settingsModalOverlay');
+  if (overlay) {
+    if (overlay.classList.contains('open')) {
+      closeSettingsModal();
+    } else {
+      openSettingsModal();
+    }
   }
 }
 
@@ -331,7 +783,6 @@ async function triggerInvestigation() {
   const objectiveInput = document.getElementById('objectiveInput');
   const runBtn = document.getElementById('runBtn');
   const cancelBtn = document.getElementById('cancelBtn');
-  const statusBadge = document.getElementById('statusBadge');
   const statusDot = document.getElementById('statusDot');
   const statusText = document.getElementById('statusText');
 
@@ -453,7 +904,6 @@ function onJobCompleted(job) {
   appendTelemetryLog(`[JOB] Job ${job.id} completed successfully`);
 
   if (job.report) {
-    document.getElementById('hudEvidenceCount').innerText = `${job.report.evidence.length} Verified Records`;
     renderReport(job.report);
     renderForensicTimeline(job.report);
     renderHypotheses(job.report);
@@ -476,7 +926,7 @@ function onJobFailed(job) {
   container.innerHTML = `
     <div class="report-card">
       <div class="report-card-title" style="color: var(--status-fail);">Investigation Failed</div>
-      <div style="font-family: var(--font-mono); font-size: 11px;">${job.error || 'Unknown execution error'}</div>
+      <div style="font-family: var(--editor-font); font-size: 11px;">${job.error || 'Unknown execution error'}</div>
     </div>
   `;
 }
@@ -516,7 +966,7 @@ function renderReport(report) {
   summaryCard.className = 'report-card';
   summaryCard.innerHTML = `
     <div class="report-card-title">Investigation Summary</div>
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-family: var(--font-mono); font-size: 11px;">
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-family: var(--editor-font); font-size: 11px;">
       <div>Objective: <span style="color: var(--text-primary);">${escapeHtml(report.objective)}</span></div>
       <div>Duration: <span style="color: var(--text-primary);">${duration}ms</span></div>
       <div>Repository: <span style="color: var(--text-primary);">${escapeHtml(report.projectMetadata.rootPath)}</span></div>
@@ -566,7 +1016,7 @@ function renderReport(report) {
   rawCard.className = 'report-card';
   rawCard.innerHTML = `
     <div class="report-card-title">Formatted Report Text</div>
-    <div id="reportText" style="font-family: var(--font-mono); font-size: 11px; white-space: pre-wrap; line-height: 1.5; background: #0A0A0B; padding: 10px; border-radius: 2px;">${formatReportSimple(report)}</div>
+    <div id="reportText" style="font-family: var(--editor-font); font-size: 11px; white-space: pre-wrap; line-height: 1.5; background: var(--bg-editor); padding: 10px; border-radius: 2px;">${formatReportSimple(report)}</div>
   `;
   container.appendChild(rawCard);
 
@@ -619,7 +1069,7 @@ function renderForensicTimeline(report) {
     header.appendChild(meta);
 
     const source = document.createElement('div');
-    source.style.fontFamily = 'var(--font-mono)';
+    source.style.fontFamily = 'var(--editor-font)';
     source.style.fontSize = '10.5px';
     source.style.color = 'var(--text-secondary)';
     source.innerText = `Source: ${ev.source}`;
@@ -683,7 +1133,7 @@ function renderGitDiffs(report) {
 
     const body = document.createElement('div');
     body.style.padding = '8px';
-    body.style.background = '#090A0B';
+    body.style.background = 'var(--bg-editor)';
 
     const lines = ev.content.split('\n');
     lines.forEach(l => {

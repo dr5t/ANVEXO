@@ -1,36 +1,46 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="obsidian-slate">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ANVEXO | Autonomous Software Investigation Workbench</title>
+  <title>ANVEXO IDE | Autonomous Software Investigation Workbench</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
   <header class="app-header">
-    <div class="brand">
-      <svg class="brand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
-        <polyline points="2 17 12 22 22 17"></polyline>
-        <polyline points="2 12 12 17 22 12"></polyline>
+    <div class="brand" id="brandHome" title="ANVEXO IDE">
+      <svg class="brand-icon" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+        <path d="M16 3 L28 10 L28 22 L16 29 L4 22 L4 10 Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+        <path d="M16 3 L16 12 M16 20 L16 29" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        <polygon points="16,11 21,16 16,21 11,16" fill="#E54D2E"/>
+        <path d="M4 10 L11 16 M28 10 L21 16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
       </svg>
       <span class="brand-title">ANVEXO</span>
-      <span class="brand-badge">WORKBENCH</span>
+      <span class="brand-badge">IDE</span>
     </div>
 
     <div class="header-center">
       <div class="path-input-wrapper">
         <span class="path-prefix">target://</span>
         <input type="text" id="pathInput" class="path-input" value="." placeholder="Target repository path..." aria-label="Target repository path" spellcheck="false">
-        <span id="branchChip" class="branch-chip">branch: main</span>
+        <button id="scanPathBtn" class="path-scan-btn" title="Scan directory topography">$ scan</button>
+        <span id="branchChip" class="branch-chip">git: active</span>
       </div>
     </div>
 
     <div class="header-actions">
+      <span id="testCounterChip" class="badge">95/95 TESTS</span>
       <div id="statusBadge" class="badge badge-status">
         <span id="statusDot" class="status-dot idle" aria-hidden="true"></span>
         <span id="statusText">READY</span>
       </div>
+      <button id="settingsBtn" class="btn btn-icon-only" aria-label="Open Settings (Cmd+,)" title="Settings (Cmd+,)">
+        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        </svg>
+      </button>
       <button id="cancelBtn" class="btn btn-danger" style="display: none;" aria-label="Cancel active investigation">
         <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <circle cx="12" cy="12" r="10"></circle>
@@ -48,37 +58,6 @@
     </div>
   </header>
 
-  <div class="hud-strip">
-    <div class="hud-metric">
-      <div class="hud-label">ECHO MEMORY MATRIX</div>
-      <div class="hud-value-row">
-        <span id="hudMemoryMode" class="hud-value">Mode B (Local)</span>
-        <span id="hudContextStatus" class="hud-tag">Active</span>
-      </div>
-    </div>
-    <div class="hud-metric">
-      <div class="hud-label">AUTOMATED TEST SUITE</div>
-      <div class="hud-value-row">
-        <span id="hudTestCount" class="hud-value highlight-green">80 Passed (100%)</span>
-        <span class="hud-tag pass">Vitest V8</span>
-      </div>
-    </div>
-    <div class="hud-metric">
-      <div class="hud-label">GROUND TRUTH EVIDENCE</div>
-      <div class="hud-value-row">
-        <span id="hudEvidenceCount" class="hud-value">0 Verified Records</span>
-        <span class="hud-tag info">Scrubbed</span>
-      </div>
-    </div>
-    <div class="hud-metric">
-      <div class="hud-label">RATE LIMIT WINDOW</div>
-      <div class="hud-value-row">
-        <span id="hudRateLimit" class="hud-value">300 Req / Min</span>
-        <span class="hud-tag">Sliding</span>
-      </div>
-    </div>
-  </div>
-
   <div class="command-preset-bar">
     <span class="preset-label">QUICK COMMANDS:</span>
     <button class="cmd-preset-btn" data-cmd="scan" title="Discover project topography and detect stack">$ scan</button>
@@ -93,35 +72,40 @@
   <div id="workbenchShell" class="workbench-shell">
     <aside class="activity-bar" aria-label="Activity Rail">
       <div class="activity-top">
-        <button class="activity-btn active" data-view="investigation" title="Investigation Objective & DAG Plan">
-          <svg class="activity-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <button class="activity-btn active" data-view="investigation" title="Investigation Objective & Plan" aria-label="Investigation Objective and Plan">
+          <svg class="activity-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
           </svg>
         </button>
-        <button class="activity-btn" data-view="explorer" title="Repository Topography Explorer">
-          <svg class="activity-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <button class="activity-btn" data-view="explorer" title="Repository Topography Explorer" aria-label="Repository Topography Explorer">
+          <svg class="activity-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
           </svg>
         </button>
-        <button class="activity-btn" data-view="hypotheses" title="Active Hypotheses Matrix">
-          <svg class="activity-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <button class="activity-btn" data-view="hypotheses" title="Active Hypotheses Matrix" aria-label="Active Hypotheses Matrix">
+          <svg class="activity-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <circle cx="12" cy="12" r="10"></circle>
             <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
             <line x1="12" y1="17" x2="12.01" y2="17"></line>
           </svg>
         </button>
-        <button class="activity-btn" data-view="permissions" title="Permission Gates and Audit Log">
-          <svg class="activity-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+        <button class="activity-btn" data-view="permissions" title="Permission Gates & Audit Log" aria-label="Permission Gates and Audit Log">
+          <svg class="activity-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
           </svg>
         </button>
       </div>
       <div class="activity-bottom">
-        <button class="activity-btn" data-action="toggleBottom" title="Toggle Bottom Telemetry Drawer">
-          <svg class="activity-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <button class="activity-btn" data-action="toggleBottom" title="Toggle Bottom Drawer (Cmd+J)" aria-label="Toggle Bottom Drawer (Cmd+J)">
+          <svg class="activity-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <polyline points="4 17 10 11 4 5"></polyline>
             <line x1="12" y1="19" x2="20" y2="19"></line>
+          </svg>
+        </button>
+        <button class="activity-btn" data-action="openSettings" title="Open Settings (Cmd+,)" aria-label="Open Settings (Cmd+,)">
+          <svg class="activity-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
           </svg>
         </button>
       </div>
@@ -203,7 +187,7 @@
       <section id="paneRight" class="pane-right" aria-label="Inspection Workspace">
         <nav class="tabs" aria-label="Workspace tabs">
           <button class="tab-btn active" data-tab="report" aria-label="Report and Findings tab">
-            <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
               <polyline points="14 2 14 8 20 8"></polyline>
               <line x1="16" y1="13" x2="8" y2="13"></line>
@@ -212,21 +196,21 @@
             <span>Report &amp; Findings</span>
           </button>
           <button class="tab-btn" data-tab="trace" aria-label="Forensic Evidence Trace tab">
-            <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <circle cx="12" cy="12" r="10"></circle>
               <polyline points="12 6 12 12 16 14"></polyline>
             </svg>
             <span>Evidence Trace</span>
           </button>
           <button class="tab-btn" data-tab="code" aria-label="Code Inspector tab">
-            <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <polyline points="16 18 22 12 16 6"></polyline>
               <polyline points="8 6 2 12 8 18"></polyline>
             </svg>
             <span>Code Inspector</span>
           </button>
           <button class="tab-btn" data-tab="diffs" aria-label="Unified Diffs tab">
-            <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <line x1="18" y1="20" x2="18" y2="10"></line>
               <line x1="12" y1="20" x2="12" y2="4"></line>
               <line x1="6" y1="20" x2="6" y2="14"></line>
@@ -234,7 +218,7 @@
             <span>Unified Diffs</span>
           </button>
           <button class="tab-btn" data-tab="console" aria-label="Tool Console tab">
-            <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <polyline points="4 17 10 11 4 5"></polyline>
               <line x1="12" y1="19" x2="20" y2="19"></line>
             </svg>
@@ -343,13 +327,396 @@
     </div>
     <div class="footer-center">
       <span>CANONICAL BOUNDARY: <span class="footer-success">127.0.0.1:4173 (VERIFIED)</span></span>
+      <span>THEME: <span id="footerTheme" class="footer-info">OBSIDIAN SLATE</span></span>
+      <span>FONT: <span id="footerFont" class="footer-info">JETBRAINS MONO</span></span>
       <span>MEMORY: <span id="footerMemory" class="footer-info">MODE B</span></span>
     </div>
     <div class="footer-right">
       <span>ARCHITECTURE: <span class="footer-success">LOCAL-FIRST</span></span>
-      <span>TESTS: <span class="footer-success">80/80 PASSING</span></span>
+      <span>TESTS: <span class="footer-success">95/95 PASSING</span></span>
     </div>
   </footer>
+
+  <div id="settingsModalOverlay" class="settings-overlay" role="dialog" aria-modal="true" aria-labelledby="settingsModalTitle">
+    <div class="settings-modal">
+      <div class="settings-header">
+        <div class="settings-header-left">
+          <span id="settingsModalTitle" class="settings-title">SETTINGS</span>
+          <input type="text" id="settingsSearchInput" class="settings-search-input" placeholder="Search settings..." aria-label="Search settings" spellcheck="false">
+        </div>
+        <button id="settingsCloseBtn" class="settings-close-btn" aria-label="Close Settings (Esc)" title="Close (Esc)">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+
+      <div class="settings-layout">
+        <nav class="settings-nav" aria-label="Settings Categories">
+          <button class="settings-nav-btn active" data-cat="appearance">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="5"></circle>
+              <line x1="12" y1="1" x2="12" y2="3"></line>
+              <line x1="12" y1="21" x2="12" y2="23"></line>
+              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+              <line x1="1" y1="12" x2="3" y2="12"></line>
+              <line x1="21" y1="12" x2="23" y2="12"></line>
+              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+            </svg>
+            <span>Appearance</span>
+          </button>
+          <button class="settings-nav-btn" data-cat="editor">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="4 7 4 4 20 4 20 7"></polyline>
+              <line x1="9" y1="20" x2="15" y2="20"></line>
+              <line x1="12" y1="4" x2="12" y2="20"></line>
+            </svg>
+            <span>Typography &amp; Editor</span>
+          </button>
+          <button class="settings-nav-btn" data-cat="layout">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="9" y1="3" x2="9" y2="21"></line>
+            </svg>
+            <span>Layout &amp; Panels</span>
+          </button>
+          <button class="settings-nav-btn" data-cat="general">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="16" x2="12" y2="12"></line>
+              <line x1="12" y1="8" x2="12.01" y2="8"></line>
+            </svg>
+            <span>General &amp; Shortcuts</span>
+          </button>
+          <button class="settings-nav-btn" data-cat="about">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+              <polyline points="2 17 12 22 22 17"></polyline>
+              <polyline points="2 12 12 17 22 12"></polyline>
+            </svg>
+            <span>About ANVEXO</span>
+          </button>
+        </nav>
+
+        <div class="settings-content-pane">
+          <div id="cat-appearance" class="settings-category active" data-search-scope="themes appearance color dark light contrast">
+            <div class="settings-group">
+              <div class="settings-group-title">Color Theme</div>
+              <div class="settings-group-desc">Select an intentionally balanced theme token system for long coding sessions.</div>
+            </div>
+
+            <div class="theme-grid">
+              <div class="theme-card active" data-theme-choice="obsidian-slate">
+                <div class="theme-card-top">
+                  <span class="theme-card-name">Obsidian Slate</span>
+                  <span class="theme-card-badge">DEFAULT</span>
+                </div>
+                <div class="theme-swatches">
+                  <div class="theme-swatch" style="background: #0D0F12;"></div>
+                  <div class="theme-swatch" style="background: #181C22;"></div>
+                  <div class="theme-swatch" style="background: #21262E;"></div>
+                  <div class="theme-swatch" style="background: #E54D2E;"></div>
+                </div>
+              </div>
+
+              <div class="theme-card" data-theme-choice="midnight-graphite">
+                <div class="theme-card-top">
+                  <span class="theme-card-name">Midnight Graphite</span>
+                  <span class="theme-card-badge">DARK</span>
+                </div>
+                <div class="theme-swatches">
+                  <div class="theme-swatch" style="background: #08090A;"></div>
+                  <div class="theme-swatch" style="background: #141619;"></div>
+                  <div class="theme-swatch" style="background: #1C1E22;"></div>
+                  <div class="theme-swatch" style="background: #D03B29;"></div>
+                </div>
+              </div>
+
+              <div class="theme-card" data-theme-choice="nord">
+                <div class="theme-card-top">
+                  <span class="theme-card-name">Nord</span>
+                  <span class="theme-card-badge">ARCTIC</span>
+                </div>
+                <div class="theme-swatches">
+                  <div class="theme-swatch" style="background: #2E3440;"></div>
+                  <div class="theme-swatch" style="background: #434C5E;"></div>
+                  <div class="theme-swatch" style="background: #88C0D0;"></div>
+                  <div class="theme-swatch" style="background: #A3BE8C;"></div>
+                </div>
+              </div>
+
+              <div class="theme-card" data-theme-choice="solarized-dark">
+                <div class="theme-card-top">
+                  <span class="theme-card-name">Solarized Dark</span>
+                  <span class="theme-card-badge">PRECISION</span>
+                </div>
+                <div class="theme-swatches">
+                  <div class="theme-swatch" style="background: #002B36;"></div>
+                  <div class="theme-swatch" style="background: #073642;"></div>
+                  <div class="theme-swatch" style="background: #268BD2;"></div>
+                  <div class="theme-swatch" style="background: #CB4B16;"></div>
+                </div>
+              </div>
+
+              <div class="theme-card" data-theme-choice="light-studio">
+                <div class="theme-card-top">
+                  <span class="theme-card-name">Light Studio</span>
+                  <span class="theme-card-badge">CLEAN</span>
+                </div>
+                <div class="theme-swatches">
+                  <div class="theme-swatch" style="background: #FFFFFF;"></div>
+                  <div class="theme-swatch" style="background: #F6F8FA;"></div>
+                  <div class="theme-swatch" style="background: #D0D7DE;"></div>
+                  <div class="theme-swatch" style="background: #CF222E;"></div>
+                </div>
+              </div>
+
+              <div class="theme-card" data-theme-choice="high-contrast">
+                <div class="theme-card-top">
+                  <span class="theme-card-name">High Contrast</span>
+                  <span class="theme-card-badge">A11Y</span>
+                </div>
+                <div class="theme-swatches">
+                  <div class="theme-swatch" style="background: #000000;"></div>
+                  <div class="theme-swatch" style="background: #1A1A1A;"></div>
+                  <div class="theme-swatch" style="background: #6E7681;"></div>
+                  <div class="theme-swatch" style="background: #F2CC60;"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div id="cat-editor" class="settings-category" data-search-scope="typography font editor code line numbers size weight wrap">
+            <div class="settings-group">
+              <div class="settings-group-title">Editor Typography</div>
+              <div class="settings-group-desc">Configure coding typography across the code inspector, forensic evidence viewer, and tool console.</div>
+            </div>
+
+            <div class="setting-row">
+              <div class="setting-info">
+                <span class="setting-label">Font Family</span>
+                <span class="setting-subtext">Monospace typeface for code and diagnostics</span>
+              </div>
+              <div class="setting-control">
+                <select id="fontFamilySelect" class="setting-select">
+                  <option value="JetBrains Mono">JetBrains Mono</option>
+                  <option value="IBM Plex Mono">IBM Plex Mono</option>
+                  <option value="Fira Code">Fira Code</option>
+                  <option value="Inter">Inter</option>
+                  <option value="System Monospace">System Monospace</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="setting-row">
+              <div class="setting-info">
+                <span class="setting-label">Font Size</span>
+                <span class="setting-subtext">Base code inspector font size</span>
+              </div>
+              <div class="setting-control">
+                <input type="range" id="fontSizeSlider" class="setting-slider" min="11" max="18" step="0.5" value="12.5">
+                <span id="fontSizeValue" class="setting-value-chip">12.5px</span>
+              </div>
+            </div>
+
+            <div class="setting-row">
+              <div class="setting-info">
+                <span class="setting-label">Line Height</span>
+                <span class="setting-subtext">Relative line spacing multiplier</span>
+              </div>
+              <div class="setting-control">
+                <input type="range" id="lineHeightSlider" class="setting-slider" min="1.2" max="2.0" step="0.05" value="1.55">
+                <span id="lineHeightValue" class="setting-value-chip">1.55</span>
+              </div>
+            </div>
+
+            <div class="setting-row">
+              <div class="setting-info">
+                <span class="setting-label">Font Weight</span>
+                <span class="setting-subtext">Stroke weight of code characters</span>
+              </div>
+              <div class="setting-control">
+                <select id="fontWeightSelect" class="setting-select">
+                  <option value="400">400 (Regular)</option>
+                  <option value="500">500 (Medium)</option>
+                  <option value="600">600 (Semi-Bold)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="setting-row">
+              <div class="setting-info">
+                <span class="setting-label">Tab Size</span>
+                <span class="setting-subtext">Number of spaces per indentation level</span>
+              </div>
+              <div class="setting-control">
+                <select id="tabSizeSelect" class="setting-select">
+                  <option value="2">2 spaces</option>
+                  <option value="4">4 spaces</option>
+                  <option value="8">8 spaces</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="setting-row">
+              <div class="setting-info">
+                <span class="setting-label">Word Wrap</span>
+                <span class="setting-subtext">Wrap long code lines in editor views</span>
+              </div>
+              <div class="setting-control">
+                <input type="checkbox" id="wordWrapToggle" class="setting-toggle" checked>
+              </div>
+            </div>
+
+            <div class="setting-row">
+              <div class="setting-info">
+                <span class="setting-label">Line Numbers</span>
+                <span class="setting-subtext">Display gutter numbers in code viewer</span>
+              </div>
+              <div class="setting-control">
+                <input type="checkbox" id="lineNumbersToggle" class="setting-toggle" checked>
+              </div>
+            </div>
+
+            <div class="settings-group" style="margin-top: 10px;">
+              <div class="settings-group-title">Typography Live Preview</div>
+              <pre id="settingsPreviewBox" class="settings-preview-box">function verifyRootCause(evidence) {
+  const verified = evidence.filter(e =&gt; e.status === "verified");
+  return { count: verified.length, groundTruth: true };
+}</pre>
+            </div>
+          </div>
+
+          <div id="cat-layout" class="settings-category" data-search-scope="layout sidebar drawer panel reset">
+            <div class="settings-group">
+              <div class="settings-group-title">Workspace Layout</div>
+              <div class="settings-group-desc">Configure visible IDE canvas panels and restore default layout dimensions.</div>
+            </div>
+
+            <div class="setting-row">
+              <div class="setting-info">
+                <span class="setting-label">Left Investigation Sidebar</span>
+                <span class="setting-subtext">Show or collapse the objective and DAG plan panel (Cmd+B)</span>
+              </div>
+              <div class="setting-control">
+                <input type="checkbox" id="sidebarToggle" class="setting-toggle" checked>
+              </div>
+            </div>
+
+            <div class="setting-row">
+              <div class="setting-info">
+                <span class="setting-label">Bottom Telemetry Drawer</span>
+                <span class="setting-subtext">Show or collapse the live logs and audit drawer (Cmd+J)</span>
+              </div>
+              <div class="setting-control">
+                <input type="checkbox" id="drawerToggle" class="setting-toggle" checked>
+              </div>
+            </div>
+
+            <div class="setting-row">
+              <div class="setting-info">
+                <span class="setting-label">Reset Workspace Layout</span>
+                <span class="setting-subtext">Restore default split canvas widths and panel states</span>
+              </div>
+              <div class="setting-control">
+                <button id="resetLayoutBtn" class="btn btn-sm">Reset Layout</button>
+              </div>
+            </div>
+          </div>
+
+          <div id="cat-general" class="settings-category" data-search-scope="general shortcuts keyboard default reset startup">
+            <div class="settings-group">
+              <div class="settings-group-title">General Preferences</div>
+              <div class="settings-group-desc">Application startup defaults and persistence options.</div>
+            </div>
+
+            <div class="setting-row">
+              <div class="setting-info">
+                <span class="setting-label">Default Target Path</span>
+                <span class="setting-subtext">Initial repository path loaded when opening the workbench</span>
+              </div>
+              <div class="setting-control">
+                <input type="text" id="defaultPathInput" class="setting-select" style="width: 140px;" value=".">
+              </div>
+            </div>
+
+            <div class="setting-row">
+              <div class="setting-info">
+                <span class="setting-label">Restore Default Settings</span>
+                <span class="setting-subtext">Reset all appearance, typography, and layout preferences</span>
+              </div>
+              <div class="setting-control">
+                <button id="restoreDefaultsBtn" class="btn btn-sm btn-danger">Restore Defaults</button>
+              </div>
+            </div>
+
+            <div class="settings-group" style="margin-top: 10px;">
+              <div class="settings-group-title">Keyboard Shortcuts</div>
+              <table class="shortcuts-table">
+                <thead>
+                  <tr>
+                    <th>Command</th>
+                    <th>Shortcut</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Trigger Autonomous Investigation</td>
+                    <td><span class="shortcut-key">Cmd + Enter</span> / <span class="shortcut-key">Ctrl + Enter</span></td>
+                  </tr>
+                  <tr>
+                    <td>Open Settings Dialog</td>
+                    <td><span class="shortcut-key">Cmd + ,</span> / <span class="shortcut-key">Ctrl + ,</span></td>
+                  </tr>
+                  <tr>
+                    <td>Toggle Left Investigation Sidebar</td>
+                    <td><span class="shortcut-key">Cmd + B</span> / <span class="shortcut-key">Ctrl + B</span></td>
+                  </tr>
+                  <tr>
+                    <td>Toggle Bottom Telemetry Drawer</td>
+                    <td><span class="shortcut-key">Cmd + J</span> / <span class="shortcut-key">Ctrl + J</span></td>
+                  </tr>
+                  <tr>
+                    <td>Close Active Dialog or Drawer</td>
+                    <td><span class="shortcut-key">Esc</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div id="cat-about" class="settings-category" data-search-scope="about version license architecture security anvexo">
+            <div class="about-card">
+              <div class="about-header">
+                <svg class="about-logo" viewBox="0 0 32 32" fill="none">
+                  <path d="M16 3 L28 10 L28 22 L16 29 L4 22 L4 10 Z" stroke="#E54D2E" stroke-width="2" stroke-linejoin="round"/>
+                  <path d="M16 3 L16 12 M16 20 L16 29" stroke="#E54D2E" stroke-width="2" stroke-linecap="round"/>
+                  <polygon points="16,11 21,16 16,21 11,16" fill="#E54D2E"/>
+                  <path d="M4 10 L11 16 M28 10 L21 16" stroke="#E54D2E" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                <div>
+                  <div class="about-name">ANVEXO IDE</div>
+                  <div style="font-family: var(--font-mono); font-size: 10px; color: var(--accent-orange);">Version 0.1.0-prod</div>
+                </div>
+              </div>
+              <div class="about-desc">
+                ANVEXO is an autonomous software investigation and codebase intelligence platform combining ANVESHAN's ground-truth hypothesis testing with ECHO's persistent architectural context.
+              </div>
+              <div class="about-meta-row">
+                <span>Security Sandbox: <strong>127.0.0.1:4173 (Verified)</strong></span>
+                <span>Automated Tests: <strong>95/95 Passing (100%)</strong></span>
+                <span>Node.js: <strong>&gt;=20.0.0</strong></span>
+                <span>License: <strong>UNLICENSED (Proprietary)</strong></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <script src="/app.js"></script>
 </body>

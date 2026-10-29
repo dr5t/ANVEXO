@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%" fill="none">
+  <defs>
+    <linearGradient id="iconBg" x1="256" y1="0" x2="256" y2="512" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#1E222A"/>
+      <stop offset="50%" stop-color="#14161A"/>
+      <stop offset="100%" stop-color="#0A0B0D"/>
+    </linearGradient>
+    <radialGradient id="iconGlow" cx="256" cy="360" r="180" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FF5C28" stop-opacity="0.28"/>
+      <stop offset="50%" stop-color="#FF5C28" stop-opacity="0.08"/>
+      <stop offset="100%" stop-color="#FF5C28" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="iconBorder" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#3A404E"/>
+      <stop offset="100%" stop-color="#1A1C22"/>
+    </linearGradient>
+    <linearGradient id="iLeftOuter" x1="52" y1="10" x2="12" y2="84" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#2D323A"/>
+      <stop offset="50%" stop-color="#20232A"/>
+      <stop offset="100%" stop-color="#14161A"/>
+    </linearGradient>
+    <linearGradient id="iLeftInner" x1="52" y1="10" x2="38" y2="72" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#4F5664"/>
+      <stop offset="45%" stop-color="#3C424E"/>
+      <stop offset="100%" stop-color="#262A32"/>
+    </linearGradient>
+    <linearGradient id="iLeftBevel" x1="12" y1="82" x2="32" y2="84" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#101114"/>
+      <stop offset="100%" stop-color="#1C1E24"/>
+    </linearGradient>
+    <linearGradient id="iRightTop" x1="52" y1="10" x2="76" y2="84" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FF7A38"/>
+      <stop offset="35%" stop-color="#FF5A1E"/>
+      <stop offset="100%" stop-color="#E84410"/>
+    </linearGradient>
+    <linearGradient id="iRightSide" x1="72" y1="36" x2="94" y2="84" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#D63A12"/>
+      <stop offset="50%" stop-color="#B02608"/>
+      <stop offset="100%" stop-color="#7C1602"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="16" y="16" width="480" height="480" rx="108" fill="url(#iconBg)" stroke="url(#iconBorder)" stroke-width="2"/>
+  <rect x="16" y="16" width="480" height="480" rx="108" fill="url(#iconGlow)"/>
+
+  <g transform="translate(108, 108) scale(2.95)">
+    <polygon points="52,10 20,52 12,82 32,84" fill="url(#iLeftOuter)"/>
+    <polygon points="52,10 32,84 38,72 50,46" fill="url(#iLeftInner)"/>
+    <polygon points="12,82 32,84 26,88" fill="url(#iLeftBevel)"/>
+    <polygon points="52,10 50,46 62,68 76,84" fill="url(#iRightTop)"/>
+    <polygon points="52,10 76,84 94,74 78,44" fill="url(#iRightSide)"/>
+    <polygon points="76,84 94,74 86,84" fill="#7C1602"/>
+  </g>
+</svg>

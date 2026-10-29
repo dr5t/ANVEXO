@@ -1,6 +1,16 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
-  <path d="M16 3 L28 10 L28 22 L16 29 L4 22 L4 10 Z" stroke="#E54D2E" stroke-width="2" stroke-linejoin="round"/>
-  <path d="M16 3 L16 12 M16 20 L16 29" stroke="#E54D2E" stroke-width="2" stroke-linecap="round"/>
-  <polygon points="16,11 21,16 16,21 11,16" fill="#E54D2E"/>
-  <path d="M4 10 L11 16 M28 10 L21 16" stroke="#E54D2E" stroke-width="2" stroke-linecap="round"/>
+  <defs>
+    <linearGradient id="favLeft" x1="16" y1="3" x2="4" y2="28" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#4F5664"/>
+      <stop offset="100%" stop-color="#181A1D"/>
+    </linearGradient>
+    <linearGradient id="favRight" x1="16" y1="3" x2="28" y2="28" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FF7A38"/>
+      <stop offset="100%" stop-color="#C4340E"/>
+    </linearGradient>
+  </defs>
+  <polygon points="16,3 6,24 4,28 11,28" fill="url(#favLeft)"/>
+  <polygon points="16,3 11,28 13,24 16,15" fill="#3E444E"/>
+  <polygon points="16,3 16,15 20,22 25,28" fill="url(#favRight)"/>
+  <polygon points="16,3 25,28 30,25 24,14" fill="#9A2207"/>
 </svg>
