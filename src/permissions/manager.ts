@@ -115,6 +115,24 @@ export class PermissionManager {
     return [...this.grants.values()];
   }
 
+  clearAuditLog(): void {
+    this.auditLog = [];
+  }
+
+  setPredefinedPolicy(policy: 'permissive' | 'balanced' | 'strict'): void {
+    if (policy === 'permissive') {
+      this.grant(PermissionScope.FILE_READ, '*', PermissionDecision.ALWAYS_ALLOW);
+      this.grant(PermissionScope.GIT_READ, '*', PermissionDecision.ALWAYS_ALLOW);
+      this.grant(PermissionScope.TEST_RUN, '*', PermissionDecision.ALWAYS_ALLOW);
+      this.grant(PermissionScope.FILE_WRITE, '*', PermissionDecision.ALWAYS_ALLOW);
+      this.grant(PermissionScope.COMMAND_EXECUTE, '*', PermissionDecision.ALWAYS_ALLOW);
+    } else if (policy === 'balanced') {
+      this.grant(PermissionScope.FILE_READ, '*', PermissionDecision.ALWAYS_ALLOW);
+      this.grant(PermissionScope.GIT_READ, '*', PermissionDecision.ALWAYS_ALLOW);
+      this.grant(PermissionScope.TEST_RUN, '*', PermissionDecision.ALWAYS_ALLOW);
+    }
+  }
+
   private key(scope: PermissionScope, resource: string): string {
     return `${scope}::${resource}`;
   }

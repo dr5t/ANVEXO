@@ -32,12 +32,16 @@ export enum PermissionDecision {
 export enum PermissionScope {
   FILE_READ = 'file:read',
   FILE_WRITE = 'file:write',
+  FILE_DELETE = 'file:delete',
   GIT_READ = 'git:read',
   GIT_WRITE = 'git:write',
   COMMAND_EXECUTE = 'command:execute',
   TEST_RUN = 'test:run',
   NETWORK = 'network',
   BROWSER = 'browser',
+  PLUGIN_INSTALL = 'plugin:install',
+  PLUGIN_EXECUTE = 'plugin:execute',
+  MCP_CONNECT = 'mcp:connect',
 }
 
 export interface PermissionRequest {
@@ -243,4 +247,192 @@ export interface ProjectContext {
   historicalInvestigations: HistoricalInvestigationRecord[];
   knownBugs: KnownBugRecord[];
   contradictions: ContradictionRecord[];
+}
+
+export type ProviderId = 'anthropic' | 'openai' | 'gemini' | 'ollama' | 'offline';
+
+export interface ModelInfo {
+  id: string;
+  name: string;
+  provider: ProviderId;
+  contextWindow: number;
+  maxOutputTokens: number;
+  supportsStreaming: boolean;
+  supportsToolCalling: boolean;
+  isLocal: boolean;
+}
+
+export interface ModelConfig {
+  provider: ProviderId;
+  model: string;
+  apiKey?: string;
+  baseUrl?: string;
+  temperature?: number;
+  maxTokens?: number;
+}
+
+export type ChatRole = 'system' | 'user' | 'assistant' | 'tool';
+
+export interface ToolCallPayload {
+  id: string;
+  name: string;
+  arguments: Record<string, unknown>;
+}
+
+export interface ChatMessage {
+  role: ChatRole;
+  content: string;
+  name?: string;
+  toolCallId?: string;
+  toolCalls?: ToolCallPayload[];
+}
+
+export interface CompletionRequest {
+  messages: ChatMessage[];
+  tools?: ToolDefinition[];
+  temperature?: number;
+  maxTokens?: number;
+  signal?: AbortSignal;
+}
+
+export interface CompletionResponse {
+  content: string;
+  toolCalls?: ToolCallPayload[];
+  finishReason?: string;
+  usage?: {
+    promptTokens: number;
+    completionTokens: number;
+    totalTokens: number;
+  };
+}
+
+export interface CompletionChunk {
+  delta: string;
+  toolCallDelta?: Partial<ToolCallPayload>;
+  isComplete: boolean;
+}
+
+export interface ModelProvider {
+  readonly id: ProviderId;
+  readonly name: string;
+  listModels(): Promise<ModelInfo[]>;
+  complete(request: CompletionRequest): Promise<CompletionResponse>;
+  stream(request: CompletionRequest, onChunk: (chunk: CompletionChunk) => void): Promise<CompletionResponse>;
+}
+
+export type AgentMode = 'plan' | 'interactive' | 'autonomous';
+
+export interface AgentStepPlan {
+  id: string;
+  title: string;
+  toolName?: string;
+  toolArgs?: Record<string, unknown>;
+  requiresApproval: boolean;
+  status: 'pending' | 'approved' | 'rejected' | 'running' | 'completed' | 'failed';
+  result?: string;
+  error?: string;
+}
+
+export interface AgentPlan {
+  goal: string;
+  steps: AgentStepPlan[];
+  createdAt: Date;
+  status: 'draft' | 'executing' | 'completed' | 'cancelled';
+}
+
+export interface AgentSession {
+  id: string;
+  repositoryPath: string;
+  mode: AgentMode;
+  messages: ChatMessage[];
+  plan?: AgentPlan;
+  status: 'idle' | 'planning' | 'waiting_approval' | 'running' | 'completed' | 'failed';
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export type SkillScope = 'built-in' | 'project' | 'user';
+
+export interface SkillArgument {
+  name: string;
+  description: string;
+  required: boolean;
+  default?: string;
+}
+
+export interface SkillDefinition {
+  id: string;
+  name: string;
+  description: string;
+  instructions: string;
+  scope: SkillScope;
+  path?: string;
+  arguments?: SkillArgument[];
+  allowedTools?: string[];
+  suggestedPrompts?: string[];
+}
+
+export type RuleScope = 'system' | 'user' | 'project';
+
+export interface RuleDefinition {
+  id: string;
+  title: string;
+  scope: RuleScope;
+  content: string;
+  path?: string;
+  priority: number;
+  enabled: boolean;
+}
+
+export interface PluginManifest {
+  id: string;
+  name: string;
+  version: string;
+  description: string;
+  entryPoint: string;
+  author?: string;
+  permissions: PermissionScope[];
+  tools?: string[];
+  commands?: string[];
+  enabled: boolean;
+  installedAt: Date;
+}
+
+export type McpTransportType = 'stdio' | 'http';
+
+export interface McpServerConfig {
+  id: string;
+  name: string;
+  transport: McpTransportType;
+  command?: string;
+  args?: string[];
+  url?: string;
+  env?: Record<string, string>;
+  headers?: Record<string, string>;
+  enabled: boolean;
+}
+
+export interface McpToolSchema {
+  name: string;
+  description?: string;
+  inputSchema: {
+    type: string;
+    properties?: Record<string, unknown>;
+    required?: string[];
+  };
+}
+
+export interface UserPreferences {
+  theme: string;
+  editorFont: string;
+  editorFontSize: number;
+  editorLineHeight: number;
+  editorTabSize: number;
+  editorLineNumbers: boolean;
+  editorWordWrap: boolean;
+  activeProvider: ProviderId;
+  activeModel: string;
+  providerKeys: Record<string, string>;
+  mcpServers: McpServerConfig[];
+  plugins: PluginManifest[];
 }

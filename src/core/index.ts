@@ -16,6 +16,30 @@ export type {
   KnownBugRecord,
   ContradictionRecord,
   ProjectContext,
+  ProviderId,
+  ModelInfo,
+  ModelConfig,
+  ChatRole,
+  ToolCallPayload,
+  ChatMessage,
+  CompletionRequest,
+  CompletionResponse,
+  CompletionChunk,
+  ModelProvider,
+  AgentMode,
+  AgentStepPlan,
+  AgentPlan,
+  AgentSession,
+  SkillScope,
+  SkillArgument,
+  SkillDefinition,
+  RuleScope,
+  RuleDefinition,
+  PluginManifest,
+  McpTransportType,
+  McpServerConfig,
+  McpToolSchema,
+  UserPreferences,
 } from './types.js';
 export {
   LogLevel,
@@ -26,5 +50,6 @@ export {
   DEFAULT_CONFIG,
   MemoryMode,
 } from './types.js';
+export { ConfigManager, DEFAULT_USER_PREFERENCES } from './config.js';
 export { redactSecrets } from './redaction.js';
 export * as logger from './logger.js';
