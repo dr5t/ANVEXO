@@ -74,4 +74,18 @@ describe('Skills Subsystem', () => {
     expect(skill?.name).toBe('custom-tool');
     expect(skill?.source).toBe('workspace');
   });
+
+  it('handles malformed or missing frontmatter safely without throwing', () => {
+    const raw = 'Just plain instructions without any frontmatter delimiters.';
+    const parsed = parseSkillMarkdown(raw, 'plain-skill', 'workspace');
+    expect(parsed.id).toBe('plain-skill');
+    expect(parsed.name).toBe('plain-skill');
+    expect(parsed.instructions).toBe(raw);
+  });
+
+  it('returns undefined safely when querying unknown skill', async () => {
+    const sm = new SkillManager(tempDir);
+    const skill = await sm.getSkill('non-existent-skill-xyz');
+    expect(skill).toBeUndefined();
+  });
 });

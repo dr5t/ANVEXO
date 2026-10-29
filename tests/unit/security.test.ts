@@ -156,6 +156,46 @@ describe('Security Baseline and Defensive Controls', () => {
       expect(redacted).not.toContain('myultraheavysecretpassword');
       expect(redacted).toContain('[REDACTED]');
     });
+
+    it('redacts Slack bot and user tokens', () => {
+      const dummyBot = ['xoxb', '123456789012', '1234567890123', 'abcdefghijklmnopqrstuv'].join('-');
+      const dummyUser = ['xoxp', '9876543210', 'abcdefghijkl'].join('-');
+      const raw = `Slack bot is ${dummyBot} and user is ${dummyUser}`;
+      const redacted = redactSecrets(raw);
+      expect(redacted).not.toContain(dummyBot);
+      expect(redacted).not.toContain(dummyUser);
+      expect(redacted).toContain('[REDACTED_SLACK_TOKEN]');
+    });
+
+    it('redacts unquoted passwords in environment style', () => {
+      const raw = 'DB_PASSWORD=myUnquotedPassword987\nAPI_KEY=mySecretApiKeyToken99';
+      const redacted = redactSecrets(raw);
+      expect(redacted).not.toContain('myUnquotedPassword987');
+      expect(redacted).not.toContain('mySecretApiKeyToken99');
+      expect(redacted).toContain('[REDACTED_SECRET]');
+      expect(redacted).toContain('[REDACTED]');
+    });
+
+    it('redacts secrets in structured JSON format', () => {
+      const raw = JSON.stringify({ password: 'myJsonSecretPassword', auth: 'tokenValue12345' });
+      const redacted = redactSecrets(raw);
+      expect(redacted).not.toContain('myJsonSecretPassword');
+      expect(redacted).not.toContain('tokenValue12345');
+      expect(redacted).toContain('[REDACTED_SECRET]');
+    });
+
+    it('preserves ordinary text without false positive redactions', () => {
+      const raw = 'const passwordInput = document.getElementById("pwd"); const userAuth = true; const password_hash = calculateHash(salt);';
+      const redacted = redactSecrets(raw);
+      expect(redacted).toBe(raw);
+    });
+
+    it('handles malformed, empty, and non-string inputs safely', () => {
+      expect(redactSecrets('')).toBe('');
+      expect(redactSecrets(null as unknown as string)).toBe(null);
+      expect(redactSecrets(undefined as unknown as string)).toBe(undefined);
+      expect(redactSecrets(12345 as unknown as string)).toBe(12345);
+    });
   });
 
   describe('Subprocess Execution Isolation', () => {

@@ -92,4 +92,44 @@ describe('AgentRuntime', () => {
     expect(events).toContain('done');
     expect(session.status).toBe('completed');
   });
+
+  it('exposes skillManager through getter and integrates skills compactly in system prompt', async () => {
+    const runtime = new AgentRuntime({
+      repoPath: tempDir,
+      provider,
+      permissions,
+      tools,
+      ruleManager,
+      skillManager,
+    });
+
+    expect(runtime.getSkillManager()).toBe(skillManager);
+
+    const session = runtime.createSession('plan');
+    const plan = await runtime.createPlan('Test skill prompt integration', session);
+    expect(plan).toBeDefined();
+
+    const planMessages = session.messages;
+    const systemMsg = planMessages.find(m => m.role === 'system');
+    if (systemMsg) {
+      expect(systemMsg.content).toContain('Available skills:');
+      expect(systemMsg.content).toContain('investigate-bug');
+      expect(systemMsg.content.length).toBeLessThan(15000);
+    }
+  });
+
+  it('operates reliably when skillManager is omitted', async () => {
+    const runtime = new AgentRuntime({
+      repoPath: tempDir,
+      provider,
+      permissions,
+      tools,
+      ruleManager,
+    });
+
+    expect(runtime.getSkillManager()).toBeUndefined();
+    const session = runtime.createSession('plan');
+    const plan = await runtime.createPlan('Test prompt without skills', session);
+    expect(plan).toBeDefined();
+  });
 });
