@@ -27,11 +27,11 @@ const SECRET_PATTERNS: Array<{
     replacement: 'Bearer [REDACTED_TOKEN]',
   },
   {
-    regex: /\b([a-zA-Z0-9_]*(?:password|passwd))["']?\s*[:=]\s*["']?([^\s"';&\[\]\(\)]{4,})["']?/gi,
+    regex: /\b([a-zA-Z0-9_]*(?:password|passwd))\\?["']?\s*[:=]\s*\\?["']?([^\s\\"'`;&\[\]\(\)]{4,})\\?["']?/gi,
     replacement: (m, key, val) => (/^(true|false|null|undefined|none|nil)$/i.test(val) ? m : `${key}="[REDACTED_SECRET]"`),
   },
   {
-    regex: /\b([a-zA-Z0-9_]*(?:secret|api_key|apikey|api[_-]?key|access[_-]?token|auth[_-]?token|token|auth))\b["']?\s*[:=]\s*["']?([^\s"';&\[\]\(\)]{4,})["']?/gi,
+    regex: /\b([a-zA-Z0-9_]*(?:secret|api_key|apikey|api[_-]?key|access[_-]?token|auth[_-]?token|token|auth))\b\\?["']?\s*[:=]\s*\\?["']?([^\s\\"'`;&\[\]\(\)]{4,})\\?["']?/gi,
     replacement: (m, key, val) => (/^(true|false|null|undefined|none|nil)$/i.test(val) ? m : `${key}="[REDACTED]"`),
   },
 ];

@@ -184,6 +184,13 @@ describe('Security Baseline and Defensive Controls', () => {
       expect(redacted).toContain('[REDACTED_SECRET]');
     });
 
+    it('redacts secrets in escaped JSON strings', () => {
+      const raw = '{"data": "{\\"token\\": \\"innerSecretToken12345\\"}"}';
+      const redacted = redactSecrets(raw);
+      expect(redacted).not.toContain('innerSecretToken12345');
+      expect(redacted).toContain('[REDACTED]');
+    });
+
     it('preserves ordinary text without false positive redactions', () => {
       const raw = 'const passwordInput = document.getElementById("pwd"); const userAuth = true; const password_hash = calculateHash(salt);';
       const redacted = redactSecrets(raw);
