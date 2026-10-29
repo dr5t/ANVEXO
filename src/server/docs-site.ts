@@ -72,8 +72,43 @@ npm link</code></pre>
         <li><strong>Investigation Workbench:</strong> Interactive objective prompt, hypothesis formation, real evidence findings, and audit log.</li>
         <li><strong>Git Workbench:</strong> Branch indicator, uncommitted files, diff view, stage/unstage controls, and commit workflow.</li>
         <li><strong>Integrated Terminal:</strong> Process execution, working directory awareness, exit status, and real command output.</li>
-        <li><strong>Settings Modal:</strong> Six built-in themes (Obsidian Slate, Midnight Graphite, Light Paper, High Contrast Dark, High Contrast Light, Neutral Sand), font options, and permission defaults.</li>
+        <li><strong>Settings Modal:</strong> Six canonical themes (Obsidian Slate, Graphite, Midnight, Light, Solarized Dark, Solarized Light), typography controls, and memory persistence preferences.</li>
       </ul>
+    `,
+  },
+  {
+    id: 'anveshan',
+    title: 'ANVESHAN Investigation Engine',
+    summary: 'Autonomous root-cause analysis, hypothesis testing, diagnostic execution, and evidence tracking.',
+    content: `
+      <h2>ANVESHAN Investigation Engine</h2>
+      <p>ANVESHAN is ANVEXO's autonomous software investigation engine that moves beyond simple code browsing into rigorous hypothesis-driven root-cause analysis.</p>
+      <h3>Investigation Lifecycle</h3>
+      <ol>
+        <li><strong>Discovery &amp; Inspection:</strong> Analyzes git repository topography, unstaged diffs, branch state, and recently modified files.</li>
+        <li><strong>Hypothesis Formulation:</strong> Automatically constructs testable hypotheses regarding the reported failure, regression, or defect.</li>
+        <li><strong>Diagnostic Execution:</strong> Executes targeted diagnostics, automated tests, and code searches under explicit capability approval.</li>
+        <li><strong>Evidence Synthesis:</strong> Classifies gathered artifacts into affirmative, contradictory, or inconclusive findings with exact file line links.</li>
+        <li><strong>Remediation Recommendations:</strong> Synthesizes verified findings into targeted fixes, preventing hallucinations with explicit uncertainty bounds.</li>
+      </ol>
+      <p>Every step in ANVESHAN is recorded in a tamper-resistant DAG audit trail with real exit codes and execution runtimes.</p>
+    `,
+  },
+  {
+    id: 'echo',
+    title: 'ECHO Codebase Intelligence',
+    summary: 'Architectural dependency graphs, git commit tracking, contradiction detection, and local-first memory.',
+    content: `
+      <h2>ECHO Codebase Intelligence</h2>
+      <p>ECHO maintains continuous architectural understanding of repositories across multi-session developer workflows.</p>
+      <h3>Core Intelligence Capabilities</h3>
+      <ul>
+        <li><strong>Topological Dependency Graphing:</strong> Automatically parses package manifests, module import trees, and circular dependency structures.</li>
+        <li><strong>Commit-Aware Staleness Detection:</strong> Compares cached index hashes against the current git HEAD commit, detecting out-of-sync intelligence automatically.</li>
+        <li><strong>Contradiction Detection:</strong> Tracks discrepancies between historical test passes, git changes, and observed runtime behaviors.</li>
+        <li><strong>Four Local-First Memory Modes:</strong> Supports Mode A (Ephemeral/Zero-Persistent), Mode B (Local Repo Context), Mode C (Persistent Intelligence), and Mode D (User-Controlled Cloud Storage).</li>
+      </ul>
+      <p>All intelligence indexing adheres strictly to local-first privacy, preventing unauthorized code exfiltration.</p>
     `,
   },
   {
@@ -203,7 +238,7 @@ npm run build
 
 # Run linter
 npm run lint</code></pre>
-      <p>All 109 core test suites execute without failures, validating server security, permission enforcement, memory caching, tool execution, and discovery.</p>
+      <p>All 147 tests across 20 core test suites execute without failures (100% pass rate), validating server security, permission enforcement, memory caching, tool execution, and discovery.</p>
     `,
   },
 ];
@@ -438,7 +473,7 @@ export function renderDocsHtml(activeSectionId: string = 'overview'): string {
 
   <footer>
     <span>ANVEXO Developer Ecosystem: Autonomous Investigation and Engineering Platform</span>
-    <span>109/109 Tests Verified</span>
+    <span>147/147 Tests Verified (100% Pass)</span>
   </footer>
 </body>
 </html>`;

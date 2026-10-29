@@ -26,6 +26,32 @@ function requestGet(url: string, headers: Record<string, string> = {}): Promise<
   });
 }
 
+function requestPost(url: string, payload: unknown, headers: Record<string, string> = {}): Promise<{ status: number; headers: http.IncomingHttpHeaders; body: string }> {
+  return new Promise((resolve, reject) => {
+    const parsed = new URL(url);
+    const data = JSON.stringify(payload);
+    const req = http.request({
+      hostname: parsed.hostname,
+      port: parsed.port,
+      path: parsed.pathname + parsed.search,
+      method: 'POST',
+      headers: {
+        Host: parsed.host,
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(data),
+        ...headers,
+      },
+    }, (res) => {
+      let body = '';
+      res.on('data', chunk => { body += chunk; });
+      res.on('end', () => resolve({ status: res.statusCode || 0, headers: res.headers, body }));
+    });
+    req.on('error', reject);
+    req.write(data);
+    req.end();
+  });
+}
+
 interface IdeSettings {
   theme: string;
   fontFamily: string;
@@ -247,6 +273,46 @@ describe('IDE Settings & Branding Validation', () => {
       expect(res.body).toContain('[data-theme="solarized-dark"]');
       expect(res.body).toContain('[data-theme="light-studio"]');
       expect(res.body).toContain('[data-theme="high-contrast"]');
+    });
+
+    it('serves styles.css and index.html containing the 6 canonical themes and memory panel', async () => {
+      const stylesRes = await requestGet(`${baseUrl}/styles.css`);
+      expect(stylesRes.status).toBe(200);
+      expect(stylesRes.body).toContain('[data-theme="obsidian-slate"]');
+      expect(stylesRes.body).toContain('[data-theme="graphite"]');
+      expect(stylesRes.body).toContain('[data-theme="midnight"]');
+      expect(stylesRes.body).toContain('[data-theme="light"]');
+      expect(stylesRes.body).toContain('[data-theme="solarized-dark"]');
+      expect(stylesRes.body).toContain('[data-theme="solarized-light"]');
+
+      const indexRes = await requestGet(`${baseUrl}/`);
+      expect(indexRes.status).toBe(200);
+      expect(indexRes.body).toContain('data-theme-choice="obsidian-slate"');
+      expect(indexRes.body).toContain('data-theme-choice="graphite"');
+      expect(indexRes.body).toContain('data-theme-choice="midnight"');
+      expect(indexRes.body).toContain('data-theme-choice="light"');
+      expect(indexRes.body).toContain('data-theme-choice="solarized-dark"');
+      expect(indexRes.body).toContain('data-theme-choice="solarized-light"');
+      expect(indexRes.body).toContain('id="cat-memory"');
+    });
+
+    it('queries and updates memory persistence modes via /api/context/mode', async () => {
+      const getRes = await requestGet(`${baseUrl}/api/context`);
+      expect(getRes.status).toBe(200);
+      const getJson = JSON.parse(getRes.body);
+      expect(getJson.mode).toBeDefined();
+
+      const postRes = await requestPost(`${baseUrl}/api/context/mode`, { mode: 'mode_a_zero_persistent' });
+      expect(postRes.status).toBe(200);
+      const postJson = JSON.parse(postRes.body);
+      expect(postJson.mode).toBe('mode_a_zero_persistent');
+
+      const verifyRes = await requestGet(`${baseUrl}/api/context`);
+      const verifyJson = JSON.parse(verifyRes.body);
+      expect(verifyJson.mode).toBe('mode_a_zero_persistent');
+
+      const invalidRes = await requestPost(`${baseUrl}/api/context/mode`, { mode: 'invalid_mode' });
+      expect(invalidRes.status).toBe(400);
     });
   });
 });
