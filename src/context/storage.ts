@@ -106,6 +106,14 @@ export class UserCloudStorageAdapter implements StorageAdapter {
     this.apiKey = apiKey;
   }
 
+  getEndpoint(): string {
+    return this.endpoint;
+  }
+
+  hasApiKey(): boolean {
+    return Boolean(this.apiKey);
+  }
+
   async load(repoRoot: string): Promise<ProjectContext | null> {
     return this.memoryFallback.load(repoRoot);
   }

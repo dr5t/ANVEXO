@@ -5,12 +5,9 @@ import type {
   AgentSession,
   AgentStepPlan,
   ChatMessage,
-  CompletionRequest,
   ModelProvider,
-  ToolDefinition,
   ToolResult,
 } from '../core/types.js';
-import { PermissionScope, logger } from '../core/index.js';
 import type { PermissionManager } from '../permissions/index.js';
 import type { RuleManager } from '../rules/index.js';
 import type { SkillManager } from '../skills/index.js';
@@ -80,6 +77,10 @@ export class AgentRuntime {
     return [...this.sessions.values()];
   }
 
+  getSkillManager(): SkillManager | undefined {
+    return this.skillManager;
+  }
+
   private buildSystemPrompt(): string {
     const rulesPrompt = this.ruleManager.buildSystemPrompt();
     const toolList = this.tools
@@ -87,7 +88,7 @@ export class AgentRuntime {
       .map((t) => `- ${t.name}: ${t.description} (Risk: ${t.risk})`)
       .join('\n');
 
-    return [
+    const sections = [
       'You are ANVEXO, an autonomous AI coding agent and software engineering investigator.',
       'Your workspace is: ' + this.repoPath,
       'When given an objective, plan carefully, use real tools to verify hypotheses, and make evidence-based changes.',
@@ -96,7 +97,16 @@ export class AgentRuntime {
       rulesPrompt,
       'Available tools:',
       toolList,
-    ].join('\n\n');
+    ];
+
+    if (this.skillManager) {
+      const skills = this.skillManager.listAllSkills(this.repoPath);
+      if (skills.length > 0) {
+        sections.push('Available skills:\n' + skills.map((s) => `- ${s.id}: ${s.description}`).join('\n'));
+      }
+    }
+
+    return sections.join('\n\n');
   }
 
   async createPlan(objective: string, session: AgentSession): Promise<AgentPlan> {

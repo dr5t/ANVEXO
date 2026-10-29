@@ -70,7 +70,6 @@ export class ProviderRegistry {
   }
 
   listProviders(): Array<{ id: ProviderId; name: string; isConfigured: boolean }> {
-    const prefs = this.configManager.loadUserPreferences();
     return [
       { id: 'offline', name: 'ANVEXO Heuristic Engine', isConfigured: true },
       { id: 'anthropic', name: 'Anthropic Claude', isConfigured: Boolean(this.configManager.getApiKey('anthropic')) },

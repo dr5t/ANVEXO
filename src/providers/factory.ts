@@ -46,7 +46,6 @@ export class ProviderFactory {
     isConfigured: boolean;
     isLocal: boolean;
   }>> {
-    const prefs = this.configManager.loadUserPreferences();
     return [
       {
         id: 'offline',

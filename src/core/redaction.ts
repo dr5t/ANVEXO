@@ -20,7 +20,11 @@ const SECRET_PATTERNS: Array<{ regex: RegExp; replacement: string }> = [
     replacement: 'Bearer [REDACTED_TOKEN]',
   },
   {
-    regex: /(password|secret|api_key|apikey|token|auth)["']?\s*[:=]\s*["']([^\s"']{8,})["']/gi,
+    regex: /(password|passwd)["']?\s*[:=]\s*["']?([^\s"';&\[\]]{4,})["']?/gi,
+    replacement: '$1="[REDACTED_SECRET]"',
+  },
+  {
+    regex: /(secret|api_key|apikey|api[_-]?key|access[_-]?token|auth[_-]?token|token|auth)["']?\s*[:=]\s*["']?([^\s"';&\[\]]{4,})["']?/gi,
     replacement: '$1="[REDACTED]"',
   },
 ];
