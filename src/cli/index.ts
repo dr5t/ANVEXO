@@ -508,10 +508,13 @@ program
     });
     const { url } = await server.start();
     process.stdout.write(`ANVEXO Workbench server running at ${url}\n`);
-    process.on('SIGINT', async () => {
+    const shutdown = async () => {
       await server.stop();
       process.exit(0);
-    });
+    };
+    process.on('SIGINT', shutdown);
+    process.on('SIGTERM', shutdown);
+    await new Promise(() => {});
   });
 
 program.parse();

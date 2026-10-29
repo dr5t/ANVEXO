@@ -10,7 +10,7 @@
   <img src="https://img.shields.io/badge/version-0.1.0-E54D2E?style=flat-square&labelColor=141618" alt="Version 0.1.0">
   <img src="https://img.shields.io/badge/node-%3E%3D20.0.0-58A6FF?style=flat-square&labelColor=141618" alt="Node.js 20+">
   <img src="https://img.shields.io/badge/typescript-5.4+-3178C6?style=flat-square&labelColor=141618" alt="TypeScript 5.4+">
-  <img src="https://img.shields.io/badge/tests-145%20passed%20(100%25)-3FB950?style=flat-square&labelColor=141618" alt="145 Tests Passed">
+  <img src="https://img.shields.io/badge/tests-147%20passed%20(100%25)-3FB950?style=flat-square&labelColor=141618" alt="147 Tests Passed">
   <img src="https://img.shields.io/badge/coverage-74.9%25%20lines-58A6FF?style=flat-square&labelColor=141618" alt="Coverage 74.9%">
   <img src="https://img.shields.io/badge/license-UNLICENSED-E54D2E?style=flat-square&labelColor=141618" alt="Commercial License">
 </p>
