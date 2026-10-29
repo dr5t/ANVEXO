@@ -158,7 +158,7 @@ export class ContextManager {
   }
 
   detectContradictions(newFindings: Finding[]): ContradictionRecord[] {
-    if (!this.currentContext || this.currentContext.historicalInvestigations.length === 0) {
+    if (!this.currentContext || (this.currentContext.historicalInvestigations.length === 0 && this.currentContext.knownBugs.length === 0)) {
       return [];
     }
 

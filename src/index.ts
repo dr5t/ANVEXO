@@ -6,4 +6,6 @@ export { discoverProject } from './discovery/index.js';
 export { EvidenceCollector } from './evidence/index.js';
 export { createInvestigationPlan } from './planner/index.js';
 export { formatReport, generateFindings } from './reporting/index.js';
+export { ContextManager, analyzeDependencies } from './context/index.js';
+export type { StorageAdapter, DependencyAnalysisResult } from './context/index.js';
 export * from './core/index.js';

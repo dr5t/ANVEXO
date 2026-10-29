@@ -63,16 +63,21 @@ export class LocalStorageAdapter implements StorageAdapter {
   }
 
   async save(context: ProjectContext): Promise<void> {
-    const filePath = this.getStoragePath(context.repoRoot);
-    const dir = path.dirname(filePath);
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
+    try {
+      const filePath = this.getStoragePath(context.repoRoot);
+      const dir = path.dirname(filePath);
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
 
-    const tempFile = `${filePath}.tmp.${Date.now()}`;
-    fs.writeFileSync(tempFile, JSON.stringify(context, null, 2), 'utf-8');
-    fs.renameSync(tempFile, filePath);
-    logger.debug('storage', `Saved context to ${filePath}`);
+      const tempFile = `${filePath}.tmp.${Date.now()}`;
+      fs.writeFileSync(tempFile, JSON.stringify(context, null, 2), 'utf-8');
+      fs.renameSync(tempFile, filePath);
+      logger.debug('storage', `Saved context to ${filePath}`);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      logger.error('storage', `Failed to save context: ${msg}`);
+    }
   }
 
   async delete(repoRoot: string): Promise<void> {

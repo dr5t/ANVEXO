@@ -1,12 +1,13 @@
 import { randomUUID } from 'node:crypto';
 import type { InvestigationReport, ProjectMetadata, ToolResult } from '../core/index.js';
-import { EvidenceType, VerificationStatus, PermissionScope, PermissionDecision, logger } from '../core/index.js';
+import { EvidenceType, VerificationStatus, PermissionScope, PermissionDecision, MemoryMode, logger } from '../core/index.js';
 import { PermissionManager } from '../permissions/index.js';
 import { ToolRegistry, registerBuiltinTools } from '../tools/index.js';
 import { discoverProject } from '../discovery/index.js';
 import { EvidenceCollector } from '../evidence/index.js';
 import { createInvestigationPlan } from '../planner/index.js';
 import { formatReport, generateFindings } from '../reporting/index.js';
+import { ContextManager } from '../context/index.js';
 
 export interface InvestigationOptions {
   objective: string;
@@ -14,17 +15,20 @@ export interface InvestigationOptions {
   autoApprove?: boolean;
   skipTests?: boolean;
   verbose?: boolean;
+  memoryMode?: MemoryMode;
 }
 
 export class InvestigationEngine {
   private permissions: PermissionManager;
   private toolRegistry: ToolRegistry;
   private evidence: EvidenceCollector;
+  private contextManager: ContextManager;
 
-  constructor() {
+  constructor(memoryMode: MemoryMode = MemoryMode.PERSISTENT_INTELLIGENCE) {
     this.permissions = new PermissionManager();
     this.toolRegistry = new ToolRegistry(this.permissions);
     this.evidence = new EvidenceCollector();
+    this.contextManager = new ContextManager(memoryMode);
     registerBuiltinTools(this.toolRegistry);
   }
 
@@ -36,10 +40,18 @@ export class InvestigationEngine {
     return this.toolRegistry;
   }
 
+  getContextManager(): ContextManager {
+    return this.contextManager;
+  }
+
   async investigate(options: InvestigationOptions): Promise<InvestigationReport> {
     const startedAt = new Date();
     logger.info('engine', `Starting investigation: ${options.objective}`);
     logger.info('engine', `Repository: ${options.repositoryPath}`);
+
+    if (options.memoryMode) {
+      this.contextManager.setMode(options.memoryMode);
+    }
 
     if (options.autoApprove) {
       this.permissions.grant(PermissionScope.FILE_READ, '*', PermissionDecision.ALWAYS_ALLOW);
@@ -57,6 +69,18 @@ export class InvestigationEngine {
       const msg = err instanceof Error ? err.message : String(err);
       logger.error('engine', `Discovery failed: ${msg}`);
       return this.buildErrorReport(options, startedAt, `Project discovery failed: ${msg}`);
+    }
+
+    await this.contextManager.init(options.repositoryPath);
+    const staleCheck = await this.contextManager.checkStale(options.repositoryPath);
+    if (staleCheck.isStale) {
+      this.evidence.add({
+        type: EvidenceType.PROJECT_METADATA,
+        source: 'context_manager',
+        content: `Repository commit shifted: previous ${staleCheck.savedCommit}, current ${staleCheck.currentCommit}`,
+        toolName: 'context_manager',
+        verificationStatus: VerificationStatus.OBSERVED,
+      });
     }
 
     this.evidence.add({
@@ -139,7 +163,21 @@ export class InvestigationEngine {
     };
 
     report.findings = generateFindings(report);
+
+    const contradictions = this.contextManager.detectContradictions(report.findings);
+    for (const c of contradictions) {
+      report.findings.push({
+        claim: `Contradiction with previous context: ${c.claim}`,
+        evidenceIds: [],
+        verificationStatus: VerificationStatus.CONTRADICTED,
+        confidence: 0.85,
+        details: `Conflicts with: ${c.previousEvidence}`,
+      });
+    }
+
     report.unverifiedClaims = this.collectUnverifiedClaims(report);
+
+    await this.contextManager.recordInvestigation(report);
 
     const completedSteps = plan.steps.filter(s => s.status === 'completed').length;
     const failedSteps = plan.steps.filter(s => s.status === 'failed').length;

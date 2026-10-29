@@ -17,6 +17,7 @@ program
   .description('Run an investigation on a local repository')
   .argument('<path>', 'Path to the repository to investigate')
   .option('-o, --objective <objective>', 'Investigation objective', 'General project investigation and health check')
+  .option('-m, --memory-mode <mode>', 'Memory mode (ephemeral, local, persistent, cloud)', 'persistent')
   .option('--auto-approve', 'Auto-approve all read permissions', false)
   .option('--skip-tests', 'Skip test execution', false)
   .option('--verbose', 'Enable verbose logging', false)
@@ -24,6 +25,7 @@ program
   .option('--json', 'Output report as JSON instead of formatted text', false)
   .action(async (repoPath: string, opts: {
     objective: string;
+    memoryMode: string;
     autoApprove: boolean;
     skipTests: boolean;
     verbose: boolean;
@@ -36,13 +38,24 @@ program
       setLogLevel(LogLevel.DEBUG);
     }
 
-    const engine = new InvestigationEngine();
+    const { MemoryMode } = await import('../core/index.js');
+    let mode = MemoryMode.PERSISTENT_INTELLIGENCE;
+    if (opts.memoryMode === 'ephemeral' || opts.memoryMode === 'zero') {
+      mode = MemoryMode.ZERO_PERSISTENT;
+    } else if (opts.memoryMode === 'local') {
+      mode = MemoryMode.LOCAL_CONTEXT;
+    } else if (opts.memoryMode === 'cloud') {
+      mode = MemoryMode.USER_CLOUD;
+    }
+
+    const engine = new InvestigationEngine(mode);
     const report = await engine.investigate({
       objective: opts.objective,
       repositoryPath: repoPath,
       autoApprove: opts.autoApprove,
       skipTests: opts.skipTests,
       verbose: opts.verbose,
+      memoryMode: mode,
     });
 
     if (opts.json) {
@@ -76,6 +89,44 @@ program
       process.stdout.write(`Config Files:    ${metadata.configFiles.join(', ')}\n`);
       process.stdout.write(`Entry Points:    ${metadata.entryPoints.join(', ') || 'none detected'}\n`);
     }
+  });
+
+const contextCmd = program
+  .command('context')
+  .description('Manage project context and intelligence memory');
+
+contextCmd
+  .command('inspect')
+  .description('Inspect current project memory and context')
+  .argument('<path>', 'Path to the repository')
+  .action(async (repoPath: string) => {
+    const { ContextManager } = await import('../context/index.js');
+    const cm = new ContextManager();
+    const ctx = await cm.init(repoPath);
+    process.stdout.write(JSON.stringify(ctx, null, 2) + '\n');
+  });
+
+contextCmd
+  .command('rebuild')
+  .description('Rebuild dependency graph and commit index')
+  .argument('<path>', 'Path to the repository')
+  .action(async (repoPath: string) => {
+    const { ContextManager } = await import('../context/index.js');
+    const cm = new ContextManager();
+    await cm.init(repoPath);
+    const updated = await cm.rebuildIndex(repoPath);
+    process.stdout.write(`Rebuilt index for ${updated.repoRoot}. Dependencies: ${Object.keys(updated.dependencies).length}, Graph files: ${Object.keys(updated.dependencyGraph).length}\n`);
+  });
+
+contextCmd
+  .command('clear')
+  .description('Clear saved project memory')
+  .argument('<path>', 'Path to the repository')
+  .action(async (repoPath: string) => {
+    const { ContextManager } = await import('../context/index.js');
+    const cm = new ContextManager();
+    await cm.clearMemory(repoPath);
+    process.stdout.write(`Cleared project memory for ${repoPath}\n`);
   });
 
 program.parse();

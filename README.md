@@ -118,11 +118,43 @@ CLI Options:
 | Option | Description |
 |---|---|
 | `-o, --objective <text>` | Specific investigation objective or failure description |
+| `-m, --memory-mode <mode>` | Memory mode: ephemeral, local, persistent, cloud (default: persistent) |
 | `--auto-approve` | Grant read permissions automatically for the duration of the run |
 | `--skip-tests` | Omit test execution steps from the investigation |
 | `--verbose` | Output debug-level engine logs to stderr |
 | `--quiet` | Suppress log messages and output only the final report |
 | `--json` | Output the complete investigation report as structured JSON |
+
+#### 3. Manage Project Memory and Context
+
+Inspect the persistent project intelligence, dependency graph, known bugs, and investigation history:
+
+```bash
+node dist/cli/index.js context inspect /path/to/project
+```
+
+Rebuild the dependency map and commit tracking index:
+
+```bash
+node dist/cli/index.js context rebuild /path/to/project
+```
+
+Clear all persisted context for a repository:
+
+```bash
+node dist/cli/index.js context clear /path/to/project
+```
+
+---
+
+## Memory and Context Models
+
+ANVEXO supports four distinct memory modes to provide full user control over persistence:
+
+- Mode A (Zero Persistent): In-memory execution. Context, evidence, and intermediate states are wiped at session end.
+- Mode B (Local Project Context): Stores project metadata and dependency graphs locally under `.anvexo/context.json`.
+- Mode C (Persistent Local Intelligence): Default mode. Tracks historical investigations across sessions, records known bugs with root causes and affected files, monitors Git commit hash shifts for stale context, and detects contradictions across investigation runs.
+- Mode D (User-Configured Cloud Storage): Extensible remote persistence adapter for enterprise team synchronization. Never transmitted without explicit configuration.
 
 ---
 
@@ -131,9 +163,9 @@ CLI Options:
 ANVEXO can be embedded as an engine inside other applications:
 
 ```typescript
-import { InvestigationEngine } from 'anvexo';
+import { InvestigationEngine, MemoryMode } from 'anvexo';
 
-const engine = new InvestigationEngine();
+const engine = new InvestigationEngine(MemoryMode.PERSISTENT_INTELLIGENCE);
 
 const report = await engine.investigate({
   objective: 'Investigate test failures in auth module',
@@ -143,6 +175,9 @@ const report = await engine.investigate({
 });
 
 console.log(engine.formatReport(report));
+
+const context = engine.getContextManager().getContext();
+console.log(`Tracked dependencies: ${Object.keys(context?.dependencies || {}).length}`);
 ```
 
 ---
@@ -155,7 +190,7 @@ ANVEXO enforces permissions at the tool boundary before any filesystem, process,
 - Resource Scoping: Grants can be limited to exact file paths or wildcard patterns.
 - One-Time Authorization: High-risk operations can be approved for a single execution.
 - Audit Log: Every permission evaluation (allow or deny) is timestamped and recorded.
-- No Silent Data Egress: Phase 1 includes zero external network transmission.
+- No Silent Data Egress: Local-first architecture with zero external network transmission.
 
 ---
 
@@ -170,11 +205,12 @@ npm run test:coverage
 
 ### Coverage Metrics
 
-- Core Engine: 90.4% statements
+- Core Engine: 84.4% statements
+- Context & Memory: 82.3% statements
 - Permissions: 97.4% statements
 - Evidence Store: 100% statements
-- Tool Registry: 80.3% statements
-- Overall Test Suite: 46 passing tests across unit and integration suites
+- Tool Registry: 77.3% statements
+- Overall Test Suite: 55 passing tests across 7 unit and integration suites
 
 ---
 
@@ -182,10 +218,10 @@ npm run test:coverage
 
 - Phase 0: Repository and Engineering Foundation (Completed)
 - Phase 1: Working Core Investigation Engine (Completed)
-- Phase 2: Persistent Project Intelligence and Memory Models
+- Phase 2: Persistent Project Intelligence and Memory Models (Completed)
 - Phase 3: Controlled Code Modification and Automated Recovery
 - Phase 4: Browser Automation and Reproduction via Playwright
-- Phase 5: Graphical Interfaces (CLI, Desktop, Web) pending User Approval
+- Phase 5: Graphical Interfaces (Split IDE Canvas approved by user)
 - Phase 6: Integration Ecosystem (MCP Server, Agent Skills)
 - Phase 7: Commercial Licensing and Enterprise Deployment
 
