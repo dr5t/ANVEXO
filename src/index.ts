@@ -1,0 +1,9 @@
+export { InvestigationEngine } from './engine/index.js';
+export type { InvestigationOptions } from './engine/index.js';
+export { PermissionManager } from './permissions/index.js';
+export { ToolRegistry, registerBuiltinTools } from './tools/index.js';
+export { discoverProject } from './discovery/index.js';
+export { EvidenceCollector } from './evidence/index.js';
+export { createInvestigationPlan } from './planner/index.js';
+export { formatReport, generateFindings } from './reporting/index.js';
+export * from './core/index.js';

@@ -1,0 +1,46 @@
+{
+  "name": "anvexo",
+  "version": "0.1.0",
+  "description": "ANVEXO - AI-powered software investigation and codebase intelligence platform",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "anvexo": "dist/cli/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "investigate": "node --enable-source-maps dist/cli/index.js investigate",
+    "discover": "node --enable-source-maps dist/cli/index.js discover",
+    "lint": "tsc --noEmit",
+    "clean": "rm -rf dist",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "ai",
+    "investigation",
+    "debugging",
+    "codebase-intelligence",
+    "developer-tools"
+  ],
+  "author": "",
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "@vitest/coverage-v8": "^4.1.12",
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.12"
+  },
+  "dependencies": {
+    "chalk": "^6.0.1",
+    "commander": "^15.0.0",
+    "simple-git": "^4.0.2"
+  }
+}
