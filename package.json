@@ -17,7 +17,7 @@
     "investigate": "node --enable-source-maps dist/cli/index.js investigate",
     "discover": "node --enable-source-maps dist/cli/index.js discover",
     "lint": "tsc --noEmit",
-    "clean": "rm -rf dist coverage",
+    "clean": "node -e \"const fs=require('fs'); fs.rmSync('dist', {recursive:true, force:true}); fs.rmSync('coverage', {recursive:true, force:true});\"",
     "prepublishOnly": "npm run build"
   },
   "keywords": [

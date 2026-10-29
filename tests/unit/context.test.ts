@@ -155,5 +155,47 @@ describe('Context and Persistent Intelligence', () => {
       expect(parsed.repoRoot).toBe(testDir);
       expect(parsed.dependencies).toBeDefined();
     });
+
+    it('ensures ZERO_PERSISTENT mode never persists context file to disk', async () => {
+      const isolatedDir = fs.mkdtempSync(path.join(testDir, 'tmp-zero-mem-'));
+      try {
+        const zeroCm = new ContextManager(MemoryMode.ZERO_PERSISTENT);
+        await zeroCm.init(isolatedDir);
+        await zeroCm.recordKnownBug({
+          title: 'Ephemeral bug',
+          rootCause: 'In memory only',
+          affectedFiles: ['index.ts'],
+          resolved: false,
+        });
+
+        const expectedFile = path.join(isolatedDir, '.anvexo', 'context.json');
+        expect(fs.existsSync(expectedFile)).toBe(false);
+      } finally {
+        fs.rmSync(isolatedDir, { recursive: true, force: true });
+      }
+    });
+
+    it('clears memory cache and removes disk context file in LOCAL_CONTEXT mode', async () => {
+      const isolatedDir = fs.mkdtempSync(path.join(testDir, 'tmp-local-mem-'));
+      try {
+        const localCm = new ContextManager(MemoryMode.LOCAL_CONTEXT);
+        await localCm.init(isolatedDir);
+        await localCm.recordKnownBug({
+          title: 'Persistent bug',
+          rootCause: 'Written to disk',
+          affectedFiles: ['index.ts'],
+          resolved: false,
+        });
+
+        const contextFile = path.join(isolatedDir, '.anvexo', 'context.json');
+        expect(fs.existsSync(contextFile)).toBe(true);
+
+        await localCm.clearMemory(isolatedDir);
+        expect(fs.existsSync(contextFile)).toBe(false);
+        expect(localCm.getContext()).toBeNull();
+      } finally {
+        fs.rmSync(isolatedDir, { recursive: true, force: true });
+      }
+    });
   });
 });
