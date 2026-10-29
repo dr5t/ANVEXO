@@ -160,6 +160,14 @@ export class ApiRouter {
         }
       }
 
+      if (pathname === '/icons.js') {
+        const file = this.resolveUiFile('icons.js');
+        if (file) {
+          this.sendFile(res, 200, 'application/javascript; charset=utf-8', file);
+          return;
+        }
+      }
+
       if (pathname === '/favicon.svg') {
         const file = this.resolveUiFile('favicon.svg');
         if (file) {

@@ -32,6 +32,15 @@
   --editor-line-height: 1.55;
   --editor-font-weight: 400;
   --editor-tab-size: 2;
+
+  /* Motion Design Tokens */
+  --motion-dur-fast: 140ms;
+  --motion-dur-normal: 180ms;
+  --motion-dur-dropdown: 190ms;
+  --motion-dur-panel: 220ms;
+  --motion-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --motion-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --motion-ease-pressed: cubic-bezier(0.2, 0, 0, 1);
 }
 
 html[data-theme="obsidian-slate"] {
@@ -376,19 +385,38 @@ body {
 }
 
 .path-scan-btn {
-  background: transparent;
-  border: none;
-  color: var(--text-muted);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-hairline);
+  color: var(--text-secondary);
   font-family: var(--font-mono);
   font-size: 10px;
+  font-weight: 600;
   cursor: pointer;
-  padding: 2px 5px;
+  padding: 2px 7px;
   border-radius: 2px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition:
+    background-color var(--motion-dur-fast) var(--motion-ease-out),
+    border-color var(--motion-dur-fast) var(--motion-ease-out),
+    color var(--motion-dur-fast) var(--motion-ease-out),
+    transform 90ms var(--motion-ease-pressed);
 }
 
 .path-scan-btn:hover {
   color: var(--text-primary);
-  background: var(--bg-surface-elevated);
+  background: var(--bg-surface-active);
+  border-color: var(--border-focus);
+}
+
+.path-scan-btn:active {
+  transform: translateY(0.5px) scale(0.97);
+}
+
+.path-scan-btn:focus-visible {
+  outline: 2px solid var(--accent-orange);
+  outline-offset: 1px;
 }
 
 .branch-chip {
@@ -474,10 +502,18 @@ body {
   font-weight: 500;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
   cursor: pointer;
-  transition: all 0.15s ease;
+  position: relative;
+  overflow: hidden;
   user-select: none;
+  transition:
+    background-color var(--motion-dur-fast) var(--motion-ease-out),
+    border-color var(--motion-dur-fast) var(--motion-ease-out),
+    color var(--motion-dur-fast) var(--motion-ease-out),
+    transform 90ms var(--motion-ease-pressed),
+    box-shadow var(--motion-dur-fast) var(--motion-ease-out);
 }
 
 .btn:hover {
@@ -485,10 +521,46 @@ body {
   border-color: var(--border-focus);
 }
 
+.btn:active {
+  transform: translateY(0.5px) scale(0.985);
+  background-color: var(--bg-surface-active);
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--accent-orange);
+  outline-offset: 1px;
+}
+
+.btn:disabled,
+.btn[disabled] {
+  opacity: 0.45;
+  cursor: not-allowed;
+  pointer-events: none;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
 .btn-sm {
   height: 22px;
   padding: 0 8px;
   font-size: 10px;
+  gap: 4px;
+}
+
+.btn-secondary {
+  background-color: var(--bg-surface);
+  border-color: var(--border-hairline);
+  color: var(--text-secondary);
+}
+
+.btn-secondary:hover {
+  background-color: var(--bg-surface-elevated);
+  border-color: var(--border-focus);
+  color: var(--text-primary);
+}
+
+.btn-secondary:active {
+  transform: translateY(0.5px) scale(0.985);
 }
 
 .btn-primary {
@@ -496,27 +568,63 @@ body {
   border-color: var(--accent-orange);
   color: #FFFFFF;
   font-weight: 600;
+  box-shadow: 0 1px 2px rgba(229, 77, 46, 0.2);
 }
 
 .btn-primary:hover {
   background-color: var(--accent-orange-hover);
   border-color: var(--accent-orange-hover);
+  box-shadow: 0 2px 8px rgba(229, 77, 46, 0.35);
+}
+
+.btn-primary:active {
+  transform: translateY(0.5px) scale(0.985);
+  box-shadow: 0 1px 2px rgba(229, 77, 46, 0.15);
+}
+
+.btn-primary:focus-visible {
+  outline: 2px solid #FFFFFF;
+  outline-offset: 1px;
 }
 
 .btn-danger {
   background-color: var(--status-fail-subtle);
-  border-color: var(--status-fail);
+  border-color: rgba(248, 81, 73, 0.4);
   color: var(--status-fail);
 }
 
 .btn-danger:hover {
   background-color: var(--status-fail);
+  border-color: var(--status-fail);
   color: #FFFFFF;
+  box-shadow: 0 2px 6px rgba(248, 81, 73, 0.3);
+}
+
+.btn-danger:active {
+  transform: translateY(0.5px) scale(0.985);
+  box-shadow: none;
+}
+
+.btn-danger:focus-visible {
+  outline: 2px solid var(--status-fail);
+  outline-offset: 1px;
 }
 
 .btn-icon {
-  width: 13px;
-  height: 13px;
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  display: inline-block;
+  vertical-align: middle;
+  transition: transform var(--motion-dur-fast) var(--motion-ease-out);
+}
+
+.btn:hover .btn-icon {
+  transform: scale(1.05);
+}
+
+.btn:active .btn-icon {
+  transform: scale(0.96);
 }
 
 .btn-icon-only {
@@ -549,16 +657,33 @@ body {
   color: var(--text-secondary);
   font-family: var(--font-mono);
   font-size: 9.5px;
-  padding: 2px 7px;
+  font-weight: 500;
+  padding: 2px 8px;
   border-radius: 2px;
   cursor: pointer;
-  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition:
+    background-color var(--motion-dur-fast) var(--motion-ease-out),
+    border-color var(--motion-dur-fast) var(--motion-ease-out),
+    color var(--motion-dur-fast) var(--motion-ease-out),
+    transform 90ms var(--motion-ease-pressed);
 }
 
 .cmd-preset-btn:hover {
   background: var(--bg-surface-active);
   color: var(--text-primary);
   border-color: var(--border-focus);
+}
+
+.cmd-preset-btn:active {
+  transform: translateY(0.5px) scale(0.98);
+}
+
+.cmd-preset-btn:focus-visible {
+  outline: 2px solid var(--accent-orange);
+  outline-offset: 1px;
 }
 
 .workbench-shell {
@@ -589,16 +714,20 @@ body {
 .activity-btn {
   width: 32px;
   height: 32px;
-  border: none;
+  border: 1px solid transparent;
   background: transparent;
   color: var(--text-muted);
-  border-radius: 3px;
+  border-radius: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.15s ease;
   position: relative;
+  transition:
+    background-color var(--motion-dur-fast) var(--motion-ease-out),
+    border-color var(--motion-dur-fast) var(--motion-ease-out),
+    color var(--motion-dur-fast) var(--motion-ease-out),
+    transform 90ms var(--motion-ease-pressed);
 }
 
 .activity-btn:hover {
@@ -606,18 +735,28 @@ body {
   background: var(--bg-surface-elevated);
 }
 
+.activity-btn:active {
+  transform: scale(0.94);
+}
+
+.activity-btn:focus-visible {
+  outline: 2px solid var(--accent-orange);
+  outline-offset: 1px;
+}
+
 .activity-btn.active {
   color: var(--accent-orange);
   background: var(--accent-orange-subtle);
+  border-color: rgba(229, 77, 46, 0.2);
 }
 
 .activity-btn.active::before {
   content: "";
   position: absolute;
-  left: 0;
+  left: -1px;
   top: 6px;
   bottom: 6px;
-  width: 2px;
+  width: 2.5px;
   background-color: var(--accent-orange);
   border-radius: 0 1px 1px 0;
 }
@@ -625,7 +764,9 @@ body {
 .activity-icon {
   width: 16px;
   height: 16px;
+  flex-shrink: 0;
 }
+
 
 .workbench {
   display: flex;
@@ -909,13 +1050,28 @@ body {
   font-weight: 500;
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
   cursor: pointer;
-  transition: all 0.15s ease;
+  position: relative;
+  transition:
+    background-color var(--motion-dur-fast) var(--motion-ease-out),
+    border-color var(--motion-dur-fast) var(--motion-ease-out),
+    color var(--motion-dur-fast) var(--motion-ease-out),
+    transform 90ms var(--motion-ease-pressed);
 }
 
 .tab-btn:hover {
   color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.tab-btn:active {
+  transform: translateY(0.5px);
+}
+
+.tab-btn:focus-visible {
+  outline: 2px solid var(--accent-orange);
+  outline-offset: -1px;
 }
 
 .tab-btn.active {
@@ -1243,12 +1399,30 @@ body {
   font-weight: 600;
   color: var(--text-muted);
   cursor: pointer;
-  padding: 3px 6px;
+  padding: 4px 8px;
+  border-bottom: 2px solid transparent;
+  transition:
+    color var(--motion-dur-fast) var(--motion-ease-out),
+    border-color var(--motion-dur-fast) var(--motion-ease-out),
+    transform 90ms var(--motion-ease-pressed);
+}
+
+.drawer-tab-btn:hover {
+  color: var(--text-primary);
+}
+
+.drawer-tab-btn:active {
+  transform: translateY(0.5px);
+}
+
+.drawer-tab-btn:focus-visible {
+  outline: 2px solid var(--accent-orange);
+  outline-offset: -1px;
 }
 
 .drawer-tab-btn.active {
   color: var(--text-primary);
-  border-bottom: 2px solid var(--accent-orange);
+  border-bottom-color: var(--accent-orange);
 }
 
 .drawer-actions {
@@ -1265,15 +1439,32 @@ body {
 
 .drawer-close-btn {
   background: transparent;
-  border: none;
+  border: 1px solid transparent;
+  border-radius: 3px;
   color: var(--text-muted);
   cursor: pointer;
+  padding: 2px 4px;
   display: flex;
   align-items: center;
+  justify-content: center;
+  transition:
+    background-color var(--motion-dur-fast) var(--motion-ease-out),
+    color var(--motion-dur-fast) var(--motion-ease-out),
+    transform 90ms var(--motion-ease-pressed);
 }
 
 .drawer-close-btn:hover {
   color: var(--text-primary);
+  background: var(--bg-surface-elevated);
+}
+
+.drawer-close-btn:active {
+  transform: scale(0.92);
+}
+
+.drawer-close-btn:focus-visible {
+  outline: 2px solid var(--accent-orange);
+  outline-offset: 1px;
 }
 
 .drawer-body {
@@ -1449,7 +1640,7 @@ body {
 
 .settings-close-btn {
   background: transparent;
-  border: none;
+  border: 1px solid transparent;
   color: var(--text-muted);
   cursor: pointer;
   padding: 4px;
@@ -1457,11 +1648,24 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  transition:
+    background-color var(--motion-dur-fast) var(--motion-ease-out),
+    color var(--motion-dur-fast) var(--motion-ease-out),
+    transform 90ms var(--motion-ease-pressed);
 }
 
 .settings-close-btn:hover {
   color: var(--text-primary);
   background: var(--bg-surface-active);
+}
+
+.settings-close-btn:active {
+  transform: scale(0.92);
+}
+
+.settings-close-btn:focus-visible {
+  outline: 2px solid var(--accent-orange);
+  outline-offset: 1px;
 }
 
 .settings-layout {
@@ -1483,7 +1687,7 @@ body {
 
 .settings-nav-btn {
   background: transparent;
-  border: none;
+  border: 1px solid transparent;
   text-align: left;
   font-family: var(--font-ui);
   font-size: 11.5px;
@@ -1495,7 +1699,11 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
-  transition: all 0.15s ease;
+  transition:
+    background-color var(--motion-dur-fast) var(--motion-ease-out),
+    border-color var(--motion-dur-fast) var(--motion-ease-out),
+    color var(--motion-dur-fast) var(--motion-ease-out),
+    transform 90ms var(--motion-ease-pressed);
 }
 
 .settings-nav-btn:hover {
@@ -1503,9 +1711,19 @@ body {
   color: var(--text-primary);
 }
 
+.settings-nav-btn:active {
+  transform: scale(0.98);
+}
+
+.settings-nav-btn:focus-visible {
+  outline: 2px solid var(--accent-orange);
+  outline-offset: 1px;
+}
+
 .settings-nav-btn.active {
   background-color: var(--accent-orange-subtle);
   color: var(--accent-orange);
+  border-color: rgba(229, 77, 46, 0.2);
   font-weight: 600;
 }
 
@@ -1792,3 +2010,77 @@ body {
   font-size: 10px;
   color: var(--text-muted);
 }
+
+/* =========================================================================
+   ANVEXO Icon System Utilities & Motion
+   ========================================================================= */
+
+.anvexo-icon {
+  display: inline-block;
+  vertical-align: middle;
+  flex-shrink: 0;
+  stroke-width: 1.75;
+  color: currentColor;
+  transition:
+    transform var(--motion-dur-fast) var(--motion-ease-out),
+    color var(--motion-dur-fast) var(--motion-ease-out);
+}
+
+.anvexo-icon-accent {
+  color: var(--accent-orange) !important;
+}
+
+.anvexo-icon-spin {
+  animation: anvexoIconSpin 0.9s linear infinite;
+  transform-origin: center center;
+}
+
+@keyframes anvexoIconSpin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.finding-badge-icon,
+.step-badge-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 4px;
+}
+
+/* =========================================================================
+   Reduced Motion Preferences
+   ========================================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .status-dot.running,
+  .anvexo-icon-spin {
+    animation: none !important;
+    opacity: 1 !important;
+  }
+
+  .btn:active,
+  .btn-primary:active,
+  .btn-danger:active,
+  .btn-secondary:active,
+  .cmd-preset-btn:active,
+  .path-scan-btn:active,
+  .activity-btn:active,
+  .tab-btn:active,
+  .drawer-tab-btn:active,
+  .drawer-close-btn:active,
+  .settings-close-btn:active,
+  .settings-nav-btn:active {
+    transform: none !important;
+  }
+}
+

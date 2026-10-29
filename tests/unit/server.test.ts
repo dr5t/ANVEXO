@@ -327,6 +327,12 @@ describe('Server & Security Infrastructure', () => {
       const jsRes = await fetch(`${baseUrl}/app.js`);
       expect(jsRes.status).toBe(200);
       expect(jsRes.headers.get('content-type')).toContain('application/javascript');
+
+      const iconsRes = await fetch(`${baseUrl}/icons.js`);
+      expect(iconsRes.status).toBe(200);
+      expect(iconsRes.headers.get('content-type')).toContain('application/javascript');
+      const iconsBody = await iconsRes.text();
+      expect(iconsBody).toContain('AnvexoIcons');
     });
   });
 });
