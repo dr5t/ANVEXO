@@ -1,16 +1,371 @@
 #!/usr/bin/env node
 
+import { createInterface } from 'node:readline';
+import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { Command } from 'commander';
 import { InvestigationEngine } from '../engine/index.js';
-import { LogLevel } from '../core/index.js';
+import { LogLevel, MemoryMode } from '../core/index.js';
 import { setLogLevel } from '../core/logger.js';
+import { ConfigManager } from '../core/config.js';
+import { ProviderFactory } from '../providers/index.js';
+import { PermissionManager } from '../permissions/index.js';
+import { ToolRegistry, registerBuiltinTools } from '../tools/index.js';
+import { RuleManager } from '../rules/index.js';
+import { SkillManager } from '../skills/index.js';
+import { PluginManager } from '../plugins/index.js';
+import { GitService } from '../git/index.js';
+import { CommandDispatcher } from '../commands/index.js';
+import { AgentRuntime } from '../agent/index.js';
+import { McpClient } from '../mcp/index.js';
 
 const program = new Command();
 
 program
   .name('anvexo')
-  .description('ANVEXO - AI-powered software investigation platform')
+  .description('ANVEXO - Autonomous Developer Workspace & AI Agent Platform')
   .version('0.1.0');
+
+program
+  .option('-p, --print <prompt>', 'Run in headless non-interactive mode with single prompt')
+  .option('--plan', 'Run in plan-only mode requiring confirmation')
+  .argument('[prompt]', 'Initial coding or investigation prompt')
+  .action(async (promptArg: string | undefined, opts: { print?: string; plan?: boolean }) => {
+    const configManager = new ConfigManager();
+    const repoPath = process.cwd();
+    const providerFactory = new ProviderFactory(configManager);
+    const provider = providerFactory.getActiveProvider();
+    const permissions = new PermissionManager();
+    const tools = new ToolRegistry(permissions);
+    registerBuiltinTools(tools);
+
+    const ruleManager = new RuleManager();
+    const skillManager = new SkillManager();
+    const pluginManager = new PluginManager();
+    const gitService = new GitService();
+    const commandDispatcher = new CommandDispatcher();
+
+    const runtime = new AgentRuntime({
+      repoPath,
+      provider,
+      permissions,
+      tools,
+      ruleManager,
+      skillManager,
+      mode: opts.plan ? 'plan' : 'interactive',
+    });
+
+    const targetPrompt = opts.print || promptArg;
+
+    if (opts.print) {
+      const session = runtime.createSession('autonomous');
+      const updated = await runtime.run(targetPrompt!, session, (evt) => {
+        if (evt.type === 'thought' && evt.content) {
+          process.stdout.write(evt.content + '\n');
+        }
+      });
+      const lastMsg = updated.messages[updated.messages.length - 1];
+      if (lastMsg && lastMsg.role === 'assistant' && lastMsg.content) {
+        process.stdout.write(lastMsg.content + '\n');
+      }
+      process.exit(0);
+    }
+
+    const session = runtime.createSession(opts.plan ? 'plan' : 'interactive');
+
+    const prefs = configManager.loadUserPreferences();
+    const isGit = await gitService.isGitRepo(repoPath);
+    let branchInfo = 'no-git';
+    if (isGit) {
+      const st = await gitService.getStatus(repoPath);
+      branchInfo = st.branch;
+    }
+
+    process.stdout.write('\x1b[1mANVEXO Developer Agent\x1b[0m v0.1.0\n');
+    process.stdout.write(`Workspace: \x1b[36m${repoPath}\x1b[0m (git: ${branchInfo})\n`);
+    process.stdout.write(`Provider:  \x1b[33m${provider.name}\x1b[0m (${prefs.activeModel})\n`);
+    process.stdout.write('Type natural language tasks, or \x1b[35m/help\x1b[0m for commands, \x1b[35mexit\x1b[0m to quit.\n\n');
+
+    const rl = createInterface({
+      input: process.stdin,
+      output: process.stdout,
+      prompt: 'anvexo> ',
+    });
+
+    const runAgentTurn = async (input: string) => {
+      const trimmed = input.trim();
+      if (!trimmed) {
+        rl.prompt();
+        return;
+      }
+
+      if (trimmed.toLowerCase() === 'exit' || trimmed.toLowerCase() === 'quit') {
+        process.stdout.write('Closing ANVEXO session.\n');
+        process.exit(0);
+      }
+
+      if (trimmed.startsWith('/')) {
+        const cmdRes = await commandDispatcher.execute(trimmed, {
+          repoPath,
+          configManager,
+          skillManager,
+          ruleManager,
+          pluginManager,
+          providerFactory,
+          gitService,
+        });
+        process.stdout.write(cmdRes.message + '\n\n');
+        rl.prompt();
+        return;
+      }
+
+      process.stdout.write('\n');
+      await runtime.run(trimmed, session, (event) => {
+        if (event.type === 'thought' && event.content) {
+          process.stdout.write(event.content + '\n');
+        } else if (event.type === 'tool_start') {
+          process.stdout.write(`\x1b[34m[TOOL]\x1b[0m Running ${event.toolName}...\n`);
+        } else if (event.type === 'tool_end') {
+          process.stdout.write(`\x1b[32m[DONE]\x1b[0m ${event.toolName} finished.\n`);
+        } else if (event.type === 'plan_ready') {
+          process.stdout.write(`\x1b[33m[PLAN]\x1b[0m ${event.content}\n`);
+        } else if (event.type === 'waiting_approval') {
+          process.stdout.write(`\x1b[31m[AUTH]\x1b[0m ${event.content}\n`);
+        } else if (event.type === 'error') {
+          process.stdout.write(`\x1b[31m[ERROR]\x1b[0m ${event.content}\n`);
+        }
+      });
+      process.stdout.write('\n');
+      rl.prompt();
+    };
+
+    if (promptArg) {
+      await runAgentTurn(promptArg);
+    } else {
+      rl.prompt();
+    }
+
+    rl.on('line', async (line) => {
+      await runAgentTurn(line);
+    });
+
+    rl.on('close', () => {
+      process.stdout.write('\nExiting ANVEXO.\n');
+      process.exit(0);
+    });
+  });
+
+program
+  .command('doctor')
+  .description('Run comprehensive environment diagnostics and health checks')
+  .action(async () => {
+    const configManager = new ConfigManager();
+    const gitService = new GitService();
+    const repoPath = process.cwd();
+
+    process.stdout.write('ANVEXO Environment & System Diagnostics\n');
+    process.stdout.write('=======================================\n');
+
+    const nodeVer = process.version;
+    const nodeMajor = parseInt(nodeVer.slice(1).split('.')[0], 10);
+    const nodeOk = nodeMajor >= 20;
+    process.stdout.write(`[${nodeOk ? 'PASS' : 'FAIL'}] Node.js runtime: ${nodeVer} (required >= 20.0.0)\n`);
+
+    const isGit = await gitService.isGitRepo(repoPath);
+    process.stdout.write(`[${isGit ? 'PASS' : 'WARN'}] Git repository: ${isGit ? 'valid repo' : 'not a git repository'}\n`);
+
+    const prefs = configManager.loadUserPreferences();
+    process.stdout.write(`[INFO] Active Provider: ${prefs.activeProvider} (Model: ${prefs.activeModel})\n`);
+
+    const keys = ['anthropic', 'openai', 'gemini'] as const;
+    for (const k of keys) {
+      const hasKey = Boolean(configManager.getApiKey(k));
+      process.stdout.write(`[${hasKey ? 'PASS' : 'INFO'}] ${k.toUpperCase()} API key: ${hasKey ? 'configured' : 'not set'}\n`);
+    }
+
+    const ruleManager = new RuleManager();
+    const rules = ruleManager.listAllRules(repoPath);
+    process.stdout.write(`[PASS] Rules engine: ${rules.length} active rules loaded\n`);
+
+    const skillManager = new SkillManager();
+    const skills = skillManager.listAllSkills(repoPath);
+    process.stdout.write(`[PASS] Skills engine: ${skills.length} skills discovered\n`);
+
+    const pluginManager = new PluginManager();
+    const plugins = pluginManager.listAllPlugins(repoPath);
+    process.stdout.write(`[PASS] Plugin system: ${plugins.length} plugins registered\n`);
+
+    process.stdout.write('\nDiagnostics complete.\n');
+  });
+
+program
+  .command('init')
+  .description('Initialize ANVEXO configuration, rules, and skills in the current project')
+  .action(async () => {
+    const repoPath = process.cwd();
+    const anvexoDir = join(repoPath, '.anvexo');
+    const rulesDir = join(anvexoDir, 'rules');
+    const skillsDir = join(anvexoDir, 'skills');
+
+    mkdirSync(rulesDir, { recursive: true });
+    mkdirSync(skillsDir, { recursive: true });
+
+    const configPath = join(anvexoDir, 'config.json');
+    if (!existsSync(configPath)) {
+      writeFileSync(configPath, JSON.stringify({
+        project: 'anvexo-project',
+        version: '0.1.0',
+        memoryMode: 'local',
+        rules: [],
+      }, null, 2), 'utf-8');
+    }
+
+    const defaultRulePath = join(rulesDir, 'workspace-conventions.md');
+    if (!existsSync(defaultRulePath)) {
+      writeFileSync(defaultRulePath, '# Project Conventions\n\n1. Write deterministic, verified code.\n2. Run tests before submitting fixes.\n', 'utf-8');
+    }
+
+    process.stdout.write(`Initialized ANVEXO project configuration in ${anvexoDir}\n`);
+  });
+
+const configCmd = program
+  .command('config')
+  .description('Inspect or modify ANVEXO user and project configuration');
+
+configCmd
+  .command('list')
+  .description('List all user preferences')
+  .action(() => {
+    const cm = new ConfigManager();
+    process.stdout.write(JSON.stringify(cm.loadUserPreferences(), null, 2) + '\n');
+  });
+
+configCmd
+  .command('get <key>')
+  .description('Get value of a configuration key')
+  .action((key: string) => {
+    const cm = new ConfigManager();
+    const prefs = cm.loadUserPreferences() as unknown as Record<string, unknown>;
+    process.stdout.write(String(prefs[key] ?? 'undefined') + '\n');
+  });
+
+configCmd
+  .command('set <key> <val>')
+  .description('Set value of a configuration key')
+  .action((key: string, val: string) => {
+    const cm = new ConfigManager();
+    const prefs = cm.loadUserPreferences() as unknown as Record<string, unknown>;
+    prefs[key] = val;
+    cm.saveUserPreferences(prefs);
+    process.stdout.write(`Updated ${key} = ${val}\n`);
+  });
+
+const skillsCmd = program
+  .command('skills')
+  .description('Inspect and run available skills');
+
+skillsCmd
+  .command('list')
+  .description('List all discovered skills')
+  .action(() => {
+    const sm = new SkillManager();
+    const skills = sm.listAllSkills(process.cwd());
+    for (const s of skills) {
+      process.stdout.write(`${s.id.padEnd(25)} [${s.scope.padEnd(8)}] ${s.description}\n`);
+    }
+  });
+
+skillsCmd
+  .command('inspect <id>')
+  .description('Inspect skill definition and instructions')
+  .action((id: string) => {
+    const sm = new SkillManager();
+    const s = sm.getSkill(id, process.cwd());
+    if (!s) {
+      process.stderr.write(`Skill not found: ${id}\n`);
+      process.exit(1);
+    }
+    process.stdout.write(`Skill: ${s.name} (${s.id})\nScope: ${s.scope}\n\n${s.instructions}\n`);
+  });
+
+const rulesCmd = program
+  .command('rules')
+  .description('Inspect active governing rules');
+
+rulesCmd
+  .command('list')
+  .description('List active rules and precedence')
+  .action(() => {
+    const rm = new RuleManager();
+    const rules = rm.listAllRules(process.cwd());
+    for (const r of rules) {
+      process.stdout.write(`[${r.scope.toUpperCase().padEnd(7)}] Priority ${String(r.priority).padStart(3)}: ${r.title}\n`);
+    }
+  });
+
+const pluginsCmd = program
+  .command('plugins')
+  .description('Manage ANVEXO extension plugins');
+
+pluginsCmd
+  .command('list')
+  .description('List installed plugins')
+  .action(() => {
+    const pm = new PluginManager();
+    const plugins = pm.listAllPlugins(process.cwd());
+    if (plugins.length === 0) {
+      process.stdout.write('No plugins installed.\n');
+      return;
+    }
+    for (const p of plugins) {
+      process.stdout.write(`${p.id.padEnd(20)} v${p.version} [${p.enabled ? 'ENABLED' : 'DISABLED'}] ${p.description}\n`);
+    }
+  });
+
+const mcpCmd = program
+  .command('mcp')
+  .description('Manage Model Context Protocol servers');
+
+mcpCmd
+  .command('list')
+  .description('List configured MCP servers')
+  .action(() => {
+    const cm = new ConfigManager();
+    const prefs = cm.loadUserPreferences();
+    if (prefs.mcpServers.length === 0) {
+      process.stdout.write('No MCP servers configured in preferences.\n');
+      return;
+    }
+    for (const s of prefs.mcpServers) {
+      process.stdout.write(`${s.id.padEnd(15)} [${s.transport}] ${s.name} (enabled: ${s.enabled})\n`);
+    }
+  });
+
+mcpCmd
+  .command('test <id>')
+  .description('Test connection to configured MCP server')
+  .action(async (id: string) => {
+    const cm = new ConfigManager();
+    const prefs = cm.loadUserPreferences();
+    const s = prefs.mcpServers.find((server) => server.id === id);
+    if (!s) {
+      process.stderr.write(`MCP server not found: ${id}\n`);
+      process.exit(1);
+    }
+    const client = new McpClient(s);
+    try {
+      await client.connect();
+      const tools = await client.listTools();
+      process.stdout.write(`Connected to ${s.name}. Discovered ${tools.length} tools:\n`);
+      for (const t of tools) {
+        process.stdout.write(`  - ${t.name}: ${t.description || 'No description'}\n`);
+      }
+      await client.disconnect();
+    } catch (err) {
+      process.stderr.write(`MCP connection failed: ${(err as Error).message}\n`);
+      process.exit(1);
+    }
+  });
 
 program
   .command('investigate')
@@ -38,7 +393,6 @@ program
       setLogLevel(LogLevel.DEBUG);
     }
 
-    const { MemoryMode } = await import('../core/index.js');
     let mode = MemoryMode.PERSISTENT_INTELLIGENCE;
     if (opts.memoryMode === 'ephemeral' || opts.memoryMode === 'zero') {
       mode = MemoryMode.ZERO_PERSISTENT;

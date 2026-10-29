@@ -377,12 +377,180 @@ export function createRunCommandTool(): ToolDefinition {
   };
 }
 
+export function createFileWriteTool(): ToolDefinition {
+  return {
+    name: 'file_write',
+    description: 'Write content to a file in the workspace',
+    requiredPermission: PermissionScope.FILE_WRITE,
+    risk: 'medium',
+    async execute(args): Promise<ToolResult> {
+      const filePath = args.path as string;
+      const content = args.content as string;
+
+      if (!filePath || typeof filePath !== 'string') {
+        return { success: false, output: '', error: 'Path is required', duration: 0, metadata: {} };
+      }
+      if (typeof content !== 'string') {
+        return { success: false, output: '', error: 'Content is required', duration: 0, metadata: {} };
+      }
+      if (filePath.includes('\0')) {
+        return { success: false, output: '', error: 'Null byte detected in path', duration: 0, metadata: {} };
+      }
+
+      const resolved = path.resolve(filePath);
+      const blockedFiles = ['/etc/passwd', '/etc/shadow', '/etc/sudoers'];
+      if (blockedFiles.includes(resolved)) {
+        return { success: false, output: '', error: 'Access to system sensitive files is forbidden', duration: 0, metadata: {} };
+      }
+
+      if (args.rootPath && typeof args.rootPath === 'string') {
+        const canonicalRoot = fs.existsSync(args.rootPath) ? fs.realpathSync(path.resolve(args.rootPath)) : path.resolve(args.rootPath);
+        const canonicalTarget = path.resolve(canonicalRoot, filePath);
+        const rel = path.relative(canonicalRoot, canonicalTarget);
+        if (rel.startsWith('..') || path.isAbsolute(rel)) {
+          return { success: false, output: '', error: `Path traversal attempt detected: ${filePath} escapes root ${args.rootPath}`, duration: 0, metadata: {} };
+        }
+      }
+
+      try {
+        const dir = path.dirname(resolved);
+        if (!fs.existsSync(dir)) {
+          fs.mkdirSync(dir, { recursive: true });
+        }
+        fs.writeFileSync(resolved, content, 'utf-8');
+        return {
+          success: true,
+          output: `Successfully wrote ${Buffer.byteLength(content, 'utf-8')} bytes to ${filePath}`,
+          duration: 0,
+          metadata: { path: filePath, bytes: Buffer.byteLength(content, 'utf-8') },
+        };
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        return { success: false, output: '', error: msg, duration: 0, metadata: {} };
+      }
+    },
+  };
+}
+
+export function createFileDeleteTool(): ToolDefinition {
+  return {
+    name: 'file_delete',
+    description: 'Delete a file in the workspace',
+    requiredPermission: PermissionScope.FILE_DELETE,
+    risk: 'high',
+    async execute(args): Promise<ToolResult> {
+      const filePath = args.path as string;
+
+      if (!filePath || typeof filePath !== 'string') {
+        return { success: false, output: '', error: 'Path is required', duration: 0, metadata: {} };
+      }
+      if (filePath.includes('\0')) {
+        return { success: false, output: '', error: 'Null byte detected in path', duration: 0, metadata: {} };
+      }
+
+      const resolved = path.resolve(filePath);
+      const blockedFiles = ['/etc/passwd', '/etc/shadow', '/etc/sudoers'];
+      if (blockedFiles.includes(resolved)) {
+        return { success: false, output: '', error: 'Access to system sensitive files is forbidden', duration: 0, metadata: {} };
+      }
+
+      if (args.rootPath && typeof args.rootPath === 'string') {
+        const canonicalRoot = fs.existsSync(args.rootPath) ? fs.realpathSync(path.resolve(args.rootPath)) : path.resolve(args.rootPath);
+        const canonicalTarget = path.resolve(canonicalRoot, filePath);
+        const rel = path.relative(canonicalRoot, canonicalTarget);
+        if (rel.startsWith('..') || path.isAbsolute(rel)) {
+          return { success: false, output: '', error: `Path traversal attempt detected: ${filePath} escapes root ${args.rootPath}`, duration: 0, metadata: {} };
+        }
+      }
+
+      if (!fs.existsSync(resolved)) {
+        return { success: false, output: '', error: `File not found: ${filePath}`, duration: 0, metadata: {} };
+      }
+
+      try {
+        fs.unlinkSync(resolved);
+        return {
+          success: true,
+          output: `Successfully deleted file ${filePath}`,
+          duration: 0,
+          metadata: { path: filePath },
+        };
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        return { success: false, output: '', error: msg, duration: 0, metadata: {} };
+      }
+    },
+  };
+}
+
+export function createTestRunTool(): ToolDefinition {
+  return {
+    name: 'test_run',
+    description: 'Execute tests in the repository',
+    requiredPermission: PermissionScope.TEST_RUN,
+    risk: 'medium',
+    async execute(args): Promise<ToolResult> {
+      const cwd = (args.path as string) || process.cwd();
+      const command = (args.command as string) || 'npm test';
+      const timeout = (args.timeout as number) || 60000;
+
+      const cleanEnv = getCleanSubprocessEnv();
+
+      try {
+        const res = spawnSync(command, {
+          cwd,
+          encoding: 'utf-8',
+          timeout,
+          maxBuffer: 5_000_000,
+          env: cleanEnv,
+          shell: true,
+        });
+
+        const stdout = redactSecrets((res.stdout || '').trim());
+        const stderr = redactSecrets((res.stderr || '').trim());
+
+        if (res.error) {
+          return {
+            success: false,
+            output: stdout,
+            error: res.error.message,
+            duration: 0,
+            metadata: { command, exitCode: res.status ?? -1 },
+          };
+        }
+
+        const success = res.status === 0;
+        return {
+          success,
+          output: stdout || stderr,
+          error: success ? undefined : (stderr || `Tests failed with code ${res.status}`),
+          duration: 0,
+          metadata: { command, exitCode: res.status ?? -1 },
+        };
+      } catch (err: unknown) {
+        const execErr = err as { stdout?: string; stderr?: string; status?: number; message?: string };
+        return {
+          success: false,
+          output: redactSecrets(execErr.stdout || ''),
+          error: redactSecrets(execErr.stderr || execErr.message || 'Test execution failed'),
+          duration: 0,
+          metadata: { command, exitCode: execErr.status },
+        };
+      }
+    },
+  };
+}
+
 export function registerBuiltinTools(registry: { register: (tool: ToolDefinition) => void }): void {
   registry.register(createFileReadTool());
   registry.register(createFileListTool());
   registry.register(createFileSearchTool());
+  registry.register(createFileWriteTool());
+  registry.register(createFileDeleteTool());
   registry.register(createGitStatusTool());
   registry.register(createGitLogTool());
   registry.register(createGitDiffTool());
   registry.register(createRunCommandTool());
+  registry.register(createTestRunTool());
 }
+

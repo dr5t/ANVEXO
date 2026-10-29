@@ -5,3 +5,5 @@ export { OpenAIProvider } from './openai.js';
 export { GeminiProvider } from './gemini.js';
 export { OllamaProvider } from './ollama.js';
 export { ProviderRegistry, getDefaultProviderRegistry } from './registry.js';
+export { ProviderFactory } from './factory.js';
+export { AbstractModelProvider } from './base.js';

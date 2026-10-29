@@ -48,7 +48,7 @@ export class ProviderRegistry {
   }
 
   setActiveProvider(id: ProviderId, model?: string): void {
-    this.getProvider(id); // validates existence
+    this.getProvider(id);
     const prefs = this.configManager.loadUserPreferences();
     prefs.activeProvider = id;
     if (model) {
@@ -64,7 +64,6 @@ export class ProviderRegistry {
         const models = await provider.listModels();
         results.push(...models);
       } catch {
-        // Skip providers that fail to list models (e.g. offline ollama)
       }
     }
     return results;

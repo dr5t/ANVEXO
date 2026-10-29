@@ -175,7 +175,6 @@ export class AnthropicProvider implements ModelProvider {
   }
 
   async stream(request: CompletionRequest, onChunk: (chunk: CompletionChunk) => void): Promise<CompletionResponse> {
-    // Anthropic completion with streaming fallback or full stream
     const full = await this.complete(request);
     onChunk({ delta: full.content, isComplete: true });
     return full;

@@ -31,12 +31,9 @@ export class OfflineHeuristicProvider implements ModelProvider {
     const userMessages = request.messages.filter(m => m.role === 'user');
     const lastUserMessage = userMessages[userMessages.length - 1]?.content || '';
     const lastToolMessage = request.messages.filter(m => m.role === 'tool').pop();
-
-    // Check if the user is asking to perform a task and we have tools available
     const availableTools = request.tools || [];
     const lowerPrompt = lastUserMessage.toLowerCase();
 
-    // If we just received a tool result, synthesize an explanation of what happened
     if (lastToolMessage) {
       const summary = `Tool execution completed. The returned output has been incorporated into the investigation context:\n\n${lastToolMessage.content.slice(0, 1500)}${lastToolMessage.content.length > 1500 ? '\n... [truncated]' : ''}\n\nEvidence verified. Ready for next step or user confirmation.`;
       return {
@@ -46,7 +43,6 @@ export class OfflineHeuristicProvider implements ModelProvider {
       };
     }
 
-    // If tools are provided and the request indicates an inspection or action
     const toolCalls: ToolCallPayload[] = [];
 
     if (availableTools.length > 0) {
@@ -86,7 +82,6 @@ export class OfflineHeuristicProvider implements ModelProvider {
       };
     }
 
-    // Default heuristic response
     let responseText = '';
     if (lowerPrompt.includes('investigate') || lowerPrompt.includes('bug') || lowerPrompt.includes('root cause')) {
       responseText = `## ANVESHAN Heuristic Analysis\n\n**Objective**: ${lastUserMessage}\n\n### Formulated Hypotheses:\n1. **Hypothesis 1**: Defect originated from recent unstaged changes or configuration mismatch.\n2. **Hypothesis 2**: Dependency or path resolution divergence across runtime environments.\n\n### Recommended Investigation Steps:\n- Run \`git status\` and \`git diff\` to inspect uncommitted changes.\n- Check recent test output via \`npm test\`.\n- Search for affected symbol definitions using \`file_search\`.\n\nExecute these steps directly or run with \`anvexo investigate .\` for a complete automated DAG.`;
@@ -120,3 +115,5 @@ export class OfflineHeuristicProvider implements ModelProvider {
     return res;
   }
 }
+
+export { OfflineHeuristicProvider as OfflineModelProvider };
