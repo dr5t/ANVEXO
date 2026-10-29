@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 36" fill="none">
+  <g transform="translate(2, 2)">
+    <path d="M16 3 L28 10 L28 22 L16 29 L4 22 L4 10 Z" stroke="#E54D2E" stroke-width="2" stroke-linejoin="round"/>
+    <path d="M16 3 L16 12 M16 20 L16 29" stroke="#E54D2E" stroke-width="2" stroke-linecap="round"/>
+    <polygon points="16,11 21,16 16,21 11,16" fill="#E54D2E"/>
+    <path d="M4 10 L11 16 M28 10 L21 16" stroke="#E54D2E" stroke-width="2" stroke-linecap="round"/>
+  </g>
+  <text x="44" y="24" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif" font-size="17" font-weight="700" letter-spacing="2.5" fill="#EDEDED">ANVEXO</text>
+  <rect x="136" y="11" width="18" height="13" rx="2" fill="#22252A"/>
+  <text x="145" y="21" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif" font-size="8" font-weight="600" letter-spacing="0.5" fill="#A0A5AD" text-anchor="middle">IDE</text>
+</svg>

@@ -108,6 +108,22 @@ export class ApiRouter {
           return;
         }
       }
+
+      if (pathname === '/favicon.svg') {
+        const file = this.resolveUiFile('favicon.svg');
+        if (file) {
+          this.sendFile(res, 200, 'image/svg+xml', file);
+          return;
+        }
+      }
+
+      if (pathname.startsWith('/brand/') && !pathname.includes('..')) {
+        const file = this.resolveUiFile(pathname.slice(1));
+        if (file) {
+          this.sendFile(res, 200, 'image/svg+xml', file);
+          return;
+        }
+      }
     }
 
     const clientIp = req.socket.remoteAddress || '127.0.0.1';
