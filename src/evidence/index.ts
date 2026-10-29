@@ -2,6 +2,17 @@ import { randomUUID } from 'node:crypto';
 import type { EvidenceRecord } from '../core/index.js';
 import { EvidenceType, VerificationStatus } from '../core/index.js';
 
+export function redactSecrets(text: string): string {
+  if (!text || typeof text !== 'string') return text;
+  return text
+    .replace(/(?:password|passwd|secret|api[_-]?key|access[_-]?token|auth[_-]?token|private[_-]?key)\s*[:=]\s*["']?([^\s"';&]+)["']?/gi, (m, val) => {
+      if (val.length < 4) return m;
+      return m.replace(val, '[REDACTED_SECRET]');
+    })
+    .replace(/(?:sk-[a-zA-Z0-9]{20,}|ghp_[a-zA-Z0-9]{20,}|gho_[a-zA-Z0-9]{20,}|glpat-[a-zA-Z0-9_-]{20,}|xox[baprs]-[a-zA-Z0-9]{10,})/g, '[REDACTED_TOKEN]')
+    .replace(/-----BEGIN [A-Z ]+PRIVATE KEY-----[\s\S]*?-----END [A-Z ]+PRIVATE KEY-----/g, '[REDACTED_PRIVATE_KEY]');
+}
+
 export class EvidenceCollector {
   private records: Map<string, EvidenceRecord> = new Map();
 
@@ -17,7 +28,7 @@ export class EvidenceCollector {
       id: randomUUID(),
       type: params.type,
       source: params.source,
-      content: params.content,
+      content: redactSecrets(params.content),
       timestamp: new Date(),
       toolName: params.toolName,
       verificationStatus: params.verificationStatus || VerificationStatus.OBSERVED,

@@ -18,11 +18,34 @@ export function validatePathWithinRoot(targetPath: string, rootPath: string): st
   }
 
   const resolvedRoot = path.resolve(rootPath);
-  const resolvedTarget = path.resolve(resolvedRoot, targetPath);
+  const canonicalRoot = fs.existsSync(resolvedRoot) ? fs.realpathSync(resolvedRoot) : resolvedRoot;
+  const resolvedTarget = path.resolve(canonicalRoot, targetPath);
 
-  const rel = path.relative(resolvedRoot, resolvedTarget);
-  if (rel.startsWith('..') || path.isAbsolute(rel)) {
+  const initialRel = path.relative(canonicalRoot, resolvedTarget);
+  if (initialRel.startsWith('..') || path.isAbsolute(initialRel)) {
     throw new SecurityError(`Path traversal attempt detected: ${targetPath} escapes root ${rootPath}`, 403);
+  }
+
+  if (fs.existsSync(resolvedTarget)) {
+    const canonicalTarget = fs.realpathSync(resolvedTarget);
+    const canonicalRel = path.relative(canonicalRoot, canonicalTarget);
+    if (canonicalRel.startsWith('..') || path.isAbsolute(canonicalRel)) {
+      throw new SecurityError(`Symlink escape detected: ${targetPath} resolves outside root ${rootPath}`, 403);
+    }
+    return canonicalTarget;
+  }
+
+  let current = path.dirname(resolvedTarget);
+  while (current !== path.dirname(current)) {
+    if (fs.existsSync(current)) {
+      const canonicalParent = fs.realpathSync(current);
+      const parentRel = path.relative(canonicalRoot, canonicalParent);
+      if (parentRel.startsWith('..') || path.isAbsolute(parentRel)) {
+        throw new SecurityError(`Symlink parent escape detected: ${targetPath} resolves outside root ${rootPath}`, 403);
+      }
+      break;
+    }
+    current = path.dirname(current);
   }
 
   return resolvedTarget;
@@ -37,7 +60,26 @@ export function validateRepositoryExists(repoPath: string): string {
   if (!stat.isDirectory()) {
     throw new SecurityError(`Repository path is not a directory: ${resolved}`, 400);
   }
-  return resolved;
+  return fs.realpathSync(resolved);
+}
+
+export function validateHostHeader(req: IncomingMessage, allowedHost: string = '127.0.0.1'): boolean {
+  const rawHost = req.headers.host || '';
+  if (!rawHost) return false;
+
+  const hostname = rawHost.startsWith('[')
+    ? (rawHost.split(']')[0] + ']').toLowerCase()
+    : rawHost.split(':')[0].toLowerCase();
+
+  const allowed = [
+    '127.0.0.1',
+    'localhost',
+    '::1',
+    '[::1]',
+    allowedHost.toLowerCase(),
+  ];
+
+  return allowed.includes(hostname);
 }
 
 export function applySecurityHeaders(res: ServerResponse): void {
@@ -47,16 +89,13 @@ export function applySecurityHeaders(res: ServerResponse): void {
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
   res.setHeader(
     'Content-Security-Policy',
-    "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' ws: http:;",
+    "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none';",
   );
 }
 
-export function applyCorsHeaders(req: IncomingMessage, res: ServerResponse, allowedOrigins: string[] = ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:5173', 'http://127.0.0.1:5173']): boolean {
+export function applyCorsHeaders(req: IncomingMessage, res: ServerResponse, allowedOrigins: string[] = ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:5173', 'http://127.0.0.1:5173', 'http://localhost:4173', 'http://127.0.0.1:4173']): boolean {
   const origin = req.headers.origin;
   if (!origin) {
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
     return true;
   }
 

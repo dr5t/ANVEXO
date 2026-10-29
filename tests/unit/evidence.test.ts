@@ -61,4 +61,19 @@ describe('EvidenceCollector', () => {
     collector.clear();
     expect(collector.count()).toBe(0);
   });
+
+  it('automatically redacts sensitive tokens and secrets from evidence content', () => {
+    const collector = new EvidenceCollector();
+    const record = collector.add({
+      type: EvidenceType.FILE_CONTENT,
+      source: '.env',
+      content: 'API_KEY="sk-1234567890abcdef1234567890"\npassword=superSecret123\nTOKEN=ghp_abcdefghijklmnopqrstuvwxyz123456',
+      toolName: 'file_read',
+    });
+
+    expect(record.content).not.toContain('sk-1234567890abcdef1234567890');
+    expect(record.content).not.toContain('superSecret123');
+    expect(record.content).not.toContain('ghp_abcdefghijklmnopqrstuvwxyz123456');
+    expect(record.content).toContain('[REDACTED_SECRET]');
+  });
 });

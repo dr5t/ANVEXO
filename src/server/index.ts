@@ -7,5 +7,6 @@ export {
   validateRepositoryExists,
   applySecurityHeaders,
   applyCorsHeaders,
+  validateHostHeader,
   SecurityError,
 } from './security.js';

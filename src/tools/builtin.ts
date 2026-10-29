@@ -1,6 +1,6 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import { execSync } from 'node:child_process';
+import { spawnSync } from 'node:child_process';
 import type { ToolDefinition, ToolResult } from '../core/index.js';
 import { PermissionScope } from '../core/index.js';
 
@@ -100,10 +100,56 @@ export function createFileSearchTool(): ToolDefinition {
       }
 
       try {
-        const cmd = `grep -rn --exclude-dir=node_modules --exclude-dir=dist --exclude-dir=.git --exclude-dir=coverage --exclude-dir=build --exclude-dir=vendor --include='*.ts' --include='*.js' --include='*.py' --include='*.java' --include='*.json' --include='*.yaml' --include='*.yml' --include='*.toml' --include='*.md' --include='*.go' --include='*.rs' --include='*.c' --include='*.cpp' --include='*.h' --include='*.jsx' --include='*.tsx' --include='*.vue' --include='*.svelte' --include='*.rb' --include='*.php' --include='*.swift' --include='*.kt' -m ${maxResults} ${JSON.stringify(pattern)} ${JSON.stringify(searchPath)} 2>/dev/null || true`;
-        const output = execSync(cmd, { encoding: 'utf-8', maxBuffer: 5_000_000, timeout: 10000 });
-        const lines = output.trim().split('\n').filter(Boolean);
-        return { success: true, output: output.trim(), duration: 0, metadata: { matchCount: lines.length } };
+        const argsList = [
+          '-rn',
+          '--exclude-dir=node_modules',
+          '--exclude-dir=dist',
+          '--exclude-dir=.git',
+          '--exclude-dir=coverage',
+          '--exclude-dir=build',
+          '--exclude-dir=vendor',
+          '--include=*.ts',
+          '--include=*.js',
+          '--include=*.py',
+          '--include=*.java',
+          '--include=*.json',
+          '--include=*.yaml',
+          '--include=*.yml',
+          '--include=*.toml',
+          '--include=*.md',
+          '--include=*.go',
+          '--include=*.rs',
+          '--include=*.c',
+          '--include=*.cpp',
+          '--include=*.h',
+          '--include=*.jsx',
+          '--include=*.tsx',
+          '--include=*.vue',
+          '--include=*.svelte',
+          '--include=*.rb',
+          '--include=*.php',
+          '--include=*.swift',
+          '--include=*.kt',
+          '-m',
+          String(maxResults),
+          '--',
+          pattern,
+          searchPath,
+        ];
+        const res = spawnSync('grep', argsList, {
+          encoding: 'utf-8',
+          maxBuffer: 5_000_000,
+          timeout: 10000,
+          shell: false,
+        });
+
+        if (res.error) {
+          return { success: false, output: '', error: res.error.message, duration: 0, metadata: {} };
+        }
+
+        const stdout = res.stdout || '';
+        const lines = stdout.trim().split('\n').filter(Boolean);
+        return { success: true, output: stdout.trim(), duration: 0, metadata: { matchCount: lines.length } };
       } catch {
         return { success: false, output: '', error: 'Search failed or timed out', duration: 0, metadata: {} };
       }
@@ -120,23 +166,39 @@ export function createGitStatusTool(): ToolDefinition {
     async execute(args): Promise<ToolResult> {
       const repoPath = args.path as string;
       try {
-        const output = execSync('git status --porcelain', {
-          cwd: repoPath, encoding: 'utf-8', timeout: 5000,
+        const statusRes = spawnSync('git', ['status', '--porcelain'], {
+          cwd: repoPath,
+          encoding: 'utf-8',
+          timeout: 5000,
+          shell: false,
         });
-        const branch = execSync('git branch --show-current', {
-          cwd: repoPath, encoding: 'utf-8', timeout: 5000,
-        }).trim();
+        if (statusRes.error) {
+          const msg = statusRes.error.message;
+          if (msg.includes('not a git repository')) {
+            return { success: true, output: 'Not a Git repository', duration: 0, metadata: { hasGit: false } };
+          }
+          return { success: false, output: '', error: msg, duration: 0, metadata: {} };
+        }
+        const stderr = statusRes.stderr || '';
+        if (statusRes.status !== 0 && stderr.includes('not a git repository')) {
+          return { success: true, output: 'Not a Git repository', duration: 0, metadata: { hasGit: false } };
+        }
+        const branchRes = spawnSync('git', ['branch', '--show-current'], {
+          cwd: repoPath,
+          encoding: 'utf-8',
+          timeout: 5000,
+          shell: false,
+        });
+        const output = statusRes.stdout || '';
+        const branch = (branchRes.stdout || '').trim();
         return {
           success: true,
-          output: `Branch: ${branch}\n${output}`,
+          output: `Branch: ${branch}\n${output}`.trim(),
           duration: 0,
           metadata: { branch, changedFiles: output.trim().split('\n').filter(Boolean).length },
         };
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
-        if (msg.includes('not a git repository')) {
-          return { success: true, output: 'Not a Git repository', duration: 0, metadata: { hasGit: false } };
-        }
         return { success: false, output: '', error: msg, duration: 0, metadata: {} };
       }
     },
@@ -153,16 +215,23 @@ export function createGitLogTool(): ToolDefinition {
       const repoPath = args.path as string;
       const count = Math.min((args.count as number) || 20, 100);
       try {
-        const output = execSync(
-          `git log --oneline --no-decorate -n ${count}`,
-          { cwd: repoPath, encoding: 'utf-8', timeout: 5000 },
-        );
-        return { success: true, output: output.trim(), duration: 0, metadata: { entryCount: output.trim().split('\n').filter(Boolean).length } };
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err);
-        if (msg.includes('does not have any commits yet') || msg.includes('unknown revision')) {
+        const res = spawnSync('git', ['log', '--oneline', '--no-decorate', '-n', String(count)], {
+          cwd: repoPath,
+          encoding: 'utf-8',
+          timeout: 5000,
+          shell: false,
+        });
+        const stderr = res.stderr || '';
+        if (res.status !== 0 && (stderr.includes('does not have any commits yet') || stderr.includes('unknown revision'))) {
           return { success: true, output: 'No commits in repository', duration: 0, metadata: { entryCount: 0 } };
         }
+        if (res.error) {
+          return { success: false, output: '', error: res.error.message, duration: 0, metadata: {} };
+        }
+        const output = (res.stdout || '').trim();
+        return { success: true, output, duration: 0, metadata: { entryCount: output.split('\n').filter(Boolean).length } };
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
         return { success: false, output: '', error: msg, duration: 0, metadata: {} };
       }
     },
@@ -179,9 +248,18 @@ export function createGitDiffTool(): ToolDefinition {
       const repoPath = args.path as string;
       const file = args.file as string | undefined;
       try {
-        const cmd = file ? `git diff -- ${JSON.stringify(file)}` : 'git diff';
-        const output = execSync(cmd, { cwd: repoPath, encoding: 'utf-8', timeout: 10000 });
-        return { success: true, output: output.trim() || 'No unstaged changes', duration: 0, metadata: {} };
+        const gitArgs = file ? ['diff', '--', file] : ['diff'];
+        const res = spawnSync('git', gitArgs, {
+          cwd: repoPath,
+          encoding: 'utf-8',
+          timeout: 10000,
+          shell: false,
+        });
+        if (res.error) {
+          return { success: false, output: '', error: res.error.message, duration: 0, metadata: {} };
+        }
+        const output = (res.stdout || '').trim();
+        return { success: true, output: output || 'No unstaged changes', duration: 0, metadata: {} };
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
         return { success: false, output: '', error: msg, duration: 0, metadata: {} };
@@ -205,23 +283,55 @@ export function createRunCommandTool(): ToolDefinition {
         return { success: false, output: '', error: 'Command is required', duration: 0, metadata: {} };
       }
 
+      const cleanEnv: Record<string, string> = {
+        PATH: process.env.PATH || '',
+        HOME: process.env.HOME || '',
+        USER: process.env.USER || '',
+        SHELL: process.env.SHELL || '',
+        NODE_ENV: process.env.NODE_ENV || 'test',
+        CI: 'true',
+      };
+
       try {
-        const output = execSync(command, {
+        const res = spawnSync(command, {
           cwd,
           encoding: 'utf-8',
           timeout,
           maxBuffer: 5_000_000,
-          env: { ...process.env, CI: 'true' },
+          env: cleanEnv,
+          shell: true,
         });
-        return { success: true, output: output.trim(), duration: 0, metadata: { command } };
+
+        const stdout = (res.stdout || '').trim();
+        const stderr = (res.stderr || '').trim();
+
+        if (res.error) {
+          return {
+            success: false,
+            output: stdout,
+            error: res.error.message,
+            duration: 0,
+            metadata: { command, exitCode: res.status ?? -1 },
+          };
+        }
+
+        if (res.status !== 0) {
+          return {
+            success: false,
+            output: stdout,
+            error: stderr || `Command exited with code ${res.status}`,
+            duration: 0,
+            metadata: { command, exitCode: res.status ?? -1 },
+          };
+        }
+
+        return { success: true, output: stdout, duration: 0, metadata: { command } };
       } catch (err: unknown) {
         const execErr = err as { stdout?: string; stderr?: string; status?: number; message?: string };
-        const stdout = execErr.stdout || '';
-        const stderr = execErr.stderr || '';
         return {
           success: false,
-          output: stdout,
-          error: stderr || execErr.message || 'Command failed',
+          output: execErr.stdout || '',
+          error: execErr.stderr || execErr.message || 'Command failed',
           duration: 0,
           metadata: { command, exitCode: execErr.status },
         };

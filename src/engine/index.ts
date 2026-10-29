@@ -16,6 +16,7 @@ export interface InvestigationOptions {
   skipTests?: boolean;
   verbose?: boolean;
   memoryMode?: MemoryMode;
+  abortSignal?: AbortSignal;
 }
 
 export class InvestigationEngine {
@@ -94,6 +95,12 @@ export class InvestigationEngine {
     const plan = createInvestigationPlan(options.objective, project);
 
     for (const step of plan.steps) {
+      if (options.abortSignal?.aborted) {
+        step.status = 'failed';
+        step.error = 'Investigation aborted by operator';
+        break;
+      }
+
       if (options.skipTests && step.toolName === 'run_command') {
         step.status = 'skipped';
         continue;

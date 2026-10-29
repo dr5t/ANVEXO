@@ -1,10 +1,12 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import * as path from 'node:path';
+import * as fs from 'node:fs';
 import {
   RateLimiter,
   JobManager,
   AnvexoServer,
   validatePathWithinRoot,
+  validateHostHeader,
   SecurityError,
 } from '../../src/server/index.js';
 
@@ -77,6 +79,34 @@ describe('Server & Security Infrastructure', () => {
         validatePathWithinRoot('', testRoot);
       }).toThrow(SecurityError);
     });
+
+    it('detects and blocks symlink escapes outside root', () => {
+      const tempDir = path.join(testRoot, 'scratch_symlink_test');
+      fs.mkdirSync(tempDir, { recursive: true });
+      const outsideFile = path.join(testRoot, 'package.json');
+      const symlinkPath = path.join(tempDir, 'link_to_outside');
+
+      try {
+        if (fs.existsSync(symlinkPath)) fs.unlinkSync(symlinkPath);
+        fs.symlinkSync(outsideFile, symlinkPath);
+
+        expect(() => {
+          validatePathWithinRoot('link_to_outside', tempDir);
+        }).toThrow(/Symlink escape detected/);
+      } finally {
+        if (fs.existsSync(symlinkPath)) fs.unlinkSync(symlinkPath);
+        if (fs.existsSync(tempDir)) fs.rmdirSync(tempDir);
+      }
+    });
+
+    it('validates allowed and forbidden Host headers', () => {
+      const fakeReq = (host: string) => ({ headers: { host } } as any);
+      expect(validateHostHeader(fakeReq('localhost:4173'), '127.0.0.1')).toBe(true);
+      expect(validateHostHeader(fakeReq('127.0.0.1:4173'), '127.0.0.1')).toBe(true);
+      expect(validateHostHeader(fakeReq('[::1]:4173'), '127.0.0.1')).toBe(true);
+      expect(validateHostHeader(fakeReq('evil.com:4173'), '127.0.0.1')).toBe(false);
+      expect(validateHostHeader(fakeReq('attacker-rebound.net'), '127.0.0.1')).toBe(false);
+    });
   });
 
   describe('JobManager & Concurrency Locks', () => {
@@ -129,13 +159,38 @@ describe('Server & Security Infrastructure', () => {
       expect(jm.getJob(job.id)?.status).toBe('completed');
     });
 
-    it('supports job cancellation', () => {
+    it('supports job cancellation and preserves cancelled status against late completion', () => {
       const job = jm.createJob(testRoot, 'Cancellable run');
       const cancelled = jm.cancelJob(job.id);
       expect(cancelled).toBe(true);
       expect(job.status).toBe('failed');
       expect(job.error).toContain('cancelled');
       expect(jm.isRepoLocked(testRoot)).toBe(false);
+
+      jm.markCompleted(job.id, {
+        id: job.id,
+        objective: 'Cancellable run',
+        repositoryPath: testRoot,
+        projectMetadata: {
+          rootPath: testRoot,
+          name: 'anvexo',
+          languages: [],
+          frameworks: [],
+          hasGit: true,
+          configFiles: [],
+          entryPoints: [],
+        },
+        plan: { objective: 'Cancellable run', steps: [], createdAt: new Date() },
+        evidence: [],
+        hypotheses: [],
+        findings: [],
+        limitations: [],
+        unverifiedClaims: [],
+        startedAt: new Date(),
+        completedAt: new Date(),
+      });
+
+      expect(jm.getJob(job.id)?.status).toBe('failed');
     });
   });
 
@@ -164,6 +219,42 @@ describe('Server & Security Infrastructure', () => {
       expect(data.platform).toBe('ANVEXO');
     });
 
+    it('rejects unauthorized Host headers with 400', async () => {
+      const res = await fetch(`${baseUrl}/api/health`, {
+        headers: { Host: 'evil.attacker.com' },
+      });
+      expect(res.status).toBe(400);
+      const data = await res.json();
+      expect(data.error).toContain('Invalid or forbidden Host header');
+    });
+
+    it('rejects cross-origin requests from unauthorized origins with 403', async () => {
+      const res = await fetch(`${baseUrl}/api/discover`, {
+        method: 'POST',
+        headers: {
+          Origin: 'http://malicious-website.com',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ path: testRoot }),
+      });
+      expect(res.status).toBe(403);
+      const data = await res.json();
+      expect(data.error).toContain('Cross-origin request rejected');
+    });
+
+    it('rejects non-JSON payload Content-Type with 415', async () => {
+      const res = await fetch(`${baseUrl}/api/discover`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'text/plain',
+        },
+        body: 'path=.',
+      });
+      expect(res.status).toBe(415);
+      const data = await res.json();
+      expect(data.error).toContain('application/json');
+    });
+
     it('serves /api/discover for repository', async () => {
       const res = await fetch(`${baseUrl}/api/discover`, {
         method: 'POST',
@@ -174,6 +265,17 @@ describe('Server & Security Infrastructure', () => {
       const data = await res.json();
       expect(data.name).toBe('anvexo');
       expect(data.languages).toContain('typescript');
+    });
+
+    it('serves file contents via /api/file and blocks directory traversal', async () => {
+      const okRes = await fetch(`${baseUrl}/api/file?repo=${encodeURIComponent(testRoot)}&path=package.json`);
+      expect(okRes.status).toBe(200);
+      const data = await okRes.json();
+      expect(data.path).toBe('package.json');
+      expect(data.content).toContain('anvexo');
+
+      const traversalRes = await fetch(`${baseUrl}/api/file?repo=${encodeURIComponent(testRoot)}&path=../../etc/passwd`);
+      expect(traversalRes.status).toBe(403);
     });
 
     it('rejects /api/discover for nonexistent paths', async () => {

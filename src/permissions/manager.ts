@@ -44,17 +44,35 @@ export class PermissionManager {
   async check(request: PermissionRequest): Promise<boolean> {
     const key = this.key(request.scope, request.resource);
     const wildcardKey = this.key(request.scope, '*');
-    const grant = this.grants.get(key) || this.grants.get(wildcardKey);
 
-    if (grant) {
+    let matchingKey: string | null = null;
+    if (this.grants.has(key)) {
+      matchingKey = key;
+    } else if (this.grants.has(wildcardKey)) {
+      matchingKey = wildcardKey;
+    } else {
+      for (const [k, g] of this.grants.entries()) {
+        if (g.scope === request.scope && g.resource.endsWith('*')) {
+          const prefix = g.resource.slice(0, -1);
+          if (request.resource.startsWith(prefix)) {
+            matchingKey = k;
+            break;
+          }
+        }
+      }
+    }
+
+    const grant = matchingKey ? this.grants.get(matchingKey) : undefined;
+
+    if (grant && matchingKey) {
       if (grant.expiresAt && grant.expiresAt < new Date()) {
-        this.grants.delete(key);
+        this.grants.delete(matchingKey);
       } else {
         const allowed = grant.decision === PermissionDecision.ALWAYS_ALLOW
           || grant.decision === PermissionDecision.ALLOW_ONCE;
 
         if (grant.decision === PermissionDecision.ALLOW_ONCE) {
-          this.grants.delete(key);
+          this.grants.delete(matchingKey);
         }
 
         this.logAudit(request, allowed ? PermissionDecision.ALLOW_ONCE : PermissionDecision.DENY);

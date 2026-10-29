@@ -1,7 +1,7 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { URL, fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, statSync } from 'node:fs';
 import { InvestigationEngine } from '../engine/index.js';
 import { discoverProject } from '../discovery/index.js';
 import { ContextManager } from '../context/index.js';
@@ -12,6 +12,8 @@ import {
   applySecurityHeaders,
   applyCorsHeaders,
   validateRepositoryExists,
+  validatePathWithinRoot,
+  validateHostHeader,
   SecurityError,
 } from './security.js';
 
@@ -20,9 +22,11 @@ export class ApiRouter {
   private jobManager: JobManager;
   private engine: InvestigationEngine;
   private contextManager: ContextManager;
+  private host: string;
 
-  constructor() {
-    this.rateLimiter = new RateLimiter({ windowMs: 60000, maxRequests: 120 });
+  constructor(host: string = '127.0.0.1') {
+    this.host = host;
+    this.rateLimiter = new RateLimiter({ windowMs: 60000, maxRequests: 300 });
     this.jobManager = new JobManager();
     this.engine = new InvestigationEngine();
     this.contextManager = new ContextManager();
@@ -38,12 +42,54 @@ export class ApiRouter {
 
   async handleRequest(req: IncomingMessage, res: ServerResponse): Promise<void> {
     applySecurityHeaders(res);
+
+    if (!validateHostHeader(req, this.host)) {
+      this.sendJson(res, 400, { error: 'Invalid or forbidden Host header' });
+      return;
+    }
+
     const corsAllowed = applyCorsHeaders(req, res);
 
     if (req.method === 'OPTIONS') {
       res.writeHead(corsAllowed ? 204 : 403);
       res.end();
       return;
+    }
+
+    if (req.headers.origin && !corsAllowed) {
+      this.sendJson(res, 403, { error: 'Cross-origin request rejected: unauthorized origin' });
+      return;
+    }
+
+    const host = req.headers.host || '127.0.0.1';
+    const parsedUrl = new URL(req.url || '/', `http://${host}`);
+    const pathname = parsedUrl.pathname;
+    const method = req.method || 'GET';
+
+    if (method === 'GET') {
+      if (pathname === '/' || pathname === '/index.html') {
+        const file = this.resolveUiFile('index.html');
+        if (file) {
+          this.sendFile(res, 200, 'text/html; charset=utf-8', file);
+          return;
+        }
+      }
+
+      if (pathname === '/styles.css') {
+        const file = this.resolveUiFile('styles.css');
+        if (file) {
+          this.sendFile(res, 200, 'text/css; charset=utf-8', file);
+          return;
+        }
+      }
+
+      if (pathname === '/app.js') {
+        const file = this.resolveUiFile('app.js');
+        if (file) {
+          this.sendFile(res, 200, 'application/javascript; charset=utf-8', file);
+          return;
+        }
+      }
     }
 
     const clientIp = req.socket.remoteAddress || '127.0.0.1';
@@ -57,38 +103,7 @@ export class ApiRouter {
       return;
     }
 
-    const host = req.headers.host || 'localhost';
-    const parsedUrl = new URL(req.url || '/', `http://${host}`);
-    const pathname = parsedUrl.pathname;
-    const method = req.method || 'GET';
-
     try {
-      if (method === 'GET') {
-        if (pathname === '/' || pathname === '/index.html') {
-          const file = this.resolveUiFile('index.html');
-          if (file) {
-            this.sendFile(res, 200, 'text/html; charset=utf-8', file);
-            return;
-          }
-        }
-
-        if (pathname === '/styles.css') {
-          const file = this.resolveUiFile('styles.css');
-          if (file) {
-            this.sendFile(res, 200, 'text/css; charset=utf-8', file);
-            return;
-          }
-        }
-
-        if (pathname === '/app.js') {
-          const file = this.resolveUiFile('app.js');
-          if (file) {
-            this.sendFile(res, 200, 'application/javascript; charset=utf-8', file);
-            return;
-          }
-        }
-      }
-
       if (method === 'GET' && pathname === '/api/health') {
         this.sendJson(res, 200, {
           status: 'ok',
@@ -130,6 +145,7 @@ export class ApiRouter {
           repositoryPath: validatedPath,
           autoApprove: Boolean(body.autoApprove ?? true),
           skipTests: Boolean(body.skipTests ?? false),
+          abortSignal: job.abortController.signal,
         }).then(report => {
           this.jobManager.markCompleted(job.id, report);
         }).catch(err => {
@@ -191,6 +207,37 @@ export class ApiRouter {
           return;
         }
         this.sendJson(res, 200, { message: `Job ${id} cancelled successfully` });
+        return;
+      }
+
+      if (method === 'GET' && pathname === '/api/file') {
+        const repo = parsedUrl.searchParams.get('repo');
+        const filePath = parsedUrl.searchParams.get('path');
+        if (!repo || !filePath) {
+          this.sendJson(res, 400, { error: 'repo and path query parameters are required' });
+          return;
+        }
+        const validatedRepo = validateRepositoryExists(repo);
+        const validatedFile = validatePathWithinRoot(filePath, validatedRepo);
+        if (!existsSync(validatedFile)) {
+          this.sendJson(res, 404, { error: `File not found: ${filePath}` });
+          return;
+        }
+        const stat = statSync(validatedFile);
+        if (stat.isDirectory()) {
+          this.sendJson(res, 400, { error: `Path is a directory: ${filePath}` });
+          return;
+        }
+        if (stat.size > 1_048_576) {
+          this.sendJson(res, 413, { error: 'File too large to display (exceeds 1MB)' });
+          return;
+        }
+        const content = readFileSync(validatedFile, 'utf-8');
+        this.sendJson(res, 200, {
+          path: filePath,
+          size: stat.size,
+          content,
+        });
         return;
       }
 
@@ -258,7 +305,7 @@ export class ApiRouter {
       } else {
         const msg = err instanceof Error ? err.message : 'Internal Server Error';
         logger.error('router', `Unhandled error on ${method} ${pathname}: ${msg}`);
-        this.sendJson(res, 500, { error: msg });
+        this.sendJson(res, 500, { error: 'Internal server error' });
       }
     }
   }
@@ -273,6 +320,11 @@ export class ApiRouter {
   }
 
   private async readJsonBody(req: IncomingMessage, maxBytes: number = 1_048_576): Promise<Record<string, unknown>> {
+    const contentType = req.headers['content-type'] || '';
+    if (contentType && !contentType.toLowerCase().includes('application/json')) {
+      throw new SecurityError('Content-Type must be application/json', 415);
+    }
+
     return new Promise((resolve, reject) => {
       let size = 0;
       const chunks: Buffer[] = [];

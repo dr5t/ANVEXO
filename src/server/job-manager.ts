@@ -68,6 +68,11 @@ export class JobManager {
   markCompleted(id: string, report: InvestigationReport): void {
     const job = this.jobs.get(id);
     if (job) {
+      if (job.status === 'failed' || job.status === 'cancelling') {
+        job.report = report;
+        this.repoLocks.delete(job.repositoryPath);
+        return;
+      }
       job.status = 'completed';
       job.completedAt = new Date();
       job.report = report;
@@ -80,6 +85,10 @@ export class JobManager {
   markFailed(id: string, error: string): void {
     const job = this.jobs.get(id);
     if (job) {
+      if (job.status === 'failed' && job.error?.includes('cancelled')) {
+        this.repoLocks.delete(job.repositoryPath);
+        return;
+      }
       job.status = 'failed';
       job.completedAt = new Date();
       job.error = error;

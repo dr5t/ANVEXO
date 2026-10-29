@@ -158,15 +158,16 @@ async function viewFile(fileName) {
   switchTab('code');
 
   try {
-    const res = await fetch('/api/context?path=' + encodeURIComponent(repoPath));
+    const res = await fetch(`/api/file?repo=${encodeURIComponent(repoPath)}&path=${encodeURIComponent(fileName)}`);
     if (res.ok) {
-      const ctx = await res.json();
-      editor.innerText = `File: ${fileName}\nRepository: ${repoPath}\n\nTracked Dependencies:\n${JSON.stringify(ctx.dependencies, null, 2)}`;
+      const data = await res.json();
+      editor.innerText = data.content;
     } else {
-      editor.innerText = `Viewing reference for ${fileName} in ${repoPath}`;
+      const err = await res.json();
+      editor.innerText = `Could not display ${fileName}: ${err.error}`;
     }
-  } catch {
-    editor.innerText = `Viewing reference for ${fileName}`;
+  } catch (err) {
+    editor.innerText = `Failed to load ${fileName}: ${err.message}`;
   }
 }
 
@@ -247,7 +248,7 @@ function startPolling(jobId) {
         onJobFailed(job);
       }
     } catch {}
-  }, 300);
+  }, 1000);
 }
 
 function renderPlanSteps(steps) {

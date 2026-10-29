@@ -145,4 +145,42 @@ describe('PermissionManager', () => {
     });
     expect(writeAllowed).toBe(false);
   });
+
+  it('wildcard ALLOW_ONCE is consumed after first use and does not persist', async () => {
+    pm.grant(PermissionScope.FILE_READ, '*', PermissionDecision.ALLOW_ONCE);
+    const first = await pm.check({
+      scope: PermissionScope.FILE_READ,
+      resource: '/first/path',
+      description: 'test',
+      risk: 'low',
+    });
+    expect(first).toBe(true);
+
+    const second = await pm.check({
+      scope: PermissionScope.FILE_READ,
+      resource: '/second/path',
+      description: 'test',
+      risk: 'low',
+    });
+    expect(second).toBe(false);
+  });
+
+  it('supports prefix wildcard grants', async () => {
+    pm.grant(PermissionScope.FILE_READ, 'src/*', PermissionDecision.ALWAYS_ALLOW);
+    const match = await pm.check({
+      scope: PermissionScope.FILE_READ,
+      resource: 'src/index.ts',
+      description: 'test',
+      risk: 'low',
+    });
+    expect(match).toBe(true);
+
+    const noMatch = await pm.check({
+      scope: PermissionScope.FILE_READ,
+      resource: 'docs/index.md',
+      description: 'test',
+      risk: 'low',
+    });
+    expect(noMatch).toBe(false);
+  });
 });
