@@ -83,4 +83,13 @@ describe('ToolRegistry', () => {
     expect(result.success).toBe(true);
     expect(result.output).toContain('hello');
   });
+
+  it('file_search safely treats shell metacharacters and backticks as literal text', async () => {
+    pm.grant(PermissionScope.FILE_READ, '*', PermissionDecision.ALWAYS_ALLOW);
+    const result = await registry.execute('file_search', {
+      path: process.cwd(),
+      pattern: '`echo INJECTED_TEST`',
+    });
+    expect(result.success).toBe(true);
+  });
 });

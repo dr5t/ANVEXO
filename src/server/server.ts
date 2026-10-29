@@ -14,7 +14,7 @@ export class AnvexoServer {
   private host: string;
 
   constructor(config: ServerConfig = {}) {
-    this.port = config.port || 4173;
+    this.port = typeof config.port === 'number' ? config.port : 4173;
     this.host = config.host || '127.0.0.1';
     this.router = new ApiRouter(this.host);
   }

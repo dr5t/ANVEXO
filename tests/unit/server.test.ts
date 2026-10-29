@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import * as path from 'node:path';
 import * as fs from 'node:fs';
+import * as http from 'node:http';
 import {
   RateLimiter,
   JobManager,
@@ -9,6 +10,25 @@ import {
   validateHostHeader,
   SecurityError,
 } from '../../src/server/index.js';
+
+function makeRawRequest(url: string, headers: Record<string, string>): Promise<{ status: number; body: string }> {
+  return new Promise((resolve, reject) => {
+    const parsed = new URL(url);
+    const req = http.request({
+      hostname: parsed.hostname,
+      port: parsed.port,
+      path: parsed.pathname + parsed.search,
+      method: 'GET',
+      headers,
+    }, (res) => {
+      let body = '';
+      res.on('data', chunk => { body += chunk; });
+      res.on('end', () => resolve({ status: res.statusCode || 0, body }));
+    });
+    req.on('error', reject);
+    req.end();
+  });
+}
 
 describe('Server & Security Infrastructure', () => {
   const testRoot = path.resolve(process.cwd());
@@ -220,11 +240,9 @@ describe('Server & Security Infrastructure', () => {
     });
 
     it('rejects unauthorized Host headers with 400', async () => {
-      const res = await fetch(`${baseUrl}/api/health`, {
-        headers: { Host: 'evil.attacker.com' },
-      });
+      const res = await makeRawRequest(`${baseUrl}/api/health`, { Host: 'evil.attacker.com' });
       expect(res.status).toBe(400);
-      const data = await res.json();
+      const data = JSON.parse(res.body);
       expect(data.error).toContain('Invalid or forbidden Host header');
     });
 
