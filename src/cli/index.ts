@@ -129,4 +129,23 @@ contextCmd
     process.stdout.write(`Cleared project memory for ${repoPath}\n`);
   });
 
+program
+  .command('serve')
+  .description('Start the local ANVEXO API server and workbench')
+  .option('-p, --port <port>', 'Port number to listen on', '4173')
+  .option('-h, --host <host>', 'Host address to bind', '127.0.0.1')
+  .action(async (opts: { port: string; host: string }) => {
+    const { AnvexoServer } = await import('../server/index.js');
+    const server = new AnvexoServer({
+      port: parseInt(opts.port, 10),
+      host: opts.host,
+    });
+    const { url } = await server.start();
+    process.stdout.write(`ANVEXO Workbench server running at ${url}\n`);
+    process.on('SIGINT', async () => {
+      await server.stop();
+      process.exit(0);
+    });
+  });
+
 program.parse();

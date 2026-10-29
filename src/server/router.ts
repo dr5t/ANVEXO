@@ -1,5 +1,7 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import { URL } from 'node:url';
+import { URL, fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
+import { existsSync, readFileSync } from 'node:fs';
 import { InvestigationEngine } from '../engine/index.js';
 import { discoverProject } from '../discovery/index.js';
 import { ContextManager } from '../context/index.js';
@@ -61,6 +63,32 @@ export class ApiRouter {
     const method = req.method || 'GET';
 
     try {
+      if (method === 'GET') {
+        if (pathname === '/' || pathname === '/index.html') {
+          const file = this.resolveUiFile('index.html');
+          if (file) {
+            this.sendFile(res, 200, 'text/html; charset=utf-8', file);
+            return;
+          }
+        }
+
+        if (pathname === '/styles.css') {
+          const file = this.resolveUiFile('styles.css');
+          if (file) {
+            this.sendFile(res, 200, 'text/css; charset=utf-8', file);
+            return;
+          }
+        }
+
+        if (pathname === '/app.js') {
+          const file = this.resolveUiFile('app.js');
+          if (file) {
+            this.sendFile(res, 200, 'application/javascript; charset=utf-8', file);
+            return;
+          }
+        }
+      }
+
       if (method === 'GET' && pathname === '/api/health') {
         this.sendJson(res, 200, {
           status: 'ok',
@@ -274,5 +302,31 @@ export class ApiRouter {
 
       req.on('error', reject);
     });
+  }
+
+  private resolveUiFile(name: string): string | null {
+    const currentDir = dirname(fileURLToPath(import.meta.url));
+    const candidates = [
+      join(currentDir, 'ui', name),
+      join(currentDir, '../../src/server/ui', name),
+      join(process.cwd(), 'src/server/ui', name),
+      join(process.cwd(), 'dist/server/ui', name),
+    ];
+    for (const candidate of candidates) {
+      if (existsSync(candidate)) {
+        return candidate;
+      }
+    }
+    return null;
+  }
+
+  private sendFile(res: ServerResponse, status: number, contentType: string, filePath: string): void {
+    const content = readFileSync(filePath);
+    res.writeHead(status, {
+      'Content-Type': contentType,
+      'Content-Length': content.length,
+      'Cache-Control': 'no-cache',
+    });
+    res.end(content);
   }
 }

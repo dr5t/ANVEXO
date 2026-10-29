@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ANVEXO | Autonomous Investigation & Codebase Intelligence</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <svg class="brand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+        <polyline points="2 17 12 22 22 17"></polyline>
+        <polyline points="2 12 12 17 22 12"></polyline>
+      </svg>
+      <span>ANVEXO</span>
+    </div>
+
+    <div class="header-center">
+      <div class="path-input-wrapper">
+        <svg class="path-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+        </svg>
+        <input type="text" id="pathInput" class="path-input" value="." placeholder="Target repository path..." aria-label="Target repository path" spellcheck="false">
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <div id="statusBadge" class="badge badge-status">
+        <span id="statusDot" class="status-dot idle" aria-hidden="true"></span>
+        <span>READY</span>
+      </div>
+      <button id="cancelBtn" class="btn" style="display: none;" aria-label="Cancel active investigation">
+        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="15" y1="9" x2="9" y2="15"></line>
+          <line x1="9" y1="9" x2="15" y2="15"></line>
+        </svg>
+        <span>Cancel</span>
+      </button>
+      <button id="runBtn" class="btn btn-primary" aria-label="Trigger autonomous investigation">
+        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <polygon points="5 3 19 12 5 21 5 3"></polygon>
+        </svg>
+        <span>Investigate</span>
+      </button>
+    </div>
+  </header>
+
+  <main id="workbench" class="workbench">
+    <section id="paneLeft" class="pane-left" aria-label="Investigation Controls and Plan">
+      <div class="objective-box">
+        <textarea id="objectiveInput" class="objective-input" placeholder="State investigation objective, bug symptoms, or hypothesis..." aria-label="Investigation objective" spellcheck="false"></textarea>
+        <div class="objective-footer">
+          <span>Cmd+Enter to trigger</span>
+          <span class="badge">ECHO MEMORY MODE B</span>
+        </div>
+      </div>
+
+      <div class="section-header">
+        <span>Execution Plan</span>
+        <span class="badge">DAG Status</span>
+      </div>
+
+      <div class="section-body">
+        <div id="timelineContainer" class="timeline">
+          <div class="empty-state">
+            <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="3" y1="9" x2="21" y2="9"></line>
+              <line x1="9" y1="21" x2="9" y2="9"></line>
+            </svg>
+            <div>No active plan. Enter an objective and run.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div id="paneResizer" class="pane-resizer" role="separator" aria-orientation="vertical" tabindex="0" aria-label="Resize panels"></div>
+
+    <section id="paneRight" class="pane-right" aria-label="Inspection Workspace">
+      <nav class="tabs" aria-label="Workspace tabs">
+        <button class="tab-btn active" data-tab="report" aria-label="Report and Findings tab">
+          <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+            <polyline points="10 9 9 9 8 9"></polyline>
+          </svg>
+          <span>Report & Findings</span>
+        </button>
+        <button class="tab-btn" data-tab="code" aria-label="Code and Topography tab">
+          <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polyline points="16 18 22 12 16 6"></polyline>
+            <polyline points="8 6 2 12 8 18"></polyline>
+          </svg>
+          <span>Code & Topography</span>
+        </button>
+        <button class="tab-btn" data-tab="console" aria-label="Tool Console tab">
+          <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polyline points="4 17 10 11 4 5"></polyline>
+            <line x1="12" y1="19" x2="20" y2="19"></line>
+          </svg>
+          <span>Tool Console</span>
+        </button>
+        <button class="tab-btn" data-tab="git" aria-label="Git Evidence tab">
+          <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="18" cy="18" r="3"></circle>
+            <circle cx="6" cy="6" r="3"></circle>
+            <path d="M13 6h3a2 2 0 0 1 2 2v7"></path>
+            <line x1="6" y1="9" x2="6" y2="21"></line>
+          </svg>
+          <span>Git Evidence</span>
+        </button>
+      </nav>
+
+      <div id="tab-report" class="tab-content active report-view" role="tabpanel">
+        <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+          <button id="copyReportBtn" class="btn" aria-label="Copy plain text report to clipboard">Copy Report</button>
+          <button id="exportJsonBtn" class="btn" aria-label="Export complete investigation JSON">Export JSON</button>
+        </div>
+        <div id="reportContainer">
+          <div class="empty-state">
+            <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M9 11l3 3L22 4"></path>
+              <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+            </svg>
+            <div>No investigation executed yet. Specify repository and click Investigate.</div>
+          </div>
+        </div>
+      </div>
+
+      <div id="tab-code" class="tab-content" role="tabpanel">
+        <div class="code-view">
+          <aside class="code-sidebar">
+            <div style="padding: 6px 12px; font-family: var(--font-mono); font-size: 11px; text-transform: uppercase; color: var(--text-muted); border-bottom: 1px solid var(--border-hairline);">Discovered Files</div>
+            <div id="fileList"></div>
+          </aside>
+          <pre id="codeEditor" class="code-editor" tabindex="0">Select a discovered file from the sidebar to inspect topography and dependency links.</pre>
+        </div>
+      </div>
+
+      <div id="tab-console" class="tab-content" role="tabpanel">
+        <pre id="terminalView" class="terminal-view" tabindex="0">ANVEXO Engine Tool Console v0.1.0&#10;Ready for autonomous execution.</pre>
+      </div>
+
+      <div id="tab-git" class="tab-content report-view" role="tabpanel">
+        <div id="gitView">
+          <div class="empty-state">
+            <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            <div>No Git evidence recorded. Investigations will capture status, diffs, and log commits.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="footer-left">
+      <span>Repository: <strong id="footerRepo" style="color: var(--text-primary);">-</strong></span>
+      <span>Stack: <span id="footerStack">-</span></span>
+    </div>
+    <div class="footer-right">
+      <span>Architecture: <span style="color: var(--status-pass);">LOCAL-FIRST</span></span>
+      <span>Telemetry: <span style="color: var(--text-muted);">ZERO-DATA-COLLECTION</span></span>
+    </div>
+  </footer>
+
+  <script src="/app.js"></script>
+</body>
+</html>

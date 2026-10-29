@@ -9,7 +9,7 @@
     "anvexo": "dist/cli/index.js"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && node -e \"const fs=require('fs'); fs.mkdirSync('dist/server/ui', {recursive:true}); fs.cpSync('src/server/ui', 'dist/server/ui', {recursive:true});\"",
     "dev": "tsc --watch",
     "test": "vitest run",
     "test:watch": "vitest",
