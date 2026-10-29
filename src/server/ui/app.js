@@ -23,9 +23,13 @@ const FONT_MAP = {
 
 const VALID_THEMES = [
   'obsidian-slate',
+  'graphite',
+  'midnight',
+  'light',
+  'solarized-dark',
+  'solarized-light',
   'midnight-graphite',
   'nord',
-  'solarized-dark',
   'light-studio',
   'high-contrast',
 ];
@@ -690,6 +694,72 @@ function initSettingsModal() {
     });
   }
 
+  const memSelect = document.getElementById('memoryModeSelect');
+  if (memSelect) {
+    memSelect.addEventListener('change', async () => {
+      try {
+        const res = await fetch('/api/context/mode', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ mode: memSelect.value }),
+        });
+        const data = await res.json();
+        appendTelemetryLog(`[MEMORY] Mode updated: ${data.mode || memSelect.value}`);
+      } catch (err) {
+        appendTelemetryLog(`[MEMORY] Error updating mode: ${err.message}`);
+      }
+    });
+  }
+
+  const rebuildBtn = document.getElementById('btnRebuildContext');
+  if (rebuildBtn) {
+    rebuildBtn.addEventListener('click', async () => {
+      const pathInput = document.getElementById('pathInput');
+      const p = (pathInput && pathInput.value.trim()) || '.';
+      rebuildBtn.disabled = true;
+      rebuildBtn.innerText = 'Rebuilding...';
+      try {
+        const res = await fetch('/api/context/rebuild', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ path: p }),
+        });
+        appendTelemetryLog(`[CONTEXT] Rebuilt ECHO index for ${p}`);
+        await refreshMemoryStats();
+      } catch (err) {
+        appendTelemetryLog(`[CONTEXT] Rebuild failed: ${err.message}`);
+      } finally {
+        rebuildBtn.disabled = false;
+        rebuildBtn.innerText = 'Rebuild Index';
+      }
+    });
+  }
+
+  const clearBtn = document.getElementById('btnClearMemory');
+  if (clearBtn) {
+    clearBtn.addEventListener('click', async () => {
+      if (!confirm('Clear all stored architectural context and investigation memory for this repository?')) return;
+      const pathInput = document.getElementById('pathInput');
+      const p = (pathInput && pathInput.value.trim()) || '.';
+      clearBtn.disabled = true;
+      clearBtn.innerText = 'Clearing...';
+      try {
+        await fetch('/api/context/clear', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ path: p }),
+        });
+        appendTelemetryLog(`[CONTEXT] Cleared stored memory for ${p}`);
+        await refreshMemoryStats();
+      } catch (err) {
+        appendTelemetryLog(`[CONTEXT] Clear failed: ${err.message}`);
+      } finally {
+        clearBtn.disabled = false;
+        clearBtn.innerText = 'Clear Memory';
+      }
+    });
+  }
+
   if (searchInput) {
     searchInput.addEventListener('input', () => {
       const q = searchInput.value.trim().toLowerCase();
@@ -705,10 +775,35 @@ function initSettingsModal() {
   }
 }
 
+async function refreshMemoryStats() {
+  const statsHint = document.getElementById('memoryStatsHint');
+  const memSelect = document.getElementById('memoryModeSelect');
+  const pathInput = document.getElementById('pathInput');
+  const p = (pathInput && pathInput.value.trim()) || '.';
+  try {
+    const res = await fetch(`/api/context?path=${encodeURIComponent(p)}`);
+    if (!res.ok) return;
+    const data = await res.json();
+    if (memSelect && data.mode) {
+      memSelect.value = data.mode;
+    }
+    if (statsHint) {
+      const depsCount = Object.keys(data.dependencies || {}).length;
+      const pastCount = (data.historicalInvestigations || []).length;
+      const bugsCount = (data.knownBugs || []).length;
+      const lastCommit = data.lastCommitHash ? data.lastCommitHash.slice(0, 7) : 'none';
+      statsHint.innerText = `${depsCount} dependencies indexed, ${pastCount} past investigations, ${bugsCount} known bugs. Head: ${lastCommit}`;
+    }
+  } catch (e) {
+    if (statsHint) statsHint.innerText = 'Local-first memory active. Storage ready.';
+  }
+}
+
 function openSettingsModal() {
   const overlay = document.getElementById('settingsModalOverlay');
   if (overlay) {
     syncModalControls(currentSettings);
+    refreshMemoryStats();
     overlay.classList.add('open');
   }
 }

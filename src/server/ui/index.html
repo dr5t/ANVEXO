@@ -25,7 +25,7 @@
     </div>
 
     <div class="header-actions">
-      <span id="testCounterChip" class="badge">109/109 TESTS</span>
+      <span id="testCounterChip" class="badge">145/145 TESTS</span>
       <div id="statusBadge" class="badge badge-status">
         <span id="statusDot" class="status-dot idle" aria-hidden="true"></span>
         <span id="statusText">READY</span>
@@ -334,7 +334,7 @@
     </div>
     <div class="footer-right">
       <span>ARCHITECTURE: <span class="footer-success">LOCAL-FIRST</span></span>
-      <span>TESTS: <span class="footer-success">109/109 PASSING</span></span>
+      <span>TESTS: <span class="footer-success">145/145 PASSING</span></span>
     </div>
   </footer>
 
@@ -392,6 +392,15 @@
             </svg>
             <span>General &amp; Shortcuts</span>
           </button>
+          <button class="settings-nav-btn" data-cat="memory">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
+              <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
+              <line x1="6" y1="6" x2="6.01" y2="6"></line>
+              <line x1="6" y1="18" x2="6.01" y2="18"></line>
+            </svg>
+            <span>Memory &amp; Privacy</span>
+          </button>
           <button class="settings-nav-btn" data-cat="about">
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
@@ -423,10 +432,23 @@
                 </div>
               </div>
 
-              <div class="theme-card" data-theme-choice="midnight-graphite">
+              <div class="theme-card" data-theme-choice="graphite">
                 <div class="theme-card-top">
-                  <span class="theme-card-name">Midnight Graphite</span>
+                  <span class="theme-card-name">Graphite</span>
                   <span class="theme-card-badge">DARK</span>
+                </div>
+                <div class="theme-swatches">
+                  <div class="theme-swatch" style="background: #141618;"></div>
+                  <div class="theme-swatch" style="background: #22262B;"></div>
+                  <div class="theme-swatch" style="background: #2A2F36;"></div>
+                  <div class="theme-swatch" style="background: #E54D2E;"></div>
+                </div>
+              </div>
+
+              <div class="theme-card" data-theme-choice="midnight">
+                <div class="theme-card-top">
+                  <span class="theme-card-name">Midnight</span>
+                  <span class="theme-card-badge">NIGHT</span>
                 </div>
                 <div class="theme-swatches">
                   <div class="theme-swatch" style="background: #08090A;"></div>
@@ -436,16 +458,16 @@
                 </div>
               </div>
 
-              <div class="theme-card" data-theme-choice="nord">
+              <div class="theme-card" data-theme-choice="light">
                 <div class="theme-card-top">
-                  <span class="theme-card-name">Nord</span>
-                  <span class="theme-card-badge">ARCTIC</span>
+                  <span class="theme-card-name">Light</span>
+                  <span class="theme-card-badge">CLEAN</span>
                 </div>
                 <div class="theme-swatches">
-                  <div class="theme-swatch" style="background: #2E3440;"></div>
-                  <div class="theme-swatch" style="background: #434C5E;"></div>
-                  <div class="theme-swatch" style="background: #88C0D0;"></div>
-                  <div class="theme-swatch" style="background: #A3BE8C;"></div>
+                  <div class="theme-swatch" style="background: #FFFFFF;"></div>
+                  <div class="theme-swatch" style="background: #F6F8FA;"></div>
+                  <div class="theme-swatch" style="background: #D0D7DE;"></div>
+                  <div class="theme-swatch" style="background: #CF222E;"></div>
                 </div>
               </div>
 
@@ -462,29 +484,16 @@
                 </div>
               </div>
 
-              <div class="theme-card" data-theme-choice="light-studio">
+              <div class="theme-card" data-theme-choice="solarized-light">
                 <div class="theme-card-top">
-                  <span class="theme-card-name">Light Studio</span>
-                  <span class="theme-card-badge">CLEAN</span>
+                  <span class="theme-card-name">Solarized Light</span>
+                  <span class="theme-card-badge">WARM</span>
                 </div>
                 <div class="theme-swatches">
-                  <div class="theme-swatch" style="background: #FFFFFF;"></div>
-                  <div class="theme-swatch" style="background: #F6F8FA;"></div>
-                  <div class="theme-swatch" style="background: #D0D7DE;"></div>
-                  <div class="theme-swatch" style="background: #CF222E;"></div>
-                </div>
-              </div>
-
-              <div class="theme-card" data-theme-choice="high-contrast">
-                <div class="theme-card-top">
-                  <span class="theme-card-name">High Contrast</span>
-                  <span class="theme-card-badge">A11Y</span>
-                </div>
-                <div class="theme-swatches">
-                  <div class="theme-swatch" style="background: #000000;"></div>
-                  <div class="theme-swatch" style="background: #1A1A1A;"></div>
-                  <div class="theme-swatch" style="background: #6E7681;"></div>
-                  <div class="theme-swatch" style="background: #F2CC60;"></div>
+                  <div class="theme-swatch" style="background: #FDF6E3;"></div>
+                  <div class="theme-swatch" style="background: #EEE8D5;"></div>
+                  <div class="theme-swatch" style="background: #268BD2;"></div>
+                  <div class="theme-swatch" style="background: #CB4B16;"></div>
                 </div>
               </div>
             </div>
@@ -689,6 +698,55 @@
             </div>
           </div>
 
+          <div id="cat-memory" class="settings-category" data-search-scope="memory storage persistence context cache privacy clear rebuild">
+            <div class="settings-group">
+              <div class="settings-group-title">Memory &amp; Architectural Context (ECHO)</div>
+              <div class="settings-group-desc">Configure local-first persistent memory, repository context boundaries, and investigation history.</div>
+            </div>
+
+            <div class="setting-row">
+              <div class="setting-info">
+                <div class="setting-label">Memory Persistence Mode</div>
+                <div class="setting-hint">Controls how ANVESHAN and ECHO store historical investigations, known bugs, and dependency graphs.</div>
+              </div>
+              <div class="setting-control">
+                <select id="memoryModeSelect" class="form-select">
+                  <option value="mode_a_zero_persistent">Mode A: Ephemeral / Zero-Persistent</option>
+                  <option value="mode_b_local_context">Mode B: Local Repository Context (.anvexo)</option>
+                  <option value="mode_c_persistent_intelligence" selected>Mode C: Persistent Intelligence (Recommended)</option>
+                  <option value="mode_d_user_cloud">Mode D: User-Controlled Cloud Storage</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="setting-row">
+              <div class="setting-info">
+                <div class="setting-label">Stored Architectural Context</div>
+                <div class="setting-hint" id="memoryStatsHint">Loading context statistics...</div>
+              </div>
+              <div class="setting-control" style="display: flex; gap: 8px;">
+                <button type="button" id="btnRebuildContext" class="btn btn-secondary" style="font-size: 11.5px; padding: 4px 10px;">
+                  Rebuild Index
+                </button>
+                <button type="button" id="btnClearMemory" class="btn btn-danger" style="font-size: 11.5px; padding: 4px 10px;">
+                  Clear Memory
+                </button>
+              </div>
+            </div>
+
+            <div class="setting-row">
+              <div class="setting-info">
+                <div class="setting-label">Privacy &amp; Data Boundary Controls</div>
+                <div class="setting-hint">Local-first guarantee: Code context and secrets are never transmitted to external providers without explicit approval.</div>
+              </div>
+              <div class="setting-control">
+                <span class="badge" style="background: var(--status-pass-subtle); color: var(--status-pass); border: 1px solid var(--status-pass-border); font-size: 11px; padding: 2px 8px; border-radius: 4px;">
+                  LOCAL-FIRST ACTIVE
+                </span>
+              </div>
+            </div>
+          </div>
+
           <div id="cat-about" class="settings-category" data-search-scope="about version license architecture security anvexo">
             <div class="about-card">
               <div class="about-header">
@@ -703,7 +761,7 @@
               </div>
               <div class="about-meta-row">
                 <span>Security Sandbox: <strong>127.0.0.1:4173 (Verified)</strong></span>
-                <span>Automated Tests: <strong>109/109 Passing (100%)</strong></span>
+                <span>Automated Tests: <strong>145/145 Passing (100%)</strong></span>
                 <span>Node.js: <strong>&gt;=20.0.0</strong></span>
                 <span>License: <strong>UNLICENSED (Proprietary)</strong></span>
               </div>

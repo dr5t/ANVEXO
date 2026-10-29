@@ -8,6 +8,7 @@ import type {
   CompletionRequest,
   ModelProvider,
   ToolDefinition,
+  ToolResult,
 } from '../core/types.js';
 import { PermissionScope, logger } from '../core/index.js';
 import type { PermissionManager } from '../permissions/index.js';
@@ -294,7 +295,18 @@ export class AgentRuntime {
           ...call.arguments,
         };
 
-        const result = await this.tools.execute(call.name, argsWithWorkspace);
+        let result: ToolResult;
+        try {
+          result = await this.tools.execute(call.name, argsWithWorkspace);
+        } catch (err: unknown) {
+          result = {
+            success: false,
+            output: '',
+            error: err instanceof Error ? err.message : String(err),
+            duration: 0,
+            metadata: {},
+          };
+        }
 
         const resultContent = result.success
           ? result.output

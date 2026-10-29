@@ -1,60 +1,60 @@
 # ANVEXO Developer Ecosystem Implementation Checklist
 
 ## P0: Shared Core and Infrastructure
-- [x] Baseline repository and test verification (109/109 tests passing)
-- [ ] User and project configuration engine (src/core/config.ts)
-- [ ] Model provider abstraction layer (src/providers/)
-  - [ ] ModelProvider interface and types
-  - [ ] Anthropic provider adapter
-  - [ ] OpenAI provider adapter
-  - [ ] Gemini provider adapter
-  - [ ] Ollama local provider adapter
-  - [ ] Local heuristic / offline agent provider
-- [ ] Central permission and policy engine extension (src/permissions/)
-  - [ ] Granular scopes (file:read, file:write, file:delete, command:execute, git:read, git:write, test:run, network, plugin:install, plugin:execute, mcp:connect)
-  - [ ] Path canonicalization and symlink containment
-  - [ ] Real-time audit log
-- [ ] Skills engine and SKILL.md system (src/skills/)
-  - [ ] SKILL.md specification and parser
-  - [ ] Discovery in project (.anvexo/skills) and user (~/.anvexo/skills)
-  - [ ] Built-in core skills
-- [ ] Rules engine (src/rules/)
-  - [ ] Multi-scope rule discovery (system, workspace, user)
-  - [ ] Deterministic precedence resolution
-- [ ] Plugin system (src/plugins/)
-  - [ ] Manifest validation (anvexo-plugin.json)
-  - [ ] Capability sandboxing and lifecycle
-- [ ] MCP client integration (src/mcp/)
-  - [ ] Stdio and HTTP transport adapter
-  - [ ] Dynamic tool registry conversion
-- [ ] Commands system (src/commands/)
-  - [ ] Slash command dispatcher (/help, /status, /model, /plan, /investigate, /test, /diff, /skills, /rules, /plugins, /doctor)
-- [ ] Interactive agent runtime (src/agent/)
-  - [ ] Bounded multi-step execution loop
-  - [ ] Plan mode and approval gates
-  - [ ] Session persistence
+- [x] Baseline repository and test verification (145/145 tests passing across 20 suites)
+- [x] User and project configuration engine (src/core/config.ts)
+- [x] Model provider abstraction layer (src/providers/)
+  - [x] ModelProvider interface and types
+  - [x] Anthropic provider adapter
+  - [x] OpenAI provider adapter
+  - [x] Gemini provider adapter
+  - [x] Ollama local provider adapter
+  - [x] Local heuristic / offline agent provider
+- [x] Central permission and policy engine extension (src/permissions/)
+  - [x] Granular scopes (file:read, file:write, file:delete, command:execute, git:read, git:write, test:run, network, plugin:install, plugin:execute, mcp:connect)
+  - [x] Path canonicalization and symlink containment
+  - [x] Real-time audit log
+- [x] Skills engine and SKILL.md system (src/skills/)
+  - [x] SKILL.md specification and parser
+  - [x] Discovery in project (.anvexo/skills) and user (~/.anvexo/skills)
+  - [x] Built-in core skills
+- [x] Rules engine (src/rules/)
+  - [x] Multi-scope rule discovery (system, workspace, user)
+  - [x] Deterministic precedence resolution
+- [x] Plugin system (src/plugins/)
+  - [x] Manifest validation (anvexo-plugin.json)
+  - [x] Capability sandboxing and lifecycle
+- [x] MCP client integration (src/mcp/)
+  - [x] Stdio and HTTP transport adapter
+  - [x] Dynamic tool registry conversion
+- [x] Commands system (src/commands/)
+  - [x] Slash command dispatcher (/help, /status, /model, /plan, /investigate, /test, /diff, /skills, /rules, /plugins, /doctor)
+- [x] Interactive agent runtime (src/agent/)
+  - [x] Bounded multi-step execution loop
+  - [x] Plan mode and approval gates
+  - [x] Session persistence
 
 ## P1: Terminal CLI Evolution
-- [ ] anvexo doctor command
-- [ ] anvexo init command
-- [ ] anvexo config command
-- [ ] anvexo skills command
-- [ ] anvexo rules command
-- [ ] anvexo plugins command
-- [ ] anvexo mcp command
-- [ ] anvexo agent / chat interactive mode
-- [ ] anvexo investigate (preserved and integrated)
+- [x] anvexo doctor command
+- [x] anvexo init command
+- [x] anvexo config command
+- [x] anvexo skills command
+- [x] anvexo rules command
+- [x] anvexo plugins command
+- [x] anvexo mcp command
+- [x] anvexo agent / chat interactive mode
+- [x] anvexo investigate (preserved and integrated)
 
 ## P2: Desktop IDE Expansion
-- [ ] Real filesystem project explorer (file open, tree navigation, file create/rename/delete)
-- [ ] Real code editor (syntax, lines, tabs, dirty indicators, save)
-- [ ] Real integrated terminal runner (interactive process execution, streaming)
-- [ ] Real Git panel (status, diffs, stage/unstage, commit)
-- [ ] Agent interactive coding & investigation panel
-- [ ] Skills, Rules, and Plugins explorer in UI
-- [ ] 6 Themes switcher (Obsidian Slate, Midnight Graphite, Light Paper, High Contrast Dark, High Contrast Light, Neutral Sand)
+- [x] Real filesystem project explorer (file open, tree navigation, file create/rename/delete)
+- [x] Real code editor (syntax, lines, tabs, dirty indicators, save)
+- [x] Real integrated terminal runner (interactive process execution, streaming)
+- [x] Real Git panel (status, diffs, stage/unstage, commit)
+- [x] Agent interactive coding & investigation panel
+- [x] Skills, Rules, and Plugins explorer in UI
+- [x] 6 Themes switcher (Obsidian Slate, Midnight Graphite, Light Paper, High Contrast Dark, High Contrast Light, Neutral Sand)
 
 ## P3: Website & Documentation Platform
-- [ ] Integrated documentation platform routes (/docs, /site)
-- [ ] Complete documentation pages for ecosystem specifications
-- [ ] Obsidian Slate brand consistency
+- [x] Integrated documentation platform routes (/docs, /site)
+- [x] Complete documentation pages for ecosystem specifications
+- [x] Obsidian Slate brand consistency

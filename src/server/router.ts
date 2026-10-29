@@ -5,7 +5,7 @@ import { existsSync, readFileSync, statSync, readdirSync, writeFileSync, unlinkS
 import { InvestigationEngine } from '../engine/index.js';
 import { discoverProject } from '../discovery/index.js';
 import { ContextManager } from '../context/index.js';
-import { PermissionScope, PermissionDecision, logger } from '../core/index.js';
+import { PermissionScope, PermissionDecision, MemoryMode, logger } from '../core/index.js';
 import { ConfigManager } from '../core/config.js';
 import { ProviderFactory } from '../providers/index.js';
 import { SkillManager } from '../skills/index.js';
@@ -616,12 +616,35 @@ export class ApiRouter {
       if (method === 'GET' && pathname === '/api/context') {
         const targetPath = parsedUrl.searchParams.get('path');
         if (!targetPath) {
-          this.sendJson(res, 400, { error: 'Missing path query parameter' });
+          const currentCtx = this.contextManager.getContext();
+          this.sendJson(res, 200, {
+            mode: this.contextManager.getMode(),
+            context: currentCtx,
+          });
           return;
         }
         const validatedPath = validateRepositoryExists(targetPath);
         const ctx = await this.contextManager.init(validatedPath);
-        this.sendJson(res, 200, ctx);
+        this.sendJson(res, 200, {
+          ...ctx,
+          mode: this.contextManager.getMode(),
+        });
+        return;
+      }
+
+      if (method === 'POST' && pathname === '/api/context/mode') {
+        const body = await this.readJsonBody(req);
+        if (!body.mode || typeof body.mode !== 'string') {
+          this.sendJson(res, 400, { error: 'Missing mode in request body' });
+          return;
+        }
+        const validModes = Object.values(MemoryMode);
+        if (!validModes.includes(body.mode as MemoryMode)) {
+          this.sendJson(res, 400, { error: `Invalid memory mode. Must be one of: ${validModes.join(', ')}` });
+          return;
+        }
+        this.contextManager.setMode(body.mode as MemoryMode);
+        this.sendJson(res, 200, { mode: this.contextManager.getMode(), message: `Memory mode updated to ${body.mode}` });
         return;
       }
 

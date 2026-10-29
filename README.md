@@ -10,7 +10,7 @@
   <img src="https://img.shields.io/badge/version-0.1.0-E54D2E?style=flat-square&labelColor=141618" alt="Version 0.1.0">
   <img src="https://img.shields.io/badge/node-%3E%3D20.0.0-58A6FF?style=flat-square&labelColor=141618" alt="Node.js 20+">
   <img src="https://img.shields.io/badge/typescript-5.4+-3178C6?style=flat-square&labelColor=141618" alt="TypeScript 5.4+">
-  <img src="https://img.shields.io/badge/tests-109%20passed%20(100%25)-3FB950?style=flat-square&labelColor=141618" alt="109 Tests Passed">
+  <img src="https://img.shields.io/badge/tests-145%20passed%20(100%25)-3FB950?style=flat-square&labelColor=141618" alt="145 Tests Passed">
   <img src="https://img.shields.io/badge/coverage-74.9%25%20lines-58A6FF?style=flat-square&labelColor=141618" alt="Coverage 74.9%">
   <img src="https://img.shields.io/badge/license-UNLICENSED-E54D2E?style=flat-square&labelColor=141618" alt="Commercial License">
 </p>
@@ -322,63 +322,182 @@ npm run test:coverage
 
 ## CLI Reference
 
-The `anvexo` binary provides four primary command groups:
+The `anvexo` executable provides an integrated command suite for autonomous investigation, interactive coding, and ecosystem management:
 
-### 1. `anvexo investigate`
+### 1. `anvexo doctor`
 
-Executes a full diagnostic investigation against a target repository.
+Runs comprehensive environment and dependency diagnostics.
+
+```bash
+node dist/cli/index.js doctor
+```
+
+Validates:
+- Node.js runtime version compatibility (>= 20.0.0)
+- Git installation and binary accessibility
+- Configuration file integrity (`~/.anvexo/config.json` and `.anvexo/config.json`)
+- Model provider credentials status (`ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GEMINI_API_KEY`, `OLLAMA_HOST`)
+- Storage directories write access and symlink containment
+
+---
+
+### 2. `anvexo init`
+
+Initializes an ANVEXO workspace in the current repository.
+
+```bash
+node dist/cli/index.js init [path]
+```
+
+Creates:
+- `.anvexo/config.json`: Workspace configuration file
+- `.anvexo/rules/`: Workspace-scoped rule definitions
+- `.anvexo/skills/`: Custom workflow skills directory
+
+---
+
+### 3. `anvexo config`
+
+Inspects and updates user and workspace configuration values.
+
+```bash
+# List all active configuration entries
+node dist/cli/index.js config list
+
+# Read a specific key
+node dist/cli/index.js config get model.default_provider
+
+# Update a configuration value
+node dist/cli/index.js config set model.default_provider anthropic
+```
+
+---
+
+### 4. `anvexo agent` (alias: `anvexo chat`)
+
+Launches an interactive or headless multi-step AI coding agent.
+
+```bash
+node dist/cli/index.js agent [prompt] [options]
+```
+
+#### Options
+- `--plan`: Enables plan-only mode (proposes actions without executing tools).
+- `--auto-approve`: Automatically approves tool calls without interactive confirmation.
+- `--max-iterations <count>`: Maximum tool loop iterations (default: 15).
+- `--provider <name>`: Model provider (`offline`, `anthropic`, `openai`, `gemini`, `ollama`).
+- `--model <name>`: Target model identifier.
+
+#### Example Usage
+```bash
+node dist/cli/index.js agent "Inspect the git status and run tests" --auto-approve
+```
+
+---
+
+### 5. `anvexo skills`
+
+Discovers, lists, and inspects available task skills (`SKILL.md`).
+
+```bash
+# List all discovered skills across system, user, and workspace locations
+node dist/cli/index.js skills list
+
+# Inspect instructions and parameter specification of a skill
+node dist/cli/index.js skills inspect investigate-bug
+```
+
+Built-in skills include:
+- `investigate-bug`: Autonomous software root cause investigation
+- `explain-codebase`: Architectural topology and dependency overview
+- `review-diff`: Security and quality code diff review
+- `analyze-failing-tests`: Test failure reproduction and diagnostic tracing
+- `refactor-module`: Bounded module refactoring with regression validation
+- `security-audit`: Vulnerability and credential exposure scanning
+
+---
+
+### 6. `anvexo rules`
+
+Lists active operational and security rules with priority and scope.
+
+```bash
+node dist/cli/index.js rules list
+```
+
+Rules follow deterministic precedence:
+1. System Safety Rules (Priority 100): Path containment, secret protection, command validation
+2. User Preferences (Priority 50): Operator guidelines from `~/.anvexo/rules/`
+3. Project Instructions (Priority 10): Repository guidelines from `.anvexo/rules/`
+
+---
+
+### 7. `anvexo plugins`
+
+Manages sandboxed extensions with explicit capability declarations.
+
+```bash
+# List installed plugins and activation states
+node dist/cli/index.js plugins list
+
+# Install a plugin from a local directory or package
+node dist/cli/index.js plugins install /path/to/plugin
+
+# Uninstall a plugin
+node dist/cli/index.js plugins uninstall <plugin-id>
+```
+
+---
+
+### 8. `anvexo mcp`
+
+Manages Model Context Protocol (MCP) server integrations.
+
+```bash
+# List configured MCP servers
+node dist/cli/index.js mcp list
+
+# Test connection to an MCP server
+node dist/cli/index.js mcp test <server-name>
+```
+
+Supports both `stdio` and `http` JSON-RPC 2.0 transports with automated schema validation.
+
+---
+
+### 9. `anvexo investigate`
+
+Executes autonomous hypothesis testing and root-cause analysis (ANVESHAN).
 
 ```bash
 node dist/cli/index.js investigate <path> [options]
 ```
 
 #### Arguments
-- `<path>`: Path to the target repository (required).
+- `<path>`: Path to target repository (required).
 
 #### Options
-- `-o, --objective <text>`: Investigation objective or bug symptom description (default: "General project investigation and health check").
-- `-m, --memory-mode <mode>`: ECHO memory model: `ephemeral`, `local`, `persistent`, or `cloud` (default: `persistent`).
-- `--auto-approve`: Automatically grants read permissions (`file:read`, `git:read`, `test:run`) for the run.
+- `-o, --objective <text>`: Investigation objective or bug symptom description.
+- `-m, --memory-mode <mode>`: ECHO memory model (`ephemeral`, `local`, `persistent`, `cloud`).
+- `--auto-approve`: Automatically grants read permissions (`file:read`, `git:read`, `test:run`).
 - `--skip-tests`: Omits test execution steps from the diagnostic DAG.
 - `--verbose`: Enables debug-level logging output.
 - `--quiet`: Suppresses operational logs and prints only the final report.
 - `--json`: Outputs the complete investigation report as structured JSON.
 
-#### Example Usage
-
-```bash
-node dist/cli/index.js investigate . \
-  --objective "Investigate why authentication fails intermittently on token refresh" \
-  --auto-approve
-```
-
 ---
 
-### 2. `anvexo discover`
+### 10. `anvexo discover`
 
-Analyzes repository structure and configuration without running diagnostics.
+Analyzes repository structure, languages, package managers, and configuration without running diagnostics.
 
 ```bash
 node dist/cli/index.js discover <path> [--json]
 ```
 
-#### Example Output
-
-```text
-Name:            ANVEXO
-Path:            /Users/developer/ANVEXO
-Languages:       javascript, typescript
-Frameworks:      none detected
-Package Manager: npm
-Test Runner:     vitest
-Git:             yes
-Config Files:    package.json, tsconfig.json, vitest.config.ts
-Entry Points:    src/index.ts, dist/index.js
-```
-
 ---
 
-### 3. `anvexo context`
+### 11. `anvexo context`
 
 Inspects, rebuilds, or clears the persistent ECHO memory index.
 
@@ -395,13 +514,18 @@ node dist/cli/index.js context clear /path/to/project
 
 ---
 
-### 4. `anvexo serve`
+### 12. `anvexo serve`
 
-Starts the local API server and Obsidian Slate workbench interface.
+Starts the local API server, Desktop IDE workbench, and Documentation Platform.
 
 ```bash
 node dist/cli/index.js serve --port 4173 --host 127.0.0.1
 ```
+
+Serves:
+- Desktop IDE Workbench: `http://127.0.0.1:4173/`
+- Documentation Platform: `http://127.0.0.1:4173/docs` (or `/site`)
+- REST API: `http://127.0.0.1:4173/api/`
 
 ---
 
@@ -411,6 +535,7 @@ The local HTTP server listens on `127.0.0.1:4173` by default. All endpoints enfo
 
 | Method | Path | Request Body | Description |
 | :--- | :--- | :--- | :--- |
+| `GET` | `/docs`, `/site` | None | Serves the interactive 10-chapter documentation platform. |
 | `GET` | `/api/health` | None | Returns server health status, version, and active job count. |
 | `GET` | `/api/discover` | Query: `?repo=<path>` | Analyzes target repository topography and detected stack. |
 | `POST` | `/api/investigate` | JSON: `{ repositoryPath, prompt }` | Creates and schedules an asynchronous investigation job. |
@@ -419,6 +544,21 @@ The local HTTP server listens on `127.0.0.1:4173` by default. All endpoints enfo
 | `POST` | `/api/jobs/:id/cancel` | None | Halts an active job and aborts running subprocesses. |
 | `GET` | `/api/context` | Query: `?repo=<path>` | Retrieves saved ECHO project context and dependency nodes. |
 | `GET` | `/api/file` | Query: `?repo=<path>&path=<file>` | Securely reads file content within verified repository boundaries. |
+| `GET` | `/api/files/tree` | Query: `?repo=<path>` | Returns complete workspace directory hierarchy. |
+| `POST` | `/api/files/save` | JSON: `{ repo, path, content }` | Saves file content with symlink containment checks. |
+| `POST` | `/api/files/create` | JSON: `{ repo, path, isDirectory }` | Creates a new file or directory within authorized workspace. |
+| `POST` | `/api/files/delete` | JSON: `{ repo, path }` | Deletes a file with explicit permission checks. |
+| `GET` | `/api/providers` | None | Returns registered model providers and capability metrics. |
+| `GET` | `/api/skills` | Query: `?repo=<path>` | Lists discovered skills across system, user, and project scopes. |
+| `GET` | `/api/rules` | Query: `?repo=<path>` | Lists active system, user, and workspace rules. |
+| `GET` | `/api/plugins` | None | Lists installed plugins and active state. |
+| `POST` | `/api/plugins/toggle` | JSON: `{ id, enabled }` | Enables or disables an installed plugin extension. |
+| `GET` | `/api/git/status` | Query: `?repo=<path>` | Retrieves working tree status and branch info. |
+| `GET` | `/api/git/diff` | Query: `?repo=<path>&filepath=<path>` | Returns structured git diff for modified files. |
+| `POST` | `/api/git/stage` | JSON: `{ repo, filepath }` | Stages a file for commit. |
+| `POST` | `/api/git/commit` | JSON: `{ repo, message }` | Commits staged changes with explicit message. |
+| `POST` | `/api/terminal/execute` | JSON: `{ repo, command }` | Runs interactive shell process with real output streaming. |
+| `POST` | `/api/agent/prompt` | JSON: `{ repo, prompt, options }` | Dispatches task to shared agent runtime. |
 
 ---
 
@@ -430,11 +570,12 @@ ANVEXO is engineered to withstand hostile boundaries and untrusted codebases. Th
 
 1. **Canonical Path Traversal Defense**: All file access passes through `validatePathWithinRoot` using `fs.realpathSync`. Symbolic links pointing outside the approved repository are immediately blocked with a 403 `SecurityError`.
 2. **Subprocess Injection Defense**: Built-in tools execute via `spawnSync` using explicit argument arrays and `shell: false`. Shell substitution characters (backticks, `$()`, semicolons) are treated as literal strings.
-3. **Cross-Origin Request Forgery (CSRF) Protection**: Mutation endpoints (`POST /api/investigate`, `POST /api/jobs/:id/cancel`) reject requests presenting untrusted `Origin` headers with HTTP 403 Forbidden.
+3. **Cross-Origin Request Forgery (CSRF) Protection**: Mutation endpoints reject requests presenting untrusted `Origin` headers with HTTP 403 Forbidden.
 4. **DNS Rebinding Prevention**: The server inspects the `Host` header on every request, rejecting foreign domain rebinding attempts with HTTP 400 Bad Request.
 5. **Secret Redaction**: Diagnostic outputs pass through automated regex sanitizers masking sensitive tokens (`sk-...`, `ghp_...`, `xoxb-...`, AWS keys, PEM private keys) before evidence storage.
 6. **Rate Limiting**: An in-memory sliding window limiter restricts API requests to 300 requests per minute per IP, returning HTTP 429 and `Retry-After` headers upon threshold breach.
 7. **Process Cancellation**: Terminating an investigation triggers an `AbortController` signal, halting pending child processes and releasing per-repository concurrency locks.
+8. **Granular Permission Model**: Scope-based decisions (`ALWAYS_ALLOW`, `ALLOW_ONCE`, `DENY`) gate dangerous operations including file writes, deletions, terminal execution, and plugin installations.
 
 ---
 
@@ -464,7 +605,8 @@ ANVEXO/
 │       └── split-ide-workbench.svg   # Developer workbench interface illustration
 ├── docs/
 │   ├── architecture/
-│   │   └── ARCHITECTURE.md           # Engineering and subsystem specifications
+│   │   ├── ARCHITECTURE.md           # Engineering and subsystem specifications
+│   │   └── ECOSYSTEM_CHECKLIST.md    # Master ecosystem verification checklist
 │   └── legal/
 │       ├── COMMERCIAL_LICENSE.md     # Commercial licensing tiers and terms
 │       ├── TERMS.md                  # Terms of service and usage conditions
@@ -472,14 +614,20 @@ ANVEXO/
 │       ├── SECURITY.md               # Vulnerability reporting policy
 │       └── ACCEPTABLE_USE.md         # Acceptable use restrictions
 ├── src/
+│   ├── agent/
+│   │   └── runtime.ts                # Shared multi-step agent runtime
 │   ├── cli/
-│   │   └── index.ts                  # CLI binary entry point and commands
+│   │   └── index.ts                  # CLI binary entry point and complete command suite
+│   ├── commands/
+│   │   └── dispatcher.ts             # Slash command dispatcher
 │   ├── context/
 │   │   ├── index.ts                  # Context manager and storage adapters
 │   │   └── manager.ts                # ECHO memory matrix implementation
 │   ├── core/
+│   │   ├── config.ts                 # Unified configuration engine
 │   │   ├── index.ts                  # Core models, interfaces, and enums
-│   │   └── logger.ts                 # Structured log formatter
+│   │   ├── logger.ts                 # Structured log formatter
+│   │   └── types.ts                  # Extended ecosystem type definitions
 │   ├── discovery/
 │   │   └── index.ts                  # 40+ language and framework detector
 │   ├── engine/
@@ -487,14 +635,30 @@ ANVEXO/
 │   │   └── planner.ts                # Deterministic DAG step planner
 │   ├── evidence/
 │   │   └── index.ts                  # UUID evidence store with secret scrubbing
+│   ├── git/
+│   │   └── service.ts                # Git operations and diff parser
+│   ├── mcp/
+│   │   └── client.ts                 # Model Context Protocol stdio/http client
 │   ├── permissions/
 │   │   ├── index.ts                  # Scope definitions and decision types
 │   │   └── manager.ts                # Scope-based ACL and audit log manager
+│   ├── plugins/
+│   │   └── manager.ts                # Sandboxed plugin lifecycle manager
+│   ├── providers/
+│   │   ├── index.ts                  # Provider factory and export barrel
+│   │   ├── anthropic.ts              # Anthropic Claude provider adapter
+│   │   ├── gemini.ts                 # Google Gemini provider adapter
+│   │   ├── offline.ts                # Local deterministic heuristic provider
+│   │   ├── ollama.ts                 # Ollama local daemon adapter
+│   │   └── openai.ts                 # OpenAI GPT provider adapter
+│   ├── rules/
+│   │   └── manager.ts                # Multi-scope rules engine
 │   ├── server/
+│   │   ├── docs-site.ts              # Integrated 10-chapter documentation platform
 │   │   ├── index.ts                  # Server module exports
 │   │   ├── job-manager.ts            # Job tracker and repository locks
 │   │   ├── rate-limiter.ts           # Sliding window rate limiter
-│   │   ├── router.ts                 # REST API router and static handler
+│   │   ├── router.ts                 # REST API router and documentation routes
 │   │   ├── security.ts               # Path canonicalization and host validation
 │   │   ├── server.ts                 # Native HTTP server wrapper
 │   │   └── ui/                       # Split IDE Canvas workbench interface
@@ -503,8 +667,14 @@ ANVEXO/
 │   │       ├── index.html            # Workbench HTML structure
 │   │       ├── styles.css            # 6 themes and typography styling
 │   │       └── favicon.svg           # High-legibility workbench favicon
+│   ├── skills/
+│   │   ├── builtin/                  # Complete built-in skills (SKILL.md)
+│   │   ├── manager.ts                # Skill discovery and execution manager
+│   │   └── parser.ts                 # SKILL.md frontmatter and instruction parser
+│   ├── terminal/
+│   │   └── runner.ts                 # Interactive terminal process runner
 │   ├── tools/
-│   │   ├── builtin.ts                # Hardened filesystem and git tools
+│   │   ├── builtin.ts                # Hardened filesystem, git, and execution tools
 │   │   └── index.ts                  # Tool registry and permission gate
 │   └── index.ts                      # Programmatic library entry point
 ├── tests/
@@ -512,12 +682,21 @@ ANVEXO/
 │   │   ├── cli.test.ts               # CLI command integration tests
 │   │   └── engine.test.ts            # Engine lifecycle and cancellation tests
 │   └── unit/
+│       ├── agent.test.ts             # Shared agent runtime tests
+│       ├── commands.test.ts          # Slash command dispatcher tests
+│       ├── config.test.ts            # Configuration engine tests
 │       ├── context.test.ts           # Memory modes and contradiction tests
 │       ├── core.test.ts              # Core types and logger tests
 │       ├── evidence.test.ts          # Evidence ledger and secret redaction tests
+│       ├── git.test.ts               # Git service and diff parser tests
+│       ├── mcp.test.ts               # MCP client and schema validation tests
 │       ├── permissions.test.ts       # Scope matching and wildcard tests
+│       ├── plugins.test.ts           # Plugin manifest validation and lifecycle tests
+│       ├── rules.test.ts             # Rules priority and scope tests
 │       ├── server.test.ts            # Security boundaries, CSRF, and rate tests
 │       ├── settings.test.ts          # Themes, typography, and brand asset tests
+│       ├── skills.test.ts            # SKILL.md parsing and discovery tests
+│       ├── terminal.test.ts          # Process execution and streaming tests
 │       └── tools.test.ts             # Tool execution and argument safety tests
 ├── package.json                      # Project metadata and package scripts
 ├── tsconfig.json                     # TypeScript compiler configuration
@@ -540,10 +719,17 @@ ANVEXO/
 | **Host & Origin Validation** | Completed | Anti-DNS rebinding and anti-CSRF protection on local server. |
 | **Split IDE Canvas Workbench** | Completed | Approved Obsidian Slate developer UI with live DAG and code viewer. |
 | **ECHO Memory Mode A & B** | Completed | Ephemeral in-memory and local `.anvexo/context.json` storage. |
-| **ECHO Memory Mode C** | In Progress | Transitioning from repository storage to global machine storage `~/.anvexo/`. |
-| **ECHO Memory Mode D** | Planned | Remote encrypted cloud synchronization adapter (currently an in-memory stub). |
-| **External LLM Provider Wiring** | Planned | Integration with external model providers (Claude, OpenAI, Gemini) for deep hypothesis generation. |
-| **Browser-Based Reproduction** | Planned | Playwright-driven reproduction of web UI failure states. |
+| **ECHO Memory Mode C** | Completed | Global machine storage in `~/.anvexo/`. |
+| **ECHO Memory Mode D** | In Progress | Remote encrypted cloud synchronization adapter (in-memory stub verified). |
+| **Shared Agent Runtime** | Completed | Multi-step agent execution with iteration bounds, tool calling, and planning mode. |
+| **Model Provider Abstraction** | Completed | Anthropic, OpenAI, Gemini, Ollama, and local offline heuristic engine. |
+| **Reusable Skills System** | Completed | `SKILL.md` parser, discovery in system, user, and workspace scopes. |
+| **Deterministic Rules Engine** | Completed | System safety (100), user preference (50), and project rules (10). |
+| **Sandboxed Plugin Manager** | Completed | Manifest validation (`anvexo-plugin.json`), lifecycle, and capability gating. |
+| **Model Context Protocol** | Completed | MCP JSON-RPC 2.0 client supporting `stdio` and `http` transports. |
+| **Interactive Terminal Runner** | Completed | Real child process execution, output streaming, and lifecycle management. |
+| **Git Workspace Integration** | Completed | Status, diff inspection, staging, and commit creation. |
+| **10-Chapter Docs Platform** | Completed | In-tree web documentation platform served at `/docs` and `/site`. |
 
 ---
 

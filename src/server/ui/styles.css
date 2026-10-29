@@ -63,7 +63,37 @@ html[data-theme="obsidian-slate"] {
   --status-info-subtle: rgba(88, 166, 255, 0.12);
 }
 
+html[data-theme="graphite"],
 html[data-theme="midnight-graphite"] {
+  --bg-app: #141618;
+  --bg-grid: #1B1E21;
+  --bg-surface: #1A1D20;
+  --bg-surface-elevated: #22262B;
+  --bg-surface-active: #2C3138;
+  --bg-card: #16181B;
+  --bg-sidebar: #15171A;
+  --bg-editor: #101214;
+  --border-hairline: #2A2F36;
+  --border-focus: #4A525E;
+  --text-primary: #E6E8EA;
+  --text-secondary: #A0A6AF;
+  --text-muted: #6C737E;
+  --text-disabled: #40454D;
+  --accent-orange: #E54D2E;
+  --accent-orange-hover: #F15B38;
+  --accent-orange-subtle: rgba(229, 77, 46, 0.14);
+  --status-pass: #3FB950;
+  --status-pass-subtle: rgba(63, 185, 80, 0.12);
+  --status-pass-border: #238636;
+  --status-fail: #F85149;
+  --status-fail-subtle: rgba(248, 81, 73, 0.12);
+  --status-pending: #F59E0B;
+  --status-pending-subtle: rgba(245, 158, 11, 0.12);
+  --status-info: #58A6FF;
+  --status-info-subtle: rgba(88, 166, 255, 0.12);
+}
+
+html[data-theme="midnight"] {
   --bg-app: #08090A;
   --bg-grid: #0F1012;
   --bg-surface: #0E1012;
@@ -150,6 +180,7 @@ html[data-theme="solarized-dark"] {
   --status-info-subtle: rgba(38, 139, 210, 0.15);
 }
 
+html[data-theme="light"],
 html[data-theme="light-studio"] {
   --bg-app: #F6F8FA;
   --bg-grid: #EAEFF4;
@@ -177,6 +208,35 @@ html[data-theme="light-studio"] {
   --status-pending-subtle: rgba(154, 103, 0, 0.1);
   --status-info: #0969DA;
   --status-info-subtle: rgba(9, 105, 218, 0.1);
+}
+
+html[data-theme="solarized-light"] {
+  --bg-app: #FDF6E3;
+  --bg-grid: #F5ECCE;
+  --bg-surface: #EEE8D5;
+  --bg-surface-elevated: #E4DCB9;
+  --bg-surface-active: #D9CEA4;
+  --bg-card: #FDF6E3;
+  --bg-sidebar: #EEE8D5;
+  --bg-editor: #FDF6E3;
+  --border-hairline: #D5CCB0;
+  --border-focus: #268BD2;
+  --text-primary: #657B83;
+  --text-secondary: #586E75;
+  --text-muted: #93A1A1;
+  --text-disabled: #B58900;
+  --accent-orange: #CB4B16;
+  --accent-orange-hover: #DC322F;
+  --accent-orange-subtle: rgba(203, 75, 22, 0.12);
+  --status-pass: #859900;
+  --status-pass-subtle: rgba(133, 153, 0, 0.12);
+  --status-pass-border: #6B7B00;
+  --status-fail: #DC322F;
+  --status-fail-subtle: rgba(220, 50, 47, 0.12);
+  --status-pending: #B58900;
+  --status-pending-subtle: rgba(181, 137, 0, 0.12);
+  --status-info: #268BD2;
+  --status-info-subtle: rgba(38, 139, 210, 0.12);
 }
 
 html[data-theme="high-contrast"] {

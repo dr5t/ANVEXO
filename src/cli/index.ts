@@ -5,7 +5,7 @@ import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { Command } from 'commander';
 import { InvestigationEngine } from '../engine/index.js';
-import { LogLevel, MemoryMode } from '../core/index.js';
+import { LogLevel, MemoryMode, PermissionScope, PermissionDecision } from '../core/index.js';
 import { setLogLevel } from '../core/logger.js';
 import { ConfigManager } from '../core/config.js';
 import { ProviderFactory } from '../providers/index.js';
@@ -29,8 +29,9 @@ program
 program
   .option('-p, --print <prompt>', 'Run in headless non-interactive mode with single prompt')
   .option('--plan', 'Run in plan-only mode requiring confirmation')
+  .option('--auto-approve', 'Automatically approve read operations')
   .argument('[prompt]', 'Initial coding or investigation prompt')
-  .action(async (promptArg: string | undefined, opts: { print?: string; plan?: boolean }) => {
+  .action(async (promptArg: string | undefined, opts: { print?: string; plan?: boolean; autoApprove?: boolean }) => {
     const configManager = new ConfigManager();
     const repoPath = process.cwd();
     const providerFactory = new ProviderFactory(configManager);
@@ -38,6 +39,10 @@ program
     const permissions = new PermissionManager();
     const tools = new ToolRegistry(permissions);
     registerBuiltinTools(tools);
+
+    permissions.grant(PermissionScope.FILE_READ, '*', PermissionDecision.ALWAYS_ALLOW);
+    permissions.grant(PermissionScope.GIT_READ, '*', PermissionDecision.ALWAYS_ALLOW);
+    permissions.grant(PermissionScope.TEST_RUN, '*', PermissionDecision.ALWAYS_ALLOW);
 
     const ruleManager = new RuleManager();
     const skillManager = new SkillManager();
@@ -59,16 +64,22 @@ program
 
     if (opts.print) {
       const session = runtime.createSession('autonomous');
-      const updated = await runtime.run(targetPrompt!, session, (evt) => {
-        if (evt.type === 'thought' && evt.content) {
-          process.stdout.write(evt.content + '\n');
+      try {
+        const updated = await runtime.run(targetPrompt!, session, (evt) => {
+          if (evt.type === 'thought' && evt.content) {
+            process.stdout.write(evt.content + '\n');
+          }
+        });
+        const lastMsg = updated.messages[updated.messages.length - 1];
+        if (lastMsg && lastMsg.role === 'assistant' && lastMsg.content) {
+          process.stdout.write(lastMsg.content + '\n');
         }
-      });
-      const lastMsg = updated.messages[updated.messages.length - 1];
-      if (lastMsg && lastMsg.role === 'assistant' && lastMsg.content) {
-        process.stdout.write(lastMsg.content + '\n');
+        process.exit(0);
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        process.stderr.write(`Error: ${msg}\n`);
+        process.exit(1);
       }
-      process.exit(0);
     }
 
     const session = runtime.createSession(opts.plan ? 'plan' : 'interactive');
@@ -402,11 +413,12 @@ program
       mode = MemoryMode.USER_CLOUD;
     }
 
+    const autoApprove = Boolean(opts.autoApprove || program.opts().autoApprove);
     const engine = new InvestigationEngine(mode);
     const report = await engine.investigate({
       objective: opts.objective,
       repositoryPath: repoPath,
-      autoApprove: opts.autoApprove,
+      autoApprove,
       skipTests: opts.skipTests,
       verbose: opts.verbose,
       memoryMode: mode,
