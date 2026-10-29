@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 380 90" width="100%" height="100%" fill="none">
+  <defs>
+    <linearGradient id="hLeftOuter" x1="52" y1="10" x2="12" y2="84" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#2D323A"/>
+      <stop offset="50%" stop-color="#20232A"/>
+      <stop offset="100%" stop-color="#14161A"/>
+    </linearGradient>
+    <linearGradient id="hLeftInner" x1="52" y1="10" x2="38" y2="72" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#4F5664"/>
+      <stop offset="45%" stop-color="#3C424E"/>
+      <stop offset="100%" stop-color="#262A32"/>
+    </linearGradient>
+    <linearGradient id="hLeftBevel" x1="12" y1="82" x2="32" y2="84" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#101114"/>
+      <stop offset="100%" stop-color="#1C1E24"/>
+    </linearGradient>
+    <linearGradient id="hRightTop" x1="52" y1="10" x2="76" y2="84" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FF7A38"/>
+      <stop offset="35%" stop-color="#FF5A1E"/>
+      <stop offset="100%" stop-color="#E84410"/>
+    </linearGradient>
+    <linearGradient id="hRightSide" x1="72" y1="36" x2="94" y2="84" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#D63A12"/>
+      <stop offset="50%" stop-color="#B02608"/>
+      <stop offset="100%" stop-color="#7C1602"/>
+    </linearGradient>
+  </defs>
+
+  <g id="brand-symbol" transform="translate(10, 5) scale(0.85)">
+    <polygon points="52,10 20,52 12,82 32,84" fill="url(#hLeftOuter)"/>
+    <polygon points="52,10 32,84 38,72 50,46" fill="url(#hLeftInner)"/>
+    <polygon points="12,82 32,84 26,88" fill="url(#hLeftBevel)"/>
+    <polygon points="52,10 50,46 62,68 76,84" fill="url(#hRightTop)"/>
+    <polygon points="52,10 76,84 94,74 78,44" fill="url(#hRightSide)"/>
+    <polygon points="76,84 94,74 86,84" fill="#7C1602"/>
+  </g>
+
+  <g id="brand-wordmark" transform="translate(110, 20)">
+    <path d="M 3 56 L 19 22 L 35 56" stroke="#EDEDED" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M 52 56 L 52 22 L 80 56 L 80 22" stroke="#EDEDED" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M 97 22 L 112 56 L 127 22" stroke="#EDEDED" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M 168 22 L 144 22 L 144 56 L 168 56 M 144 39 L 164 39" stroke="#EDEDED" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M 185 22 L 213 56 M 213 22 L 185 56" stroke="#FF5C28" stroke-width="6.5" stroke-linecap="round"/>
+    <rect x="230" y="22" width="28" height="34" rx="8" stroke="#EDEDED" stroke-width="6.5" fill="none"/>
+  </g>
+</svg>
