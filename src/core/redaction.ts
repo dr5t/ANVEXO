@@ -8,7 +8,7 @@ const SECRET_PATTERNS: Array<{ regex: RegExp; replacement: string }> = [
     replacement: '[REDACTED_AWS_KEY]',
   },
   {
-    regex: /\b(?:ghp_[a-zA-Z0-9]{36}|github_pat_[a-zA-Z0-9_]{60,82})\b/g,
+    regex: /\b(?:ghp_[a-zA-Z0-9]{30,40}|github_pat_[a-zA-Z0-9_]{60,82})\b/g,
     replacement: '[REDACTED_GITHUB_TOKEN]',
   },
   {

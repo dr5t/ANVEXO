@@ -409,7 +409,12 @@ export class ApiRouter {
         }
         try {
           const raw = Buffer.concat(chunks).toString('utf-8');
-          const parsed = JSON.parse(raw);
+          const parsed = JSON.parse(raw, (key, value) => {
+            if (key === '__proto__' || key === 'constructor' || key === 'prototype') {
+              throw new SecurityError('Prototype pollution attempt detected in payload', 400);
+            }
+            return value;
+          });
           this.assertNoPrototypePollution(parsed);
           resolve(parsed);
         } catch (err) {

@@ -4,6 +4,16 @@ let activeTab = 'report';
 let activeDrawerTab = 'telemetry';
 let activeActivityView = 'investigation';
 
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   initResizer();
   initActivityBar();
@@ -270,7 +280,7 @@ function populateFileTree(metadata) {
   allFiles.forEach(file => {
     const item = document.createElement('div');
     item.className = 'file-item';
-    item.innerHTML = `<span style="color: var(--status-info);">[file]</span> ${file}`;
+    item.innerHTML = `<span style="color: var(--status-info);">[file]</span> ${escapeHtml(file)}`;
     item.addEventListener('click', () => {
       document.querySelectorAll('.file-item').forEach(f => f.classList.remove('active'));
       item.classList.add('active');
@@ -507,9 +517,9 @@ function renderReport(report) {
   summaryCard.innerHTML = `
     <div class="report-card-title">Investigation Summary</div>
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-family: var(--font-mono); font-size: 11px;">
-      <div>Objective: <span style="color: var(--text-primary);">${report.objective}</span></div>
+      <div>Objective: <span style="color: var(--text-primary);">${escapeHtml(report.objective)}</span></div>
       <div>Duration: <span style="color: var(--text-primary);">${duration}ms</span></div>
-      <div>Repository: <span style="color: var(--text-primary);">${report.projectMetadata.rootPath}</span></div>
+      <div>Repository: <span style="color: var(--text-primary);">${escapeHtml(report.projectMetadata.rootPath)}</span></div>
       <div>Evidence Records: <span style="color: var(--text-primary);">${report.evidence.length}</span></div>
     </div>
   `;
@@ -525,9 +535,9 @@ function renderReport(report) {
       const statusClass = finding.verificationStatus === 'verified' ? 'pass' : (finding.verificationStatus === 'contradicted' ? 'fail' : 'pending');
       item.className = `finding-item ${statusClass}`;
       item.innerHTML = `
-        <div class="finding-claim">${finding.claim}</div>
-        <div class="finding-details">Status: [${finding.verificationStatus.toUpperCase()}] | Confidence: ${(finding.confidence * 100).toFixed(0)}%</div>
-        <div class="finding-details">${finding.details || ''}</div>
+        <div class="finding-claim">${escapeHtml(finding.claim)}</div>
+        <div class="finding-details">Status: [${escapeHtml(finding.verificationStatus.toUpperCase())}] | Confidence: ${(finding.confidence * 100).toFixed(0)}%</div>
+        <div class="finding-details">${escapeHtml(finding.details || '')}</div>
       `;
       findingsCard.appendChild(item);
     });
@@ -640,11 +650,11 @@ function renderHypotheses(report) {
     card.className = 'hypo-card';
     card.innerHTML = `
       <div class="hypo-header">
-        <span style="color: var(--accent-orange);">H${idx + 1}: ${f.verificationStatus.toUpperCase()}</span>
+        <span style="color: var(--accent-orange);">H${idx + 1}: ${escapeHtml(f.verificationStatus.toUpperCase())}</span>
         <span style="color: var(--status-pass);">${(f.confidence * 100).toFixed(0)}% CONFIDENCE</span>
       </div>
-      <div class="hypo-title">${f.claim}</div>
-      <div class="hypo-meta">${f.details || 'Ground truth validated via test execution.'}</div>
+      <div class="hypo-title">${escapeHtml(f.claim)}</div>
+      <div class="hypo-meta">${escapeHtml(f.details || 'Ground truth validated via test execution.')}</div>
     `;
     container.appendChild(card);
   });
@@ -747,7 +757,7 @@ function renderAuditLog(logs) {
 
     const sideItem = document.createElement('div');
     sideItem.className = 'file-item';
-    sideItem.innerHTML = `<span style="color: ${log.decision === 'deny' ? 'var(--status-fail)' : 'var(--status-pass)'};">[${log.decision.toUpperCase()}]</span> ${log.scope} (${log.resource})`;
+    sideItem.innerHTML = `<span style="color: ${log.decision === 'deny' ? 'var(--status-fail)' : 'var(--status-pass)'};">[${escapeHtml(log.decision.toUpperCase())}]</span> ${escapeHtml(log.scope)} (${escapeHtml(log.resource)})`;
     container.appendChild(sideItem);
   });
 }
