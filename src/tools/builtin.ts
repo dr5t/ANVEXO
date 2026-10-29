@@ -545,12 +545,16 @@ export function registerBuiltinTools(registry: { register: (tool: ToolDefinition
   registry.register(createFileReadTool());
   registry.register(createFileListTool());
   registry.register(createFileSearchTool());
-  registry.register(createFileWriteTool());
-  registry.register(createFileDeleteTool());
   registry.register(createGitStatusTool());
   registry.register(createGitLogTool());
   registry.register(createGitDiffTool());
   registry.register(createRunCommandTool());
+}
+
+export function registerWorkspaceTools(registry: { register: (tool: ToolDefinition) => void }): void {
+  registerBuiltinTools(registry);
+  registry.register(createFileWriteTool());
+  registry.register(createFileDeleteTool());
   registry.register(createTestRunTool());
 }
 

@@ -1,5 +1,5 @@
 ---
-name: Investigate Bug
+name: investigate-bug
 description: Perform autonomous evidence-backed root cause analysis on a software defect
 tools: file_read, file_search, git_log, git_diff, git_status, test_run
 ---

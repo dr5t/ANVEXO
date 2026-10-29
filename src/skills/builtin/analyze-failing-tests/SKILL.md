@@ -1,5 +1,5 @@
 ---
-name: Analyze Failing Tests
+name: analyze-failing-tests
 description: Run automated tests, isolate stack traces, and identify exact failure lines
 tools: test_run, file_read, file_search
 ---

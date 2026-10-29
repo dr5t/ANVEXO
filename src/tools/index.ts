@@ -1,2 +1,2 @@
 export { ToolRegistry } from './registry.js';
-export { registerBuiltinTools } from './builtin.js';
+export { registerBuiltinTools, registerWorkspaceTools } from './builtin.js';

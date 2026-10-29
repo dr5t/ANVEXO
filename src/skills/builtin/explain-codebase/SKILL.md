@@ -1,5 +1,5 @@
 ---
-name: Explain Codebase
+name: explain-codebase
 description: Analyze architectural topography, entry points, and component relationships
 tools: file_list, file_read, file_search
 ---

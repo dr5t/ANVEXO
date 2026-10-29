@@ -1,5 +1,5 @@
 ---
-name: Security Audit
+name: security-audit
 description: Audit codebase for path traversals, command injection, secret leakage, and permission flaws
 tools: file_search, file_read
 ---

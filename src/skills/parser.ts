@@ -2,12 +2,19 @@ import { SkillArgument, SkillDefinition, SkillScope } from '../core/types.js';
 
 export function parseSkillMarkdown(
   content: string,
-  id: string,
-  scope: SkillScope,
-  path?: string,
+  idOrPath: string,
+  scope: SkillScope | string = 'built-in',
+  pathLocation?: string,
 ): SkillDefinition {
+  let id = idOrPath;
+  const location = pathLocation || (idOrPath.includes('/') ? idOrPath : undefined);
+  if (id.includes('/')) {
+    const parts = id.split('/');
+    id = parts[parts.length - 2] || parts[parts.length - 1].replace(/\.md$/, '');
+  }
   let name = id;
   let description = '';
+  let version: string | undefined;
   let instructions = content;
   const args: SkillArgument[] = [];
   const allowedTools: string[] = [];
@@ -33,6 +40,8 @@ export function parseSkillMarkdown(
           name = val;
         } else if (key === 'description') {
           description = val;
+        } else if (key === 'version') {
+          version = val;
         } else if (key === 'tools' || key === 'allowedtools') {
           val.split(',').map((t) => t.trim()).filter(Boolean).forEach((t) => allowedTools.push(t));
         }
@@ -71,13 +80,18 @@ export function parseSkillMarkdown(
     description = firstParagraph.replace(/^#+\s*.*?\n/, '').trim().slice(0, 140);
   }
 
+  const normalizedScope: SkillScope = scope === 'workspace' ? 'project' : (scope as SkillScope);
+
   return {
     id,
     name,
     description: description || 'Autonomous workflow skill',
     instructions,
-    scope,
-    path,
+    scope: normalizedScope,
+    source: String(scope),
+    location,
+    version,
+    path: location,
     arguments: args.length > 0 ? args : undefined,
     allowedTools: allowedTools.length > 0 ? allowedTools : undefined,
     suggestedPrompts: suggestedPrompts.length > 0 ? suggestedPrompts : undefined,

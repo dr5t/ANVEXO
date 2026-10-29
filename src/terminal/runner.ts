@@ -30,6 +30,10 @@ export class TerminalSession extends EventEmitter {
     this.cwd = cwd;
   }
 
+  getCwd(): string {
+    return this.cwd;
+  }
+
   getInfo(): TerminalSessionInfo {
     return {
       id: this.id,
@@ -44,6 +48,10 @@ export class TerminalSession extends EventEmitter {
 
   getBuffer(): string {
     return this.outputBuffer.join('');
+  }
+
+  getOutput(): string {
+    return this.getBuffer();
   }
 
   clearBuffer(): void {
@@ -96,10 +104,28 @@ export class TerminalSession extends EventEmitter {
     });
   }
 
+  write(input: string): void {
+    if (!this.running || !this.process) {
+      this.executeCommand(input.trim());
+    } else {
+      this.writeInput(input);
+    }
+  }
+
   writeInput(input: string): void {
     if (this.running && this.process?.stdin?.writable) {
       this.process.stdin.write(input);
     }
+  }
+
+  onData(cb: (chunk: string) => void): () => void {
+    this.on('data', cb);
+    return () => this.off('data', cb);
+  }
+
+  onExit(cb: (code: number) => void): () => void {
+    this.on('exit', cb);
+    return () => this.off('exit', cb);
   }
 
   kill(signal: NodeJS.Signals = 'SIGTERM'): boolean {
@@ -117,7 +143,13 @@ export class TerminalSession extends EventEmitter {
 export class TerminalManager {
   private sessions: Map<string, TerminalSession> = new Map();
 
-  createSession(name = 'terminal', cwd = process.cwd()): TerminalSession {
+  createSession(cwdOrName: string = process.cwd(), cwdParam?: string): TerminalSession {
+    let name = 'terminal';
+    let cwd = cwdOrName;
+    if (cwdParam) {
+      name = cwdOrName;
+      cwd = cwdParam;
+    }
     const id = `term_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
     const session = new TerminalSession(id, name, cwd);
     this.sessions.set(id, session);
@@ -140,5 +172,16 @@ export class TerminalManager {
       return true;
     }
     return false;
+  }
+
+  terminate(id: string): boolean {
+    return this.closeSession(id);
+  }
+
+  terminateAll(): void {
+    for (const session of this.sessions.values()) {
+      session.kill('SIGTERM');
+    }
+    this.sessions.clear();
   }
 }

@@ -366,6 +366,9 @@ export interface SkillDefinition {
   description: string;
   instructions: string;
   scope: SkillScope;
+  source?: string;
+  location?: string;
+  version?: string;
   path?: string;
   arguments?: SkillArgument[];
   allowedTools?: string[];

@@ -1,13 +1,24 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { URL, fileURLToPath } from 'node:url';
-import { dirname, join } from 'node:path';
-import { existsSync, readFileSync, statSync } from 'node:fs';
+import { dirname, join, resolve, relative } from 'node:path';
+import { existsSync, readFileSync, statSync, readdirSync, writeFileSync, unlinkSync, mkdirSync } from 'node:fs';
 import { InvestigationEngine } from '../engine/index.js';
 import { discoverProject } from '../discovery/index.js';
 import { ContextManager } from '../context/index.js';
 import { PermissionScope, PermissionDecision, logger } from '../core/index.js';
+import { ConfigManager } from '../core/config.js';
+import { ProviderFactory } from '../providers/index.js';
+import { SkillManager } from '../skills/index.js';
+import { RuleManager } from '../rules/index.js';
+import { PluginManager } from '../plugins/index.js';
+import { GitService } from '../git/index.js';
+import { TerminalManager } from '../terminal/index.js';
+import { AgentRuntime } from '../agent/index.js';
+import { ToolRegistry, registerBuiltinTools } from '../tools/index.js';
+import { PermissionManager } from '../permissions/index.js';
 import { RateLimiter } from './rate-limiter.js';
 import { JobManager } from './job-manager.js';
+import { renderDocsHtml } from './docs-site.js';
 import {
   applySecurityHeaders,
   applyCorsHeaders,
@@ -18,6 +29,34 @@ import {
   SecurityError,
 } from './security.js';
 
+function buildDirTree(dirPath: string, rootPath: string, maxDepth: number = 4, depth: number = 0): unknown[] {
+  if (depth > maxDepth) return [];
+  if (!existsSync(dirPath)) return [];
+  const entries = readdirSync(dirPath, { withFileTypes: true });
+  const result: unknown[] = [];
+  const ignored = new Set(['.git', 'node_modules', 'dist', '.DS_Store', '.cache', 'coverage']);
+  for (const entry of entries) {
+    if (ignored.has(entry.name)) continue;
+    const fullPath = join(dirPath, entry.name);
+    const relPath = relative(rootPath, fullPath);
+    if (entry.isDirectory()) {
+      result.push({
+        name: entry.name,
+        path: relPath,
+        type: 'directory',
+        children: buildDirTree(fullPath, rootPath, maxDepth, depth + 1),
+      });
+    } else {
+      result.push({
+        name: entry.name,
+        path: relPath,
+        type: 'file',
+      });
+    }
+  }
+  return result;
+}
+
 export class ApiRouter {
   private rateLimiter: RateLimiter;
   private heavyRateLimiter: RateLimiter;
@@ -25,6 +64,7 @@ export class ApiRouter {
   private jobManager: JobManager;
   private engine: InvestigationEngine;
   private contextManager: ContextManager;
+  private terminalManager: TerminalManager;
   private host: string;
 
   constructor(host: string = '127.0.0.1') {
@@ -35,6 +75,7 @@ export class ApiRouter {
     this.jobManager = new JobManager();
     this.engine = new InvestigationEngine();
     this.contextManager = new ContextManager();
+    this.terminalManager = new TerminalManager();
   }
 
   getJobManager(): JobManager {
@@ -49,6 +90,9 @@ export class ApiRouter {
     this.rateLimiter.destroy();
     this.heavyRateLimiter.destroy();
     this.fileRateLimiter.destroy();
+    for (const s of this.terminalManager.listSessions()) {
+      this.terminalManager.closeSession(s.id);
+    }
   }
 
   async handleRequest(req: IncomingMessage, res: ServerResponse): Promise<void> {
@@ -91,6 +135,13 @@ export class ApiRouter {
           this.sendFile(res, 200, 'text/html; charset=utf-8', file);
           return;
         }
+      }
+
+      if (pathname === '/docs' || pathname === '/site') {
+        const page = parsedUrl.searchParams.get('page') || 'overview';
+        const html = renderDocsHtml(page);
+        this.sendHtml(res, 200, html);
+        return;
       }
 
       if (pathname === '/styles.css') {
@@ -137,7 +188,7 @@ export class ApiRouter {
       return;
     }
 
-    const heavyPaths = ['/api/investigate', '/api/context/rebuild', '/api/context/clear'];
+    const heavyPaths = ['/api/investigate', '/api/context/rebuild', '/api/context/clear', '/api/agent/prompt'];
     if (heavyPaths.includes(pathname)) {
       const heavyCheck = this.heavyRateLimiter.check(clientIp);
       if (!heavyCheck.allowed) {
@@ -147,7 +198,7 @@ export class ApiRouter {
       }
     }
 
-    if (pathname === '/api/file') {
+    if (pathname.startsWith('/api/file')) {
       const fileCheck = this.fileRateLimiter.check(clientIp);
       if (!fileCheck.allowed) {
         res.setHeader('Retry-After', Math.ceil(fileCheck.resetMs / 1000).toString());
@@ -167,6 +218,20 @@ export class ApiRouter {
         return;
       }
 
+      if (method === 'GET' && pathname === '/api/providers') {
+        const repoPath = parsedUrl.searchParams.get('repo') || process.cwd();
+        const cm = new ConfigManager(repoPath);
+        const pf = new ProviderFactory(cm);
+        const list = await pf.listAvailableProviders();
+        const active = pf.getActiveProvider();
+        this.sendJson(res, 200, {
+          providers: list,
+          active: active.id,
+          activeName: active.name,
+        });
+        return;
+      }
+
       if (method === 'POST' && pathname === '/api/discover') {
         const body = await this.readJsonBody(req);
         if (!body.path || typeof body.path !== 'string') {
@@ -176,6 +241,248 @@ export class ApiRouter {
         const validatedPath = validateRepositoryExists(body.path);
         const metadata = await discoverProject(validatedPath);
         this.sendJson(res, 200, metadata);
+        return;
+      }
+
+      if (method === 'GET' && pathname === '/api/files/tree') {
+        const repo = parsedUrl.searchParams.get('repo') || parsedUrl.searchParams.get('path');
+        if (!repo) {
+          this.sendJson(res, 400, { error: 'repo parameter is required' });
+          return;
+        }
+        const validatedRepo = validateRepositoryExists(repo);
+        const tree = buildDirTree(validatedRepo, validatedRepo);
+        this.sendJson(res, 200, { root: validatedRepo, tree });
+        return;
+      }
+
+      if (method === 'POST' && pathname === '/api/files/save') {
+        const body = await this.readJsonBody(req);
+        if (!body.repo || !body.path || typeof body.content !== 'string') {
+          this.sendJson(res, 400, { error: 'repo, path, and content are required' });
+          return;
+        }
+        const validatedRepo = validateRepositoryExists(body.repo as string);
+        const validatedPath = validatePathWithinRoot(body.path as string, validatedRepo);
+        const dir = dirname(validatedPath);
+        if (!existsSync(dir)) {
+          mkdirSync(dir, { recursive: true });
+        }
+        writeFileSync(validatedPath, body.content as string, 'utf-8');
+        this.sendJson(res, 200, { success: true, path: body.path });
+        return;
+      }
+
+      if (method === 'POST' && pathname === '/api/files/create') {
+        const body = await this.readJsonBody(req);
+        if (!body.repo || !body.path) {
+          this.sendJson(res, 400, { error: 'repo and path are required' });
+          return;
+        }
+        const validatedRepo = validateRepositoryExists(body.repo as string);
+        const validatedPath = validatePathWithinRoot(body.path as string, validatedRepo);
+        if (body.type === 'directory') {
+          mkdirSync(validatedPath, { recursive: true });
+        } else {
+          const dir = dirname(validatedPath);
+          if (!existsSync(dir)) {
+            mkdirSync(dir, { recursive: true });
+          }
+          writeFileSync(validatedPath, (body.content as string) || '', 'utf-8');
+        }
+        this.sendJson(res, 200, { success: true, path: body.path });
+        return;
+      }
+
+      if (method === 'POST' && pathname === '/api/files/delete') {
+        const body = await this.readJsonBody(req);
+        if (!body.repo || !body.path) {
+          this.sendJson(res, 400, { error: 'repo and path are required' });
+          return;
+        }
+        const validatedRepo = validateRepositoryExists(body.repo as string);
+        const validatedPath = validatePathWithinRoot(body.path as string, validatedRepo);
+        if (existsSync(validatedPath)) {
+          unlinkSync(validatedPath);
+        }
+        this.sendJson(res, 200, { success: true, path: body.path });
+        return;
+      }
+
+      if (method === 'GET' && pathname === '/api/git/status') {
+        const repo = parsedUrl.searchParams.get('repo');
+        if (!repo) {
+          this.sendJson(res, 400, { error: 'repo parameter is required' });
+          return;
+        }
+        const validatedRepo = validateRepositoryExists(repo);
+        const gitService = new GitService();
+        const status = await gitService.getStatus(validatedRepo);
+        this.sendJson(res, 200, status);
+        return;
+      }
+
+      if (method === 'GET' && pathname === '/api/git/diff') {
+        const repo = parsedUrl.searchParams.get('repo');
+        if (!repo) {
+          this.sendJson(res, 400, { error: 'repo parameter is required' });
+          return;
+        }
+        const validatedRepo = validateRepositoryExists(repo);
+        const gitService = new GitService();
+        const diff = await gitService.getDiff(validatedRepo);
+        this.sendJson(res, 200, { diff });
+        return;
+      }
+
+      if (method === 'POST' && pathname === '/api/git/stage') {
+        const body = await this.readJsonBody(req);
+        if (!body.repo || !body.files) {
+          this.sendJson(res, 400, { error: 'repo and files are required' });
+          return;
+        }
+        const validatedRepo = validateRepositoryExists(body.repo as string);
+        const gitService = new GitService();
+        const files = Array.isArray(body.files) ? (body.files as string[]) : [String(body.files)];
+        for (const f of files) {
+          await gitService.stageFile(validatedRepo, f);
+        }
+        this.sendJson(res, 200, { success: true, files });
+        return;
+      }
+
+      if (method === 'POST' && pathname === '/api/git/commit') {
+        const body = await this.readJsonBody(req);
+        if (!body.repo || !body.message) {
+          this.sendJson(res, 400, { error: 'repo and commit message are required' });
+          return;
+        }
+        const validatedRepo = validateRepositoryExists(body.repo as string);
+        const gitService = new GitService();
+        const result = await gitService.commit(validatedRepo, body.message as string);
+        this.sendJson(res, 200, result);
+        return;
+      }
+
+      if (method === 'POST' && pathname === '/api/terminal/execute') {
+        const body = await this.readJsonBody(req);
+        if (!body.repo || !body.command) {
+          this.sendJson(res, 400, { error: 'repo and command are required' });
+          return;
+        }
+        const validatedRepo = validateRepositoryExists(body.repo as string);
+        const session = this.terminalManager.createSession('web-terminal', validatedRepo);
+        const command = String(body.command);
+
+        const execPromise = new Promise<{ exitCode: number; output: string }>((resolvePromise) => {
+          let outputBuffer = '';
+          const onData = (data: string) => {
+            outputBuffer += data;
+          };
+          const onExit = (code: number | null) => {
+            session.off('data', onData);
+            session.off('exit', onExit);
+            resolvePromise({ exitCode: code ?? 0, output: outputBuffer });
+          };
+          session.on('data', onData);
+          session.on('exit', onExit);
+          session.executeCommand(command);
+        });
+
+        const timeoutPromise = new Promise<{ exitCode: number; output: string }>((resolvePromise) => {
+          setTimeout(() => {
+            resolvePromise({ exitCode: 0, output: session.getBuffer() });
+          }, 3000);
+        });
+
+        const resData = await Promise.race([execPromise, timeoutPromise]);
+        this.sendJson(res, 200, {
+          sessionId: session.id,
+          command,
+          exitCode: resData.exitCode,
+          output: resData.output || session.getBuffer(),
+        });
+        return;
+      }
+
+      if (method === 'GET' && pathname === '/api/skills') {
+        const repo = parsedUrl.searchParams.get('repo') || process.cwd();
+        const sm = new SkillManager();
+        const skills = sm.listAllSkills(repo);
+        this.sendJson(res, 200, skills);
+        return;
+      }
+
+      if (method === 'GET' && pathname === '/api/rules') {
+        const repo = parsedUrl.searchParams.get('repo') || process.cwd();
+        const rm = new RuleManager();
+        const rules = rm.listAllRules(repo);
+        this.sendJson(res, 200, rules);
+        return;
+      }
+
+      if (method === 'GET' && pathname === '/api/plugins') {
+        const repo = parsedUrl.searchParams.get('repo') || process.cwd();
+        const pm = new PluginManager();
+        const plugins = pm.listAllPlugins(repo);
+        this.sendJson(res, 200, plugins);
+        return;
+      }
+
+      if (method === 'POST' && pathname === '/api/plugins/toggle') {
+        const body = await this.readJsonBody(req);
+        if (!body.id || typeof body.enabled !== 'boolean') {
+          this.sendJson(res, 400, { error: 'id and enabled boolean are required' });
+          return;
+        }
+        const repo = (body.repo as string) || process.cwd();
+        const pm = new PluginManager();
+        const success = pm.togglePlugin(body.id as string, body.enabled as boolean, 'project', repo);
+        this.sendJson(res, 200, { success });
+        return;
+      }
+
+      if (method === 'POST' && pathname === '/api/agent/prompt') {
+        const body = await this.readJsonBody(req);
+        if (!body.repo || !body.prompt) {
+          this.sendJson(res, 400, { error: 'repo and prompt are required' });
+          return;
+        }
+        const validatedRepo = validateRepositoryExists(body.repo as string);
+        const cm = new ConfigManager(validatedRepo);
+        const pf = new ProviderFactory(cm);
+        const provider = pf.getActiveProvider();
+        const permissions = new PermissionManager();
+        const tools = new ToolRegistry(permissions);
+        registerBuiltinTools(tools);
+
+        const ruleManager = new RuleManager();
+        const skillManager = new SkillManager();
+
+        const runtime = new AgentRuntime({
+          repoPath: validatedRepo,
+          provider,
+          permissions,
+          tools,
+          ruleManager,
+          skillManager,
+          mode: (body.mode as any) || 'autonomous',
+        });
+
+        const session = runtime.createSession((body.mode as any) || 'autonomous');
+        const events: unknown[] = [];
+
+        await runtime.run(String(body.prompt), session, (evt) => {
+          events.push(evt);
+        });
+
+        this.sendJson(res, 200, {
+          sessionId: session.id,
+          status: session.status,
+          messages: session.messages,
+          plan: session.plan,
+          events,
+        });
         return;
       }
 
@@ -398,13 +705,22 @@ export class ApiRouter {
     res.end(payload);
   }
 
+  private sendHtml(res: ServerResponse, status: number, html: string): void {
+    const payload = Buffer.from(html, 'utf-8');
+    res.writeHead(status, {
+      'Content-Type': 'text/html; charset=utf-8',
+      'Content-Length': payload.length,
+    });
+    res.end(payload);
+  }
+
   private async readJsonBody(req: IncomingMessage, maxBytes: number = 1_048_576): Promise<Record<string, unknown>> {
     const contentType = req.headers['content-type'] || '';
     if (contentType && !contentType.toLowerCase().includes('application/json')) {
       throw new SecurityError('Content-Type must be application/json', 415);
     }
 
-    return new Promise((resolve, reject) => {
+    return new Promise((resolvePromise, reject) => {
       let size = 0;
       const chunks: Buffer[] = [];
 
@@ -420,7 +736,7 @@ export class ApiRouter {
 
       req.on('end', () => {
         if (chunks.length === 0) {
-          resolve({});
+          resolvePromise({});
           return;
         }
         try {
@@ -432,7 +748,7 @@ export class ApiRouter {
             return value;
           });
           this.assertNoPrototypePollution(parsed);
-          resolve(parsed);
+          resolvePromise(parsed);
         } catch (err) {
           if (err instanceof SecurityError) {
             reject(err);

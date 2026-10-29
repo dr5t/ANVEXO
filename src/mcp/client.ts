@@ -22,6 +22,9 @@ export class McpClient {
   }
 
   async connect(): Promise<void> {
+    if (this.config.enabled === false) {
+      throw new AnvexoError(`MCP server ${this.config.name} is disabled`, 'MCP_SERVER_DISABLED', false);
+    }
     if (this.config.transport === 'stdio') {
       await this.connectStdio();
     } else if (this.config.transport === 'http') {
@@ -139,8 +142,9 @@ export class McpClient {
   }
 
   toToolDefinitions(schemas: McpToolSchema[]): ToolDefinition[] {
+    const serverIdentifier = this.config.id || this.config.name;
     return schemas.map((s) => ({
-      name: `mcp_${this.config.id}_${s.name}`,
+      name: `mcp_${serverIdentifier}_${s.name}`,
       description: `[MCP: ${this.config.name}] ${s.description || s.name}`,
       requiredPermission: PermissionScope.MCP_CONNECT,
       risk: 'medium',

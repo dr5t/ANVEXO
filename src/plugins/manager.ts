@@ -4,10 +4,16 @@ import { join } from 'node:path';
 import { AnvexoError, PermissionScope, PluginManifest } from '../core/types.js';
 
 export class PluginManager {
+  private repoPath?: string;
   private userPluginsDir: string;
 
-  constructor(customUserDir?: string) {
-    this.userPluginsDir = customUserDir || join(homedir(), '.anvexo', 'plugins');
+  constructor(repoPathOrUserDir?: string) {
+    if (repoPathOrUserDir && !repoPathOrUserDir.includes('.anvexo')) {
+      this.repoPath = repoPathOrUserDir;
+      this.userPluginsDir = join(homedir(), '.anvexo', 'plugins');
+    } else {
+      this.userPluginsDir = repoPathOrUserDir || join(homedir(), '.anvexo', 'plugins');
+    }
   }
 
   ensureUserDir(): void {
@@ -16,67 +22,84 @@ export class PluginManager {
     }
   }
 
-  validateManifest(raw: unknown): PluginManifest {
+  validateManifest(raw: unknown): string[] {
+    const errors: string[] = [];
     if (!raw || typeof raw !== 'object') {
-      throw new AnvexoError('Plugin manifest must be a JSON object', 'INVALID_PLUGIN_MANIFEST', false);
+      errors.push('Manifest must be a JSON object');
+      return errors;
     }
     const obj = raw as Record<string, unknown>;
-
     if (!obj.id || typeof obj.id !== 'string') {
-      throw new AnvexoError('Plugin manifest missing required string field: id', 'INVALID_PLUGIN_MANIFEST', false);
+      errors.push('Missing required string field: id');
     }
     if (!obj.name || typeof obj.name !== 'string') {
-      throw new AnvexoError('Plugin manifest missing required string field: name', 'INVALID_PLUGIN_MANIFEST', false);
+      errors.push('Missing required string field: name');
     }
     if (!obj.version || typeof obj.version !== 'string') {
-      throw new AnvexoError('Plugin manifest missing required string field: version', 'INVALID_PLUGIN_MANIFEST', false);
+      errors.push('Missing required string field: version');
     }
+    const allowedCapabilities = [
+      'file:read',
+      'file:write',
+      'file:delete',
+      'command:execute',
+      'git:read',
+      'git:write',
+      'test:run',
+      'network',
+      'plugin:install',
+      'plugin:execute',
+      'mcp:connect',
+    ];
+    if (Array.isArray(obj.capabilities)) {
+      for (const cap of obj.capabilities) {
+        if (!allowedCapabilities.includes(String(cap))) {
+          errors.push(`Invalid capability requested: ${String(cap)}`);
+        }
+      }
+    }
+    return errors;
+  }
 
+  parseManifest(raw: unknown): PluginManifest {
+    const errors = this.validateManifest(raw);
+    if (errors.length > 0) {
+      throw new AnvexoError(`Invalid plugin manifest: ${errors.join(', ')}`, 'INVALID_PLUGIN_MANIFEST', false);
+    }
+    const obj = raw as Record<string, unknown>;
     const permissions: PermissionScope[] = [];
-    if (Array.isArray(obj.permissions)) {
+    if (Array.isArray(obj.capabilities)) {
+      for (const c of obj.capabilities) {
+        permissions.push(c as PermissionScope);
+      }
+    } else if (Array.isArray(obj.permissions)) {
       for (const p of obj.permissions) {
-        if (typeof p === 'string') {
-          permissions.push(p as PermissionScope);
-        }
-      }
-    }
-
-    const tools: string[] = [];
-    if (Array.isArray(obj.tools)) {
-      for (const t of obj.tools) {
-        if (typeof t === 'string') {
-          tools.push(t);
-        }
-      }
-    }
-
-    const commands: string[] = [];
-    if (Array.isArray(obj.commands)) {
-      for (const c of obj.commands) {
-        if (typeof c === 'string') {
-          commands.push(c);
-        }
+        permissions.push(p as PermissionScope);
       }
     }
 
     return {
-      id: obj.id,
-      name: obj.name,
-      version: obj.version,
+      id: String(obj.id),
+      name: String(obj.name),
+      version: String(obj.version),
       description: typeof obj.description === 'string' ? obj.description : '',
-      entryPoint: typeof obj.entryPoint === 'string' ? obj.entryPoint : 'index.js',
+      entryPoint: typeof obj.entryPoint === 'string' ? obj.entryPoint : (typeof obj.main === 'string' ? obj.main : 'index.js'),
       author: typeof obj.author === 'string' ? obj.author : undefined,
       permissions,
-      tools,
-      commands,
+      tools: Array.isArray(obj.tools) ? (obj.tools as string[]) : [],
+      commands: Array.isArray(obj.commands) ? (obj.commands as string[]) : [],
       enabled: obj.enabled !== false,
       installedAt: obj.installedAt ? new Date(obj.installedAt as string) : new Date(),
     };
   }
 
-  listProjectPlugins(repoPath: string): PluginManifest[] {
+  listProjectPlugins(repoPath?: string): PluginManifest[] {
+    const targetRepo = repoPath || this.repoPath;
     const list: PluginManifest[] = [];
-    const pluginsDir = join(repoPath, '.anvexo', 'plugins');
+    if (!targetRepo) {
+      return list;
+    }
+    const pluginsDir = join(targetRepo, '.anvexo', 'plugins');
     if (!existsSync(pluginsDir)) {
       return list;
     }
@@ -87,7 +110,7 @@ export class PluginManager {
         if (existsSync(manifestFile)) {
           try {
             const raw = JSON.parse(readFileSync(manifestFile, 'utf-8'));
-            list.push(this.validateManifest(raw));
+            list.push(this.parseManifest(raw));
           } catch {
             continue;
           }
@@ -109,7 +132,7 @@ export class PluginManager {
         if (existsSync(manifestFile)) {
           try {
             const raw = JSON.parse(readFileSync(manifestFile, 'utf-8'));
-            list.push(this.validateManifest(raw));
+            list.push(this.parseManifest(raw));
           } catch {
             continue;
           }
@@ -124,17 +147,31 @@ export class PluginManager {
     for (const p of this.listUserPlugins()) {
       map.set(p.id, p);
     }
-    if (repoPath) {
-      for (const p of this.listProjectPlugins(repoPath)) {
+    const targetRepo = repoPath || this.repoPath;
+    if (targetRepo) {
+      for (const p of this.listProjectPlugins(targetRepo)) {
         map.set(p.id, p);
       }
     }
     return Array.from(map.values());
   }
 
-  installPlugin(manifest: PluginManifest, destination: 'user' | 'project', repoPath?: string): void {
-    const targetBase = destination === 'project' && repoPath
-      ? join(repoPath, '.anvexo', 'plugins')
+  async listPlugins(repoPath?: string): Promise<Array<{ manifest: PluginManifest; enabled: boolean }>> {
+    const all = this.listAllPlugins(repoPath);
+    return all.map((m) => ({ manifest: m, enabled: m.enabled }));
+  }
+
+  getPlugin(id: string, repoPath?: string): { manifest: PluginManifest; enabled: boolean } | undefined {
+    const all = this.listAllPlugins(repoPath);
+    const found = all.find((p) => p.id === id);
+    if (!found) return undefined;
+    return { manifest: found, enabled: found.enabled };
+  }
+
+  installPlugin(manifest: PluginManifest, destination: 'user' | 'project' = 'project', repoPath?: string): void {
+    const targetRepo = repoPath || this.repoPath;
+    const targetBase = destination === 'project' && targetRepo
+      ? join(targetRepo, '.anvexo', 'plugins')
       : this.userPluginsDir;
 
     if (!existsSync(targetBase)) {
@@ -150,9 +187,26 @@ export class PluginManager {
     writeFileSync(manifestFile, JSON.stringify(manifest, null, 2), 'utf-8');
   }
 
-  uninstallPlugin(id: string, destination: 'user' | 'project', repoPath?: string): boolean {
-    const targetBase = destination === 'project' && repoPath
-      ? join(repoPath, '.anvexo', 'plugins')
+  async install(pluginDir: string): Promise<{ success: boolean; plugin?: { manifest: PluginManifest }; error?: string }> {
+    try {
+      const manifestPath = join(pluginDir, 'anvexo-plugin.json');
+      if (!existsSync(manifestPath)) {
+        return { success: false, error: 'anvexo-plugin.json not found in directory' };
+      }
+      const raw = JSON.parse(readFileSync(manifestPath, 'utf-8'));
+      const manifest = this.parseManifest(raw);
+      this.installPlugin(manifest, this.repoPath ? 'project' : 'user', this.repoPath);
+      return { success: true, plugin: { manifest } };
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      return { success: false, error: msg };
+    }
+  }
+
+  uninstallPlugin(id: string, destination: 'user' | 'project' = 'project', repoPath?: string): boolean {
+    const targetRepo = repoPath || this.repoPath;
+    const targetBase = destination === 'project' && targetRepo
+      ? join(targetRepo, '.anvexo', 'plugins')
       : this.userPluginsDir;
 
     const pluginDir = join(targetBase, id);
@@ -163,9 +217,16 @@ export class PluginManager {
     return false;
   }
 
-  togglePlugin(id: string, enabled: boolean, destination: 'user' | 'project', repoPath?: string): boolean {
-    const targetBase = destination === 'project' && repoPath
-      ? join(repoPath, '.anvexo', 'plugins')
+  async uninstall(id: string): Promise<boolean> {
+    const uninstalledProject = this.uninstallPlugin(id, 'project', this.repoPath);
+    const uninstalledUser = this.uninstallPlugin(id, 'user');
+    return uninstalledProject || uninstalledUser;
+  }
+
+  async togglePlugin(id: string, enabled: boolean, destination: 'user' | 'project' = 'project', repoPath?: string): Promise<boolean> {
+    const targetRepo = repoPath || this.repoPath;
+    const targetBase = destination === 'project' && targetRepo
+      ? join(targetRepo, '.anvexo', 'plugins')
       : this.userPluginsDir;
 
     const manifestFile = join(targetBase, id, 'anvexo-plugin.json');

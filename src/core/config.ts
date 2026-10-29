@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
-import { UserPreferences, ProviderId } from './types.js';
+import { UserPreferences, ProviderId, McpServerConfig } from './types.js';
 
 export const DEFAULT_USER_PREFERENCES: UserPreferences = {
   theme: 'obsidian-slate',
@@ -17,6 +17,26 @@ export const DEFAULT_USER_PREFERENCES: UserPreferences = {
   mcpServers: [],
   plugins: [],
 };
+
+export interface AppConfig {
+  defaultProvider: string;
+  activeModel: string;
+  preferences: {
+    theme: string;
+    fontSize: number;
+    editorFont: string;
+    editorFontSize: number;
+    editorLineHeight: number;
+    editorTabSize: number;
+    editorLineNumbers: boolean;
+    editorWordWrap: boolean;
+    [key: string]: unknown;
+  };
+  providerKeys: Record<string, string>;
+  mcpServers: McpServerConfig[];
+  plugins: unknown[];
+  [key: string]: unknown;
+}
 
 export class ConfigManager {
   private userConfigDir: string;
@@ -52,10 +72,15 @@ export class ConfigManager {
       return {
         ...DEFAULT_USER_PREFERENCES,
         ...parsed,
+        activeProvider: parsed.defaultProvider || parsed.activeProvider || DEFAULT_USER_PREFERENCES.activeProvider,
+        editorFontSize: parsed.preferences?.fontSize ?? parsed.editorFontSize ?? DEFAULT_USER_PREFERENCES.editorFontSize,
+        theme: parsed.preferences?.theme ?? parsed.theme ?? DEFAULT_USER_PREFERENCES.theme,
         providerKeys: {
           ...DEFAULT_USER_PREFERENCES.providerKeys,
           ...(parsed.providerKeys || {}),
         },
+        mcpServers: parsed.mcpServers || DEFAULT_USER_PREFERENCES.mcpServers,
+        plugins: parsed.plugins || DEFAULT_USER_PREFERENCES.plugins,
       };
     } catch {
       return { ...DEFAULT_USER_PREFERENCES };
@@ -75,6 +100,62 @@ export class ConfigManager {
     };
     writeFileSync(this.userConfigFile, JSON.stringify(updated, null, 2), 'utf-8');
     return updated;
+  }
+
+  getConfig(): AppConfig {
+    const prefs = this.loadUserPreferences();
+    return {
+      defaultProvider: prefs.activeProvider,
+      activeModel: prefs.activeModel,
+      preferences: {
+        theme: prefs.theme,
+        fontSize: prefs.editorFontSize,
+        editorFont: prefs.editorFont,
+        editorFontSize: prefs.editorFontSize,
+        editorLineHeight: prefs.editorLineHeight,
+        editorTabSize: prefs.editorTabSize,
+        editorLineNumbers: prefs.editorLineNumbers,
+        editorWordWrap: prefs.editorWordWrap,
+      },
+      providerKeys: prefs.providerKeys,
+      mcpServers: prefs.mcpServers,
+      plugins: prefs.plugins,
+    };
+  }
+
+  getPreferences(): AppConfig['preferences'] {
+    return this.getConfig().preferences;
+  }
+
+  async set(key: string, value: unknown): Promise<void> {
+    const prefs = this.loadUserPreferences();
+    if (key === 'defaultProvider' && typeof value === 'string') {
+      prefs.activeProvider = value as ProviderId;
+    } else {
+      (prefs as unknown as Record<string, unknown>)[key] = value;
+    }
+    this.saveUserPreferences(prefs);
+  }
+
+  get(key: string): unknown {
+    const cfg = this.getConfig();
+    if (key in cfg) {
+      return cfg[key];
+    }
+    const prefs = this.loadUserPreferences() as unknown as Record<string, unknown>;
+    return prefs[key];
+  }
+
+  async setPreference(key: string, value: unknown): Promise<void> {
+    const prefs = this.loadUserPreferences();
+    if (key === 'fontSize' && typeof value === 'number') {
+      prefs.editorFontSize = value;
+    } else if (key === 'theme' && typeof value === 'string') {
+      prefs.theme = value;
+    } else {
+      (prefs as unknown as Record<string, unknown>)[key] = value;
+    }
+    this.saveUserPreferences(prefs);
   }
 
   getApiKey(provider: ProviderId): string | undefined {
@@ -99,6 +180,51 @@ export class ConfigManager {
     const prefs = this.loadUserPreferences();
     prefs.providerKeys[provider] = key;
     this.saveUserPreferences(prefs);
+  }
+
+  async setProviderKey(provider: string, key: string): Promise<void> {
+    this.setApiKey(provider as ProviderId, key);
+  }
+
+  getProviderKey(provider: string): string | undefined {
+    return this.getApiKey(provider as ProviderId);
+  }
+
+  async addMcpServer(server: Partial<McpServerConfig> & { name: string }): Promise<void> {
+    const prefs = this.loadUserPreferences();
+    const serverConfig: McpServerConfig = {
+      id: server.id || server.name.toLowerCase().replace(/[^a-z0-9_-]/g, '-'),
+      name: server.name,
+      transport: server.transport || 'stdio',
+      command: server.command,
+      args: server.args,
+      url: server.url,
+      env: server.env,
+      headers: server.headers,
+      enabled: server.enabled !== false,
+    };
+    prefs.mcpServers = prefs.mcpServers.filter(s => s.name !== server.name && s.id !== serverConfig.id);
+    prefs.mcpServers.push(serverConfig);
+    this.saveUserPreferences(prefs);
+  }
+
+  listMcpServers(): McpServerConfig[] {
+    return this.loadUserPreferences().mcpServers;
+  }
+
+  getMcpServer(nameOrId: string): McpServerConfig | undefined {
+    return this.listMcpServers().find(s => s.name === nameOrId || s.id === nameOrId);
+  }
+
+  async removeMcpServer(nameOrId: string): Promise<boolean> {
+    const prefs = this.loadUserPreferences();
+    const beforeCount = prefs.mcpServers.length;
+    prefs.mcpServers = prefs.mcpServers.filter(s => s.name !== nameOrId && s.id !== nameOrId);
+    if (prefs.mcpServers.length !== beforeCount) {
+      this.saveUserPreferences(prefs);
+      return true;
+    }
+    return false;
   }
 
   loadProjectConfig(repoPath: string): Record<string, unknown> {

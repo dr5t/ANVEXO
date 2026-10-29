@@ -65,6 +65,7 @@ export class AgentRuntime {
       messages: [],
       status: 'idle',
       createdAt: new Date(),
+      updatedAt: new Date(),
     };
     this.sessions.set(session.id, session);
     return session;
@@ -271,11 +272,13 @@ export class AgentRuntime {
         }
 
         if (session.mode === 'interactive' && (toolDef.risk === 'high' || toolDef.risk === 'medium')) {
-          const check = this.permissions.check(
-            toolDef.requiredPermission,
-            typeof call.arguments.path === 'string' ? call.arguments.path : '*',
-          );
-          if (!check.granted) {
+          const allowed = await this.permissions.check({
+            scope: toolDef.requiredPermission,
+            resource: typeof call.arguments.path === 'string' ? call.arguments.path : '*',
+            description: `Tool ${call.name} invocation`,
+            risk: toolDef.risk,
+          });
+          if (!allowed) {
             onEvent?.({
               type: 'waiting_approval',
               toolName: call.name,

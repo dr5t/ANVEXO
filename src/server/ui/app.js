@@ -362,14 +362,14 @@ async function executeCommandPreset(cmd) {
   if (cmd === 'scan') {
     await loadProjectInfo(currentPath);
     switchActivityView('explorer');
-  } else if (cmd === 'status') {
+  } else if (cmd === 'status' || cmd === 'diff') {
     switchTab('diffs');
-  } else if (cmd === 'diff') {
-    switchTab('diffs');
+    fetchGitDiff(currentPath);
   } else if (cmd === 'trace') {
     switchTab('trace');
   } else if (cmd === 'report') {
     switchTab('report');
+
   } else if (cmd === 'test') {
     document.getElementById('objectiveInput').value = 'Run automated test suite and verify security boundaries';
     triggerInvestigation();
@@ -388,6 +388,44 @@ async function executeCommandPreset(cmd) {
     } catch (err) {
       appendTelemetryLog(`[ERROR] Rebuild failed: ${err.message}`);
     }
+  }
+}
+
+async function fetchGitDiff(repoPath) {
+  const container = document.getElementById('diffContentContainer');
+  try {
+    const res = await fetch(`/api/git/diff?repo=${encodeURIComponent(repoPath)}`);
+    if (res.ok) {
+      const data = await res.json();
+      if (!data.diff || data.diff.trim().length === 0) {
+        container.innerHTML = '<div class="empty-state">Working tree clean. Zero diff modifications detected.</div>';
+        document.getElementById('diffStatsBadge').innerText = 'CLEAN';
+      } else {
+        container.innerHTML = '';
+        document.getElementById('diffStatsBadge').innerText = 'DIFF DETECTED';
+        const card = document.createElement('div');
+        card.className = 'diff-card';
+        const body = document.createElement('div');
+        body.style.padding = '8px';
+        body.style.background = 'var(--bg-editor)';
+        data.diff.split('\n').forEach(l => {
+          const lineDiv = document.createElement('div');
+          if (l.startsWith('+') && !l.startsWith('+++')) {
+            lineDiv.className = 'diff-line add';
+          } else if (l.startsWith('-') && !l.startsWith('---')) {
+            lineDiv.className = 'diff-line del';
+          } else {
+            lineDiv.className = 'diff-line ctx';
+          }
+          lineDiv.innerText = l;
+          body.appendChild(lineDiv);
+        });
+        card.appendChild(body);
+        container.appendChild(card);
+      }
+    }
+  } catch (err) {
+    appendTelemetryLog(`[ERROR] Diff fetch failed: ${err.message}`);
   }
 }
 

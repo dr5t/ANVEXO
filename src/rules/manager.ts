@@ -1,20 +1,26 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
-import { RuleDefinition, RuleScope } from '../core/types.js';
+import { RuleDefinition } from '../core/types.js';
 
 export class RuleManager {
+  private repoPath?: string;
   private userRulesDir: string;
 
-  constructor(customUserDir?: string) {
-    this.userRulesDir = customUserDir || join(homedir(), '.anvexo', 'rules');
+  constructor(repoPathOrUserDir?: string) {
+    if (repoPathOrUserDir && !repoPathOrUserDir.includes('.anvexo')) {
+      this.repoPath = repoPathOrUserDir;
+      this.userRulesDir = join(homedir(), '.anvexo', 'rules');
+    } else {
+      this.userRulesDir = repoPathOrUserDir || join(homedir(), '.anvexo', 'rules');
+    }
   }
 
   getSystemRules(): RuleDefinition[] {
     return [
       {
         id: 'system-safety-zero-leakage',
-        title: 'Zero Secret and Credential Leakage',
+        title: 'Secret Redaction and Zero Leakage',
         scope: 'system',
         content: 'Never output, log, or persist private API keys, tokens, passwords, or credentials.',
         priority: 100,
@@ -22,7 +28,7 @@ export class RuleManager {
       },
       {
         id: 'system-safety-boundary-containment',
-        title: 'Filesystem Boundary Containment',
+        title: 'Path Traversal Defense and Boundary Containment',
         scope: 'system',
         content: 'All filesystem modifications and read operations must be strictly contained within authorized repository root boundaries.',
         priority: 100,
@@ -36,12 +42,24 @@ export class RuleManager {
         priority: 100,
         enabled: true,
       },
+      {
+        id: 'system-safety-bounded-execution',
+        title: 'Bounded Execution Loop',
+        scope: 'system',
+        content: 'Always enforce maximum iteration bounds and timeout checks to prevent infinite agent execution loops.',
+        priority: 100,
+        enabled: true,
+      },
     ];
   }
 
-  listProjectRules(repoPath: string): RuleDefinition[] {
+  listProjectRules(repoPath?: string): RuleDefinition[] {
+    const targetRepo = repoPath || this.repoPath;
     const rules: RuleDefinition[] = [];
-    const projectDir = join(repoPath, '.anvexo', 'rules');
+    if (!targetRepo) {
+      return rules;
+    }
+    const projectDir = join(targetRepo, '.anvexo', 'rules');
     if (!existsSync(projectDir)) {
       return rules;
     }
@@ -51,15 +69,31 @@ export class RuleManager {
         const filePath = join(projectDir, entry.name);
         const content = readFileSync(filePath, 'utf-8');
         const id = entry.name.replace(/\.md$/, '');
-        const titleLine = content.split('\n')[0] || id;
-        const title = titleLine.replace(/^#+\s*/, '').trim() || id;
+        let title = id;
+        let priority = 10;
+        const trimmed = content.trim();
+        if (trimmed.startsWith('---')) {
+          const secondDelim = trimmed.indexOf('---', 3);
+          if (secondDelim !== -1) {
+            const fm = trimmed.slice(3, secondDelim);
+            for (const line of fm.split('\n')) {
+              const colon = line.indexOf(':');
+              if (colon !== -1) {
+                const k = line.slice(0, colon).trim().toLowerCase();
+                const v = line.slice(colon + 1).trim();
+                if (k === 'title') title = v;
+                if (k === 'priority') priority = parseInt(v, 10) || 10;
+              }
+            }
+          }
+        }
         rules.push({
           id,
           title,
           scope: 'project',
           content: content.trim(),
           path: filePath,
-          priority: 10,
+          priority,
           enabled: true,
         });
       }
@@ -78,15 +112,31 @@ export class RuleManager {
         const filePath = join(this.userRulesDir, entry.name);
         const content = readFileSync(filePath, 'utf-8');
         const id = entry.name.replace(/\.md$/, '');
-        const titleLine = content.split('\n')[0] || id;
-        const title = titleLine.replace(/^#+\s*/, '').trim() || id;
+        let title = id;
+        let priority = 50;
+        const trimmed = content.trim();
+        if (trimmed.startsWith('---')) {
+          const secondDelim = trimmed.indexOf('---', 3);
+          if (secondDelim !== -1) {
+            const fm = trimmed.slice(3, secondDelim);
+            for (const line of fm.split('\n')) {
+              const colon = line.indexOf(':');
+              if (colon !== -1) {
+                const k = line.slice(0, colon).trim().toLowerCase();
+                const v = line.slice(colon + 1).trim();
+                if (k === 'title') title = v;
+                if (k === 'priority') priority = parseInt(v, 10) || 50;
+              }
+            }
+          }
+        }
         rules.push({
           id,
           title,
           scope: 'user',
           content: content.trim(),
           path: filePath,
-          priority: 50,
+          priority,
           enabled: true,
         });
       }
@@ -95,12 +145,17 @@ export class RuleManager {
   }
 
   listAllRules(repoPath?: string): RuleDefinition[] {
+    const targetRepo = repoPath || this.repoPath;
     const rules = [...this.getSystemRules()];
     rules.push(...this.listUserRules());
-    if (repoPath) {
-      rules.push(...this.listProjectRules(repoPath));
+    if (targetRepo) {
+      rules.push(...this.listProjectRules(targetRepo));
     }
     return rules.sort((a, b) => b.priority - a.priority);
+  }
+
+  async listRules(repoPath?: string): Promise<RuleDefinition[]> {
+    return this.listAllRules(repoPath);
   }
 
   buildSystemPrompt(repoPath?: string): string {

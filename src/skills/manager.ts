@@ -6,13 +6,21 @@ import { SkillDefinition } from '../core/types.js';
 import { parseSkillMarkdown } from './parser.js';
 
 export class SkillManager {
+  private repoPath?: string;
   private userSkillsDir: string;
   private builtinSkillsDir: string;
 
-  constructor(customUserDir?: string) {
-    this.userSkillsDir = customUserDir || join(homedir(), '.anvexo', 'skills');
+  constructor(repoPathOrUserDir?: string) {
+    if (repoPathOrUserDir && !repoPathOrUserDir.includes('.anvexo')) {
+      this.repoPath = repoPathOrUserDir;
+      this.userSkillsDir = join(homedir(), '.anvexo', 'skills');
+    } else {
+      this.userSkillsDir = repoPathOrUserDir || join(homedir(), '.anvexo', 'skills');
+    }
     const currentDir = dirname(fileURLToPath(import.meta.url));
-    this.builtinSkillsDir = join(currentDir, 'builtin');
+    const localBuiltin = join(currentDir, 'builtin');
+    const fallbackBuiltin = join(currentDir, '../../src/skills/builtin');
+    this.builtinSkillsDir = existsSync(localBuiltin) ? localBuiltin : fallbackBuiltin;
   }
 
   listBuiltinSkills(): SkillDefinition[] {
@@ -33,9 +41,13 @@ export class SkillManager {
     return skills;
   }
 
-  listProjectSkills(repoPath: string): SkillDefinition[] {
+  listProjectSkills(repoPath?: string): SkillDefinition[] {
+    const targetRepo = repoPath || this.repoPath;
     const skills: SkillDefinition[] = [];
-    const projectDir = join(repoPath, '.anvexo', 'skills');
+    if (!targetRepo) {
+      return skills;
+    }
+    const projectDir = join(targetRepo, '.anvexo', 'skills');
     if (!existsSync(projectDir)) {
       return skills;
     }
@@ -45,7 +57,7 @@ export class SkillManager {
         const skillFile = join(projectDir, entry.name, 'SKILL.md');
         if (existsSync(skillFile)) {
           const content = readFileSync(skillFile, 'utf-8');
-          skills.push(parseSkillMarkdown(content, entry.name, 'project', skillFile));
+          skills.push(parseSkillMarkdown(content, entry.name, 'workspace', skillFile));
         }
       }
     }
@@ -71,6 +83,7 @@ export class SkillManager {
   }
 
   listAllSkills(repoPath?: string): SkillDefinition[] {
+    const targetRepo = repoPath || this.repoPath;
     const map = new Map<string, SkillDefinition>();
 
     for (const s of this.listBuiltinSkills()) {
@@ -81,13 +94,17 @@ export class SkillManager {
       map.set(s.id, s);
     }
 
-    if (repoPath) {
-      for (const s of this.listProjectSkills(repoPath)) {
+    if (targetRepo) {
+      for (const s of this.listProjectSkills(targetRepo)) {
         map.set(s.id, s);
       }
     }
 
     return Array.from(map.values());
+  }
+
+  async listSkills(repoPath?: string): Promise<SkillDefinition[]> {
+    return this.listAllSkills(repoPath);
   }
 
   getSkill(id: string, repoPath?: string): SkillDefinition | undefined {

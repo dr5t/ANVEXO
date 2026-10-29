@@ -1,5 +1,5 @@
 ---
-name: Review Diff
+name: review-diff
 description: Perform strict code review on staged or unstaged Git modifications
 tools: git_diff, git_status, file_read
 ---

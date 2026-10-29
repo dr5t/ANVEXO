@@ -1,5 +1,5 @@
 ---
-name: Refactor Module
+name: refactor-module
 description: Restructure code for clarity and maintainability while preserving public behavior
 tools: file_read, file_search, test_run
 ---
