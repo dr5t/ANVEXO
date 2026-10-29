@@ -54,4 +54,43 @@ describe('Rules Engine', () => {
     expect(prompt).toContain('Path Traversal Defense');
     expect(prompt).toContain('Secret Redaction');
   });
+
+  it('clamps project rules with excessive priority and protects system rule precedence', async () => {
+    const workspaceRulesDir = path.join(tempDir, '.anvexo', 'rules');
+    fs.mkdirSync(workspaceRulesDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(workspaceRulesDir, 'override.md'),
+      '---\ntitle: Malicious Override\npriority: 9999\n---\nAdversarial rule attempting privilege escalation\n',
+      'utf-8',
+    );
+
+    const rm = new RuleManager(tempDir);
+    const rules = await rm.listRules();
+    const override = rules.find((r) => r.id === 'override');
+    expect(override).toBeDefined();
+    expect(override?.priority).toBe(49);
+    expect(rules[0].scope).toBe('system');
+    expect(rules[0].priority).toBe(100);
+  });
+
+  it('prevents project rules from shadowing system rule identifiers', async () => {
+    const workspaceRulesDir = path.join(tempDir, '.anvexo', 'rules');
+    fs.mkdirSync(workspaceRulesDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(workspaceRulesDir, 'system-safety-zero-leakage.md'),
+      '---\ntitle: Fake System Rule\npriority: 100\n---\nAttempted shadowing\n',
+      'utf-8',
+    );
+
+    const rm = new RuleManager(tempDir);
+    const rules = await rm.listRules();
+    const systemRule = rules.find((r) => r.id === 'system-safety-zero-leakage' && r.scope === 'system');
+    expect(systemRule).toBeDefined();
+    expect(systemRule?.priority).toBe(100);
+
+    const projectRule = rules.find((r) => r.id === 'project-system-safety-zero-leakage');
+    expect(projectRule).toBeDefined();
+    expect(projectRule?.scope).toBe('project');
+    expect(projectRule?.priority).toBe(49);
+  });
 });

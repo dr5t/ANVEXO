@@ -3,6 +3,7 @@ import * as path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import type { ToolDefinition, ToolResult } from '../core/index.js';
 import { PermissionScope, redactSecrets } from '../core/index.js';
+import { validatePathWithinRoot } from '../server/security.js';
 
 export function getCleanSubprocessEnv(): Record<string, string> {
   return {
@@ -37,33 +38,33 @@ export function createFileReadTool(): ToolDefinition {
         return { success: false, output: '', error: 'Null byte detected in path', duration: 0, metadata: {} };
       }
 
-      const resolved = path.resolve(filePath);
+      let resolved = path.resolve(filePath);
       const blockedFiles = ['/etc/passwd', '/etc/shadow', '/etc/sudoers'];
       if (blockedFiles.includes(resolved)) {
         return { success: false, output: '', error: 'Access to system sensitive files is forbidden', duration: 0, metadata: {} };
       }
 
       if (args.rootPath && typeof args.rootPath === 'string') {
-        const canonicalRoot = fs.existsSync(args.rootPath) ? fs.realpathSync(path.resolve(args.rootPath)) : path.resolve(args.rootPath);
-        const canonicalTarget = path.resolve(canonicalRoot, filePath);
-        const rel = path.relative(canonicalRoot, canonicalTarget);
-        if (rel.startsWith('..') || path.isAbsolute(rel)) {
-          return { success: false, output: '', error: `Path traversal attempt detected: ${filePath} escapes root ${args.rootPath}`, duration: 0, metadata: {} };
+        try {
+          resolved = validatePathWithinRoot(filePath, args.rootPath);
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : String(err);
+          return { success: false, output: '', error: msg, duration: 0, metadata: {} };
         }
       }
 
-      if (!fs.existsSync(filePath)) {
+      if (!fs.existsSync(resolved)) {
         return { success: false, output: '', error: `File not found: ${filePath}`, duration: 0, metadata: {} };
       }
 
-      const stat = fs.statSync(filePath);
+      const stat = fs.statSync(resolved);
       if (stat.isDirectory()) {
         return { success: false, output: '', error: `Path is a directory: ${filePath}`, duration: 0, metadata: {} };
       }
 
       if (stat.size > maxBytes) {
         const buffer = Buffer.alloc(maxBytes);
-        const fd = fs.openSync(filePath, 'r');
+        const fd = fs.openSync(resolved, 'r');
         fs.readSync(fd, buffer, 0, maxBytes, 0);
         fs.closeSync(fd);
         return {
@@ -74,7 +75,7 @@ export function createFileReadTool(): ToolDefinition {
         };
       }
 
-      const content = fs.readFileSync(filePath, 'utf-8');
+      const content = fs.readFileSync(resolved, 'utf-8');
       return { success: true, output: redactSecrets(content), duration: 0, metadata: { size: stat.size } };
     },
   };
@@ -397,18 +398,18 @@ export function createFileWriteTool(): ToolDefinition {
         return { success: false, output: '', error: 'Null byte detected in path', duration: 0, metadata: {} };
       }
 
-      const resolved = path.resolve(filePath);
+      let resolved = path.resolve(filePath);
       const blockedFiles = ['/etc/passwd', '/etc/shadow', '/etc/sudoers'];
       if (blockedFiles.includes(resolved)) {
         return { success: false, output: '', error: 'Access to system sensitive files is forbidden', duration: 0, metadata: {} };
       }
 
       if (args.rootPath && typeof args.rootPath === 'string') {
-        const canonicalRoot = fs.existsSync(args.rootPath) ? fs.realpathSync(path.resolve(args.rootPath)) : path.resolve(args.rootPath);
-        const canonicalTarget = path.resolve(canonicalRoot, filePath);
-        const rel = path.relative(canonicalRoot, canonicalTarget);
-        if (rel.startsWith('..') || path.isAbsolute(rel)) {
-          return { success: false, output: '', error: `Path traversal attempt detected: ${filePath} escapes root ${args.rootPath}`, duration: 0, metadata: {} };
+        try {
+          resolved = validatePathWithinRoot(filePath, args.rootPath);
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : String(err);
+          return { success: false, output: '', error: msg, duration: 0, metadata: {} };
         }
       }
 
@@ -448,18 +449,18 @@ export function createFileDeleteTool(): ToolDefinition {
         return { success: false, output: '', error: 'Null byte detected in path', duration: 0, metadata: {} };
       }
 
-      const resolved = path.resolve(filePath);
+      let resolved = path.resolve(filePath);
       const blockedFiles = ['/etc/passwd', '/etc/shadow', '/etc/sudoers'];
       if (blockedFiles.includes(resolved)) {
         return { success: false, output: '', error: 'Access to system sensitive files is forbidden', duration: 0, metadata: {} };
       }
 
       if (args.rootPath && typeof args.rootPath === 'string') {
-        const canonicalRoot = fs.existsSync(args.rootPath) ? fs.realpathSync(path.resolve(args.rootPath)) : path.resolve(args.rootPath);
-        const canonicalTarget = path.resolve(canonicalRoot, filePath);
-        const rel = path.relative(canonicalRoot, canonicalTarget);
-        if (rel.startsWith('..') || path.isAbsolute(rel)) {
-          return { success: false, output: '', error: `Path traversal attempt detected: ${filePath} escapes root ${args.rootPath}`, duration: 0, metadata: {} };
+        try {
+          resolved = validatePathWithinRoot(filePath, args.rootPath);
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : String(err);
+          return { success: false, output: '', error: msg, duration: 0, metadata: {} };
         }
       }
 

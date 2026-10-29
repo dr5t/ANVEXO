@@ -8,7 +8,12 @@ import {
   SecurityError,
 } from '../../src/server/index.js';
 import { redactSecrets } from '../../src/core/index.js';
-import { createFileReadTool, getCleanSubprocessEnv } from '../../src/tools/builtin.js';
+import {
+  createFileReadTool,
+  createFileWriteTool,
+  createFileDeleteTool,
+  getCleanSubprocessEnv,
+} from '../../src/tools/builtin.js';
 
 describe('Security Baseline and Defensive Controls', () => {
   let tmpDir: string;
@@ -62,6 +67,56 @@ describe('Security Baseline and Defensive Controls', () => {
       fs.writeFileSync(validFile, 'valid content');
       const resolved = validatePathWithinRoot('valid.txt', tmpDir);
       expect(resolved).toBe(fs.realpathSync(validFile));
+    });
+
+    it('blocks file_read from following symlinks escaping rootPath', async () => {
+      const outsideFile = path.join(os.tmpdir(), `anvexo-read-out-${Date.now()}.txt`);
+      fs.writeFileSync(outsideFile, 'secret-content');
+      const symlinkPath = path.join(tmpDir, 'symlink-read');
+      fs.symlinkSync(outsideFile, symlinkPath);
+
+      const tool = createFileReadTool();
+      const res = await tool.execute({ path: 'symlink-read', rootPath: tmpDir });
+      expect(res.success).toBe(false);
+      expect(res.error).toContain('Symlink escape detected');
+
+      if (fs.existsSync(outsideFile)) {
+        fs.unlinkSync(outsideFile);
+      }
+    });
+
+    it('blocks file_write from following symlinks escaping rootPath', async () => {
+      const outsideFile = path.join(os.tmpdir(), `anvexo-write-out-${Date.now()}.txt`);
+      fs.writeFileSync(outsideFile, 'initial-content');
+      const symlinkPath = path.join(tmpDir, 'symlink-write');
+      fs.symlinkSync(outsideFile, symlinkPath);
+
+      const tool = createFileWriteTool();
+      const res = await tool.execute({ path: 'symlink-write', content: 'overwritten', rootPath: tmpDir });
+      expect(res.success).toBe(false);
+      expect(res.error).toContain('Symlink escape detected');
+      expect(fs.readFileSync(outsideFile, 'utf-8')).toBe('initial-content');
+
+      if (fs.existsSync(outsideFile)) {
+        fs.unlinkSync(outsideFile);
+      }
+    });
+
+    it('blocks file_delete from unlinking targets outside rootPath via symlinks', async () => {
+      const outsideFile = path.join(os.tmpdir(), `anvexo-del-out-${Date.now()}.txt`);
+      fs.writeFileSync(outsideFile, 'do-not-delete');
+      const symlinkPath = path.join(tmpDir, 'symlink-del');
+      fs.symlinkSync(outsideFile, symlinkPath);
+
+      const tool = createFileDeleteTool();
+      const res = await tool.execute({ path: 'symlink-del', rootPath: tmpDir });
+      expect(res.success).toBe(false);
+      expect(res.error).toContain('Symlink escape detected');
+      expect(fs.existsSync(outsideFile)).toBe(true);
+
+      if (fs.existsSync(outsideFile)) {
+        fs.unlinkSync(outsideFile);
+      }
     });
   });
 

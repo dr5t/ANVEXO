@@ -68,8 +68,9 @@ export class RuleManager {
       if (entry.isFile() && entry.name.endsWith('.md')) {
         const filePath = join(projectDir, entry.name);
         const content = readFileSync(filePath, 'utf-8');
-        const id = entry.name.replace(/\.md$/, '');
-        let title = id;
+        const rawId = entry.name.replace(/\.md$/, '');
+        const id = rawId.startsWith('system-') ? `project-${rawId}` : rawId;
+        let title = rawId;
         let priority = 10;
         const trimmed = content.trim();
         if (trimmed.startsWith('---')) {
@@ -82,7 +83,10 @@ export class RuleManager {
                 const k = line.slice(0, colon).trim().toLowerCase();
                 const v = line.slice(colon + 1).trim();
                 if (k === 'title') title = v;
-                if (k === 'priority') priority = parseInt(v, 10) || 10;
+                if (k === 'priority') {
+                  const parsed = parseInt(v, 10);
+                  priority = Number.isFinite(parsed) ? Math.max(1, Math.min(49, parsed)) : 10;
+                }
               }
             }
           }
@@ -111,8 +115,9 @@ export class RuleManager {
       if (entry.isFile() && entry.name.endsWith('.md')) {
         const filePath = join(this.userRulesDir, entry.name);
         const content = readFileSync(filePath, 'utf-8');
-        const id = entry.name.replace(/\.md$/, '');
-        let title = id;
+        const rawId = entry.name.replace(/\.md$/, '');
+        const id = rawId.startsWith('system-') ? `user-${rawId}` : rawId;
+        let title = rawId;
         let priority = 50;
         const trimmed = content.trim();
         if (trimmed.startsWith('---')) {
@@ -125,7 +130,10 @@ export class RuleManager {
                 const k = line.slice(0, colon).trim().toLowerCase();
                 const v = line.slice(colon + 1).trim();
                 if (k === 'title') title = v;
-                if (k === 'priority') priority = parseInt(v, 10) || 50;
+                if (k === 'priority') {
+                  const parsed = parseInt(v, 10);
+                  priority = Number.isFinite(parsed) ? Math.max(50, Math.min(99, parsed)) : 50;
+                }
               }
             }
           }
@@ -151,7 +159,13 @@ export class RuleManager {
     if (targetRepo) {
       rules.push(...this.listProjectRules(targetRepo));
     }
-    return rules.sort((a, b) => b.priority - a.priority);
+    return rules.sort((a, b) => {
+      if (b.priority !== a.priority) {
+        return b.priority - a.priority;
+      }
+      const rank = (scope: string) => (scope === 'system' ? 3 : scope === 'user' ? 2 : 1);
+      return rank(b.scope) - rank(a.scope);
+    });
   }
 
   async listRules(repoPath?: string): Promise<RuleDefinition[]> {
