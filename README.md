@@ -1,18 +1,18 @@
 <p align="center">
-  <img src="assets/brand/anvexo-logo.svg" alt="ANVEXO - Autonomous Software Investigation and Codebase Intelligence Platform" width="880">
+  <img src="assets/brand/anvexo-logo.svg" alt="ANVEXO: INVESTIGATE | VERIFY | UNDERSTAND" width="820">
 </p>
 
 <p align="center">
-  <strong>Investigate deeper. Understand your codebase. Verify every fix.</strong>
+  <strong>INVESTIGATE | VERIFY | UNDERSTAND</strong>
 </p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/version-0.1.0-E54D2E?style=flat-square&labelColor=141618" alt="Version 0.1.0">
   <img src="https://img.shields.io/badge/node-%3E%3D20.0.0-58A6FF?style=flat-square&labelColor=141618" alt="Node.js 20+">
   <img src="https://img.shields.io/badge/typescript-5.4+-3178C6?style=flat-square&labelColor=141618" alt="TypeScript 5.4+">
-  <img src="https://img.shields.io/badge/tests-80%20passed%20(100%25)-3FB950?style=flat-square&labelColor=141618" alt="80 Tests Passed">
-  <img src="https://img.shields.io/badge/coverage-75.2%25%20lines-58A6FF?style=flat-square&labelColor=141618" alt="Coverage 75.2%">
-  <img src="https://img.shields.io/badge/license-commercial%20draft-E54D2E?style=flat-square&labelColor=141618" alt="Commercial License">
+  <img src="https://img.shields.io/badge/tests-109%20passed%20(100%25)-3FB950?style=flat-square&labelColor=141618" alt="109 Tests Passed">
+  <img src="https://img.shields.io/badge/coverage-74.9%25%20lines-58A6FF?style=flat-square&labelColor=141618" alt="Coverage 74.9%">
+  <img src="https://img.shields.io/badge/license-UNLICENSED-E54D2E?style=flat-square&labelColor=141618" alt="Commercial License">
 </p>
 
 ---
@@ -23,6 +23,7 @@
 - [The Problem](#the-problem)
 - [How ANVEXO Works](#how-anvexo-works)
 - [Core Capabilities](#core-capabilities)
+- [Brand Identity and Visual System](#brand-identity-and-visual-system)
 - [System Architecture](#system-architecture)
 - [Investigation Lifecycle](#investigation-lifecycle)
 - [Developer Workbench (Split IDE Canvas)](#developer-workbench-split-ide-canvas)
@@ -91,10 +92,42 @@ ANVEXO executes investigations in structured, deterministic stages:
 - **Contradiction Detection Engine**: Flags incoming hypotheses that dispute previously verified findings or risk reintroducing fixed regressions.
 
 ### 3. Split IDE Canvas Workbench
-- **Obsidian Slate Visual Identity**: Dark developer-focused palette (`#0C0D0E`, `#141618`, `#24272A`, `#EDEDED`, `#E54D2E`) engineered for prolonged technical work.
+- **Multiple Developer Themes**: Ships with 6 engineered themes including Obsidian Slate (default), Midnight Graphite, Nord, Solarized Dark, Light Studio, and High Contrast.
+- **Typography and Editor Controls**: Selectable font families (JetBrains Mono, IBM Plex Mono, Fira Code, Inter, system monospace), font sizes (11-18px), line height, and line numbers.
 - **Interactive DAG Step Tracker**: Displays real-time progress, execution durations, and step completion statuses.
 - **Evidence Stream and Code Viewer**: Provides side-by-side inspection of live diagnostic outputs, git diffs, and repository source code.
+- **Layout and Shortcuts**: Draggable split canvas dividers, collapsible sidebar (`Cmd+B`), telemetry drawer (`Cmd+J`), and dedicated Settings modal (`Cmd+,`).
 - **Report Aggregation**: One-click markdown report export with complete evidence citations.
+
+---
+
+## Brand Identity and Visual System
+
+The ANVEXO brand language reflects precision, technical authority, and empirical investigation. Engineered to sit alongside modern developer environments such as JetBrains, VS Code, and Zed, the visual system centers on a faceted geometric A-mark, custom uppercase typography with an orange accent on the letter X, and the core engineering principle: **INVESTIGATE | VERIFY | UNDERSTAND**.
+
+### Symbol Anatomy and Geometry
+
+- **Left Facet (Graphite/Charcoal)**: Multi-tonal shaded graphite (`#2D323A` to `#14161A`) representing empirical foundation, codebase memory, and rigor.
+- **Right Facet (Vivid Orange)**: High-energy radiant orange (`#FF7A38` to `#E84410`) symbolizing hypothesis testing, active investigation, and discovery.
+- **Negative Space**: Balanced interior silhouette maintaining clear readability down to 16x16 icon sizes.
+- **Pure Vector Artwork**: 100% SVG geometry with zero raster embeddings, zero artificial 3D bevels, and zero gratuitous neon glows.
+
+### Asset Set and Variants
+
+| Asset | Variant | Context and Resolution | Relative Path |
+| :--- | :--- | :--- | :--- |
+| **Primary Logo** | Dark Lockup | Documentation, website headers, application splash | `assets/brand/anvexo-logo.svg` |
+| **Horizontal Logo** | No Tagline | Compact toolbars, navigation bars, top-level headers | `assets/brand/anvexo-logo-horizontal.svg` |
+| **Faceted Symbol** | Standalone Mark | Window title bar, tab chips, status indicators | `assets/brand/anvexo-symbol.svg` |
+| **Stacked Logo** | Centered Layout | Constrained square containers, social cards | `assets/brand/anvexo-logo-stacked.svg` |
+| **Dark Theme Logo** | High Contrast Dark | Obsidian Slate, Midnight Graphite, Nord themes | `assets/brand/anvexo-logo-dark.svg` |
+| **Light Theme Logo** | Charcoal on Light | Light Studio, documentation light theme, print | `assets/brand/anvexo-logo-light.svg` |
+| **Monochrome Light** | Solid White / Zinc | High-contrast dark backgrounds, monochrome displays | `assets/brand/anvexo-logo-monochrome-light.svg` |
+| **Monochrome Dark** | Solid Slate / Black | High-contrast light backgrounds, monochrome printing | `assets/brand/anvexo-logo-monochrome-dark.svg` |
+| **Wordmark Only** | Dark Background | Headers, compact navigation, minimal title bars | `assets/brand/anvexo-wordmark-dark.svg` |
+| **Wordmark Only** | Light Background | Light surface documentation and headers | `assets/brand/anvexo-wordmark-light.svg` |
+| **Application Icon** | Rounded Squircle | macOS Dock, Windows taskbar, application launchers | `assets/brand/anvexo-app-icon.svg` |
+| **Favicon** | 32x32 Vector Mark | Browser tabs, web bookmarks, workbench interface | `assets/brand/favicon.svg` |
 
 ---
 
@@ -250,7 +283,7 @@ ANVEXO avoids heavyweight framework dependencies in favor of a lean, hardened ru
 
 ### Testing and Code Quality
 - **Test Runner**: Vitest 4.1.12
-- **Coverage Engine**: Vitest Coverage V8 (75.2% line coverage across 8 test suites)
+- **Coverage Engine**: Vitest Coverage V8 (74.9% line coverage across 10 test suites, 109 passing tests)
 
 ---
 
@@ -411,7 +444,18 @@ ANVEXO is engineered to withstand hostile boundaries and untrusted codebases. Th
 ANVEXO/
 ├── assets/
 │   ├── brand/
-│   │   └── anvexo-logo.svg           # Brand mark and header typography
+│   │   ├── anvexo-logo.svg           # Primary horizontal brand lockup
+│   │   ├── anvexo-logo-horizontal.svg# Horizontal logo without tagline
+│   │   ├── anvexo-symbol.svg         # Angular faceted geometric A-mark
+│   │   ├── anvexo-logo-stacked.svg   # Stacked logo for square layouts
+│   │   ├── anvexo-logo-dark.svg      # Dark theme horizontal logo
+│   │   ├── anvexo-logo-light.svg     # Light theme horizontal logo
+│   │   ├── anvexo-logo-monochrome-light.svg # Monochrome light variant
+│   │   ├── anvexo-logo-monochrome-dark.svg  # Monochrome dark variant
+│   │   ├── anvexo-wordmark-dark.svg  # Custom wordmark for dark surfaces
+│   │   ├── anvexo-wordmark-light.svg # Custom wordmark for light surfaces
+│   │   ├── anvexo-app-icon.svg       # Desktop and launcher application icon
+│   │   └── favicon.svg               # Web workbench favicon asset
 │   ├── diagrams/
 │   │   ├── system-architecture.svg   # Multi-tier system architecture
 │   │   ├── investigation-dataflow.svg# Investigation lifecycle pipeline
@@ -454,9 +498,11 @@ ANVEXO/
 │   │   ├── security.ts               # Path canonicalization and host validation
 │   │   ├── server.ts                 # Native HTTP server wrapper
 │   │   └── ui/                       # Split IDE Canvas workbench interface
+│   │       ├── brand/                # Integrated vector brand suite
 │   │       ├── app.js                # Workbench DOM controller
 │   │       ├── index.html            # Workbench HTML structure
-│   │       └── styles.css            # Obsidian Slate design system styles
+│   │       ├── styles.css            # 6 themes and typography styling
+│   │       └── favicon.svg           # High-legibility workbench favicon
 │   ├── tools/
 │   │   ├── builtin.ts                # Hardened filesystem and git tools
 │   │   └── index.ts                  # Tool registry and permission gate
@@ -471,6 +517,7 @@ ANVEXO/
 │       ├── evidence.test.ts          # Evidence ledger and secret redaction tests
 │       ├── permissions.test.ts       # Scope matching and wildcard tests
 │       ├── server.test.ts            # Security boundaries, CSRF, and rate tests
+│       ├── settings.test.ts          # Themes, typography, and brand asset tests
 │       └── tools.test.ts             # Tool execution and argument safety tests
 ├── package.json                      # Project metadata and package scripts
 ├── tsconfig.json                     # TypeScript compiler configuration

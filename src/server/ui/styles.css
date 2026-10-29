@@ -866,14 +866,14 @@ body {
 }
 
 .tab-content {
-  display: none;
+  display: none !important;
   flex: 1;
   overflow: hidden;
   flex-direction: column;
 }
 
 .tab-content.active {
-  display: flex;
+  display: flex !important;
 }
 
 .tab-toolbar {
