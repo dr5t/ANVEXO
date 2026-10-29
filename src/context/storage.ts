@@ -86,9 +86,11 @@ export class LocalStorageAdapter implements StorageAdapter {
       fs.unlinkSync(filePath);
     }
     const dir = path.dirname(filePath);
-    if (fs.existsSync(dir) && fs.readdirSync(dir).length === 0) {
-      fs.rmdirSync(dir);
-    }
+    try {
+      if (fs.existsSync(dir) && fs.readdirSync(dir).length === 0) {
+        fs.rmdirSync(dir);
+      }
+    } catch {}
   }
 
   async exists(repoRoot: string): Promise<boolean> {
