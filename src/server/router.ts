@@ -14,11 +14,14 @@ import {
   validateRepositoryExists,
   validatePathWithinRoot,
   validateHostHeader,
+  validateSecFetchSite,
   SecurityError,
 } from './security.js';
 
 export class ApiRouter {
   private rateLimiter: RateLimiter;
+  private heavyRateLimiter: RateLimiter;
+  private fileRateLimiter: RateLimiter;
   private jobManager: JobManager;
   private engine: InvestigationEngine;
   private contextManager: ContextManager;
@@ -27,6 +30,8 @@ export class ApiRouter {
   constructor(host: string = '127.0.0.1') {
     this.host = host;
     this.rateLimiter = new RateLimiter({ windowMs: 60000, maxRequests: 300 });
+    this.heavyRateLimiter = new RateLimiter({ windowMs: 60000, maxRequests: 20 });
+    this.fileRateLimiter = new RateLimiter({ windowMs: 60000, maxRequests: 120 });
     this.jobManager = new JobManager();
     this.engine = new InvestigationEngine();
     this.contextManager = new ContextManager();
@@ -38,6 +43,12 @@ export class ApiRouter {
 
   getRateLimiter(): RateLimiter {
     return this.rateLimiter;
+  }
+
+  destroy(): void {
+    this.rateLimiter.destroy();
+    this.heavyRateLimiter.destroy();
+    this.fileRateLimiter.destroy();
   }
 
   async handleRequest(req: IncomingMessage, res: ServerResponse): Promise<void> {
@@ -65,6 +76,13 @@ export class ApiRouter {
     const parsedUrl = new URL(req.url || '/', `http://${host}`);
     const pathname = parsedUrl.pathname;
     const method = req.method || 'GET';
+
+    if (['POST', 'PUT', 'DELETE'].includes(method)) {
+      if (!validateSecFetchSite(req)) {
+        this.sendJson(res, 403, { error: 'Cross-site request rejected via Sec-Fetch-Site' });
+        return;
+      }
+    }
 
     if (method === 'GET') {
       if (pathname === '/' || pathname === '/index.html') {
@@ -103,6 +121,25 @@ export class ApiRouter {
       return;
     }
 
+    const heavyPaths = ['/api/investigate', '/api/context/rebuild', '/api/context/clear'];
+    if (heavyPaths.includes(pathname)) {
+      const heavyCheck = this.heavyRateLimiter.check(clientIp);
+      if (!heavyCheck.allowed) {
+        res.setHeader('Retry-After', Math.ceil(heavyCheck.resetMs / 1000).toString());
+        this.sendJson(res, 429, { error: 'Rate limit exceeded for resource-intensive operations.' });
+        return;
+      }
+    }
+
+    if (pathname === '/api/file') {
+      const fileCheck = this.fileRateLimiter.check(clientIp);
+      if (!fileCheck.allowed) {
+        res.setHeader('Retry-After', Math.ceil(fileCheck.resetMs / 1000).toString());
+        this.sendJson(res, 429, { error: 'Rate limit exceeded for file operations.' });
+        return;
+      }
+    }
+
     try {
       if (method === 'GET' && pathname === '/api/health') {
         this.sendJson(res, 200, {
@@ -130,6 +167,14 @@ export class ApiRouter {
         const body = await this.readJsonBody(req);
         if (!body.path || typeof body.path !== 'string') {
           this.sendJson(res, 400, { error: 'Missing or invalid path in request body' });
+          return;
+        }
+        if (body.path.length > 4096) {
+          this.sendJson(res, 400, { error: 'Path parameter exceeds maximum allowed length' });
+          return;
+        }
+        if (body.objective !== undefined && (typeof body.objective !== 'string' || body.objective.length > 4096)) {
+          this.sendJson(res, 400, { error: 'Objective must be a string under 4096 characters' });
           return;
         }
         const validatedPath = validateRepositoryExists(body.path);
@@ -217,6 +262,10 @@ export class ApiRouter {
           this.sendJson(res, 400, { error: 'repo and path query parameters are required' });
           return;
         }
+        if (repo.length > 4096 || filePath.length > 4096) {
+          this.sendJson(res, 400, { error: 'Path parameters exceed maximum allowed length' });
+          return;
+        }
         const validatedRepo = validateRepositoryExists(repo);
         const validatedFile = validatePathWithinRoot(filePath, validatedRepo);
         if (!existsSync(validatedFile)) {
@@ -289,6 +338,20 @@ export class ApiRouter {
           this.sendJson(res, 400, { error: 'scope, resource, and decision are required' });
           return;
         }
+        const validScopes = Object.values(PermissionScope) as string[];
+        const validDecisions = Object.values(PermissionDecision) as string[];
+        if (!validScopes.includes(String(body.scope))) {
+          this.sendJson(res, 400, { error: `Invalid permission scope: ${String(body.scope)}` });
+          return;
+        }
+        if (!validDecisions.includes(String(body.decision))) {
+          this.sendJson(res, 400, { error: `Invalid permission decision: ${String(body.decision)}` });
+          return;
+        }
+        if (typeof body.resource !== 'string' || body.resource.length > 1024) {
+          this.sendJson(res, 400, { error: 'Resource must be a string with maximum length of 1024 characters' });
+          return;
+        }
         this.engine.getPermissions().grant(
           body.scope as PermissionScope,
           body.resource as string,
@@ -346,14 +409,37 @@ export class ApiRouter {
         }
         try {
           const raw = Buffer.concat(chunks).toString('utf-8');
-          resolve(JSON.parse(raw));
-        } catch {
-          reject(new SecurityError('Invalid JSON in request payload', 400));
+          const parsed = JSON.parse(raw);
+          this.assertNoPrototypePollution(parsed);
+          resolve(parsed);
+        } catch (err) {
+          if (err instanceof SecurityError) {
+            reject(err);
+          } else {
+            reject(new SecurityError('Invalid JSON in request payload', 400));
+          }
         }
       });
 
       req.on('error', reject);
     });
+  }
+
+  private assertNoPrototypePollution(obj: unknown): void {
+    if (!obj || typeof obj !== 'object') return;
+    if (Array.isArray(obj)) {
+      for (const item of obj) {
+        this.assertNoPrototypePollution(item);
+      }
+      return;
+    }
+    const record = obj as Record<string, unknown>;
+    for (const key of Object.keys(record)) {
+      if (key === '__proto__' || key === 'constructor' || key === 'prototype') {
+        throw new SecurityError('Prototype pollution attempt detected in payload', 400);
+      }
+      this.assertNoPrototypePollution(record[key]);
+    }
   }
 
   private resolveUiFile(name: string): string | null {

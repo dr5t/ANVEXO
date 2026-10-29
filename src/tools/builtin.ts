@@ -2,7 +2,22 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import type { ToolDefinition, ToolResult } from '../core/index.js';
-import { PermissionScope } from '../core/index.js';
+import { PermissionScope, redactSecrets } from '../core/index.js';
+
+export function getCleanSubprocessEnv(): Record<string, string> {
+  return {
+    PATH: process.env.PATH || '',
+    HOME: process.env.HOME || '',
+    USER: process.env.USER || '',
+    SHELL: process.env.SHELL || '',
+    LANG: process.env.LANG || 'en_US.UTF-8',
+    TMPDIR: process.env.TMPDIR || '/tmp',
+    NODE_ENV: process.env.NODE_ENV || 'test',
+    CI: 'true',
+    GIT_TERMINAL_PROMPT: '0',
+    GIT_OPTIONAL_LOCKS: '0',
+  };
+}
 
 export function createFileReadTool(): ToolDefinition {
   return {
@@ -13,6 +28,29 @@ export function createFileReadTool(): ToolDefinition {
     async execute(args): Promise<ToolResult> {
       const filePath = args.path as string;
       const maxBytes = (args.maxBytes as number) || 1_048_576;
+
+      if (!filePath || typeof filePath !== 'string') {
+        return { success: false, output: '', error: 'Path is required', duration: 0, metadata: {} };
+      }
+
+      if (filePath.includes('\0')) {
+        return { success: false, output: '', error: 'Null byte detected in path', duration: 0, metadata: {} };
+      }
+
+      const resolved = path.resolve(filePath);
+      const blockedFiles = ['/etc/passwd', '/etc/shadow', '/etc/sudoers'];
+      if (blockedFiles.includes(resolved)) {
+        return { success: false, output: '', error: 'Access to system sensitive files is forbidden', duration: 0, metadata: {} };
+      }
+
+      if (args.rootPath && typeof args.rootPath === 'string') {
+        const canonicalRoot = fs.existsSync(args.rootPath) ? fs.realpathSync(path.resolve(args.rootPath)) : path.resolve(args.rootPath);
+        const canonicalTarget = path.resolve(canonicalRoot, filePath);
+        const rel = path.relative(canonicalRoot, canonicalTarget);
+        if (rel.startsWith('..') || path.isAbsolute(rel)) {
+          return { success: false, output: '', error: `Path traversal attempt detected: ${filePath} escapes root ${args.rootPath}`, duration: 0, metadata: {} };
+        }
+      }
 
       if (!fs.existsSync(filePath)) {
         return { success: false, output: '', error: `File not found: ${filePath}`, duration: 0, metadata: {} };
@@ -30,14 +68,14 @@ export function createFileReadTool(): ToolDefinition {
         fs.closeSync(fd);
         return {
           success: true,
-          output: buffer.toString('utf-8'),
+          output: redactSecrets(buffer.toString('utf-8')),
           duration: 0,
           metadata: { truncated: true, totalSize: stat.size, readBytes: maxBytes },
         };
       }
 
       const content = fs.readFileSync(filePath, 'utf-8');
-      return { success: true, output: content, duration: 0, metadata: { size: stat.size } };
+      return { success: true, output: redactSecrets(content), duration: 0, metadata: { size: stat.size } };
     },
   };
 }
@@ -140,6 +178,7 @@ export function createFileSearchTool(): ToolDefinition {
           encoding: 'utf-8',
           maxBuffer: 5_000_000,
           timeout: 10000,
+          env: getCleanSubprocessEnv(),
           shell: false,
         });
 
@@ -148,8 +187,9 @@ export function createFileSearchTool(): ToolDefinition {
         }
 
         const stdout = res.stdout || '';
-        const lines = stdout.trim().split('\n').filter(Boolean);
-        return { success: true, output: stdout.trim(), duration: 0, metadata: { matchCount: lines.length } };
+        const redacted = redactSecrets(stdout.trim());
+        const lines = redacted.split('\n').filter(Boolean);
+        return { success: true, output: redacted, duration: 0, metadata: { matchCount: lines.length } };
       } catch {
         return { success: false, output: '', error: 'Search failed or timed out', duration: 0, metadata: {} };
       }
@@ -170,6 +210,7 @@ export function createGitStatusTool(): ToolDefinition {
           cwd: repoPath,
           encoding: 'utf-8',
           timeout: 5000,
+          env: getCleanSubprocessEnv(),
           shell: false,
         });
         if (statusRes.error) {
@@ -187,9 +228,10 @@ export function createGitStatusTool(): ToolDefinition {
           cwd: repoPath,
           encoding: 'utf-8',
           timeout: 5000,
+          env: getCleanSubprocessEnv(),
           shell: false,
         });
-        const output = statusRes.stdout || '';
+        const output = redactSecrets(statusRes.stdout || '');
         const branch = (branchRes.stdout || '').trim();
         return {
           success: true,
@@ -219,6 +261,7 @@ export function createGitLogTool(): ToolDefinition {
           cwd: repoPath,
           encoding: 'utf-8',
           timeout: 5000,
+          env: getCleanSubprocessEnv(),
           shell: false,
         });
         const stderr = res.stderr || '';
@@ -228,7 +271,7 @@ export function createGitLogTool(): ToolDefinition {
         if (res.error) {
           return { success: false, output: '', error: res.error.message, duration: 0, metadata: {} };
         }
-        const output = (res.stdout || '').trim();
+        const output = redactSecrets((res.stdout || '').trim());
         return { success: true, output, duration: 0, metadata: { entryCount: output.split('\n').filter(Boolean).length } };
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
@@ -253,12 +296,13 @@ export function createGitDiffTool(): ToolDefinition {
           cwd: repoPath,
           encoding: 'utf-8',
           timeout: 10000,
+          env: getCleanSubprocessEnv(),
           shell: false,
         });
         if (res.error) {
           return { success: false, output: '', error: res.error.message, duration: 0, metadata: {} };
         }
-        const output = (res.stdout || '').trim();
+        const output = redactSecrets((res.stdout || '').trim());
         return { success: true, output: output || 'No unstaged changes', duration: 0, metadata: {} };
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
@@ -283,14 +327,7 @@ export function createRunCommandTool(): ToolDefinition {
         return { success: false, output: '', error: 'Command is required', duration: 0, metadata: {} };
       }
 
-      const cleanEnv: Record<string, string> = {
-        PATH: process.env.PATH || '',
-        HOME: process.env.HOME || '',
-        USER: process.env.USER || '',
-        SHELL: process.env.SHELL || '',
-        NODE_ENV: process.env.NODE_ENV || 'test',
-        CI: 'true',
-      };
+      const cleanEnv = getCleanSubprocessEnv();
 
       try {
         const res = spawnSync(command, {
@@ -302,8 +339,8 @@ export function createRunCommandTool(): ToolDefinition {
           shell: true,
         });
 
-        const stdout = (res.stdout || '').trim();
-        const stderr = (res.stderr || '').trim();
+        const stdout = redactSecrets((res.stdout || '').trim());
+        const stderr = redactSecrets((res.stderr || '').trim());
 
         if (res.error) {
           return {
@@ -330,8 +367,8 @@ export function createRunCommandTool(): ToolDefinition {
         const execErr = err as { stdout?: string; stderr?: string; status?: number; message?: string };
         return {
           success: false,
-          output: execErr.stdout || '',
-          error: execErr.stderr || execErr.message || 'Command failed',
+          output: redactSecrets(execErr.stdout || ''),
+          error: redactSecrets(execErr.stderr || execErr.message || 'Command failed'),
           duration: 0,
           metadata: { command, exitCode: execErr.status },
         };

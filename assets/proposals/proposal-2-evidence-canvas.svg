@@ -1,0 +1,162 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 780" width="1200" height="780" fill="none">
+  <defs>
+    <pattern id="grid2" width="24" height="24" patternUnits="userSpaceOnUse">
+      <path d="M 24 0 L 0 0 0 24" fill="none" stroke="#16181B" stroke-width="0.75"/>
+    </pattern>
+    <linearGradient id="p2bg" x1="0" y1="0" x2="1200" y2="780" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#08090A"/>
+      <stop offset="100%" stop-color="#0E1012"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="780" fill="url(#p2bg)"/>
+  <rect width="1200" height="780" fill="url(#grid2)"/>
+
+  <rect width="1200" height="42" fill="#111315" stroke="#222529" stroke-width="1"/>
+  <g transform="translate(16, 12)">
+    <polygon points="10,2 2,6 10,10 18,6" fill="#E54D2E"/>
+    <polyline points="2,14 10,18 18,14" fill="none" stroke="#E54D2E" stroke-width="1.5"/>
+    <text x="26" y="15" fill="#E8E8E8" font-family="-apple-system, BlinkMacSystemFont, Arial, sans-serif" font-size="12" font-weight="700" letter-spacing="1">ANVEXO</text>
+    <text x="80" y="15" fill="#58A6FF" font-family="ui-monospace, Menlo, monospace" font-size="10">EVIDENCE CANVAS</text>
+  </g>
+
+  <g transform="translate(320, 7)">
+    <rect width="420" height="28" rx="3" fill="#0C0D0E" stroke="#222529" stroke-width="1"/>
+    <text x="12" y="18" fill="#E8E8E8" font-family="ui-monospace, Menlo, monospace" font-size="11">forensics:// /Users/developer/ANVEXO</text>
+  </g>
+
+  <g transform="translate(940, 7)">
+    <rect width="110" height="28" rx="3" fill="#0C0D0E" stroke="#292C30" stroke-width="1"/>
+    <text x="10" y="18" fill="#E54D2E" font-family="ui-monospace, Menlo, monospace" font-size="10" font-weight="600">ECHO MODE B</text>
+    <rect x="120" y="0" width="120" height="28" rx="3" fill="#E54D2E"/>
+    <text x="180" y="18" fill="#FFFFFF" font-family="-apple-system, BlinkMacSystemFont, Arial, sans-serif" font-size="11" font-weight="600" text-anchor="middle">Run Diagnostics</text>
+  </g>
+
+  <g transform="translate(16, 54)">
+    <rect width="250" height="710" fill="#111315" stroke="#222529" stroke-width="1"/>
+    <rect width="250" height="30" fill="#14171A" stroke="#222529" stroke-width="1"/>
+    <text x="12" y="20" fill="#E8E8E8" font-family="ui-monospace, Menlo, monospace" font-size="10" font-weight="700">CODEBASE EXPLORER</text>
+
+    <g transform="translate(10, 42)">
+      <text x="8" y="16" fill="#92979D" font-family="ui-monospace, Menlo, monospace" font-size="10.5">▼ src/</text>
+      <text x="20" y="34" fill="#92979D" font-family="ui-monospace, Menlo, monospace" font-size="10.5">▼ server/</text>
+      <text x="32" y="52" fill="#E54D2E" font-family="ui-monospace, Menlo, monospace" font-size="10.5">• security.ts</text>
+      <text x="32" y="70" fill="#92979D" font-family="ui-monospace, Menlo, monospace" font-size="10.5">• router.ts</text>
+      <text x="32" y="88" fill="#92979D" font-family="ui-monospace, Menlo, monospace" font-size="10.5">• server.ts</text>
+      <text x="20" y="108" fill="#92979D" font-family="ui-monospace, Menlo, monospace" font-size="10.5">▼ tools/</text>
+      <text x="32" y="126" fill="#58A6FF" font-family="ui-monospace, Menlo, monospace" font-size="10.5">• builtin.ts</text>
+      <text x="32" y="144" fill="#92979D" font-family="ui-monospace, Menlo, monospace" font-size="10.5">• index.ts</text>
+      <text x="20" y="164" fill="#92979D" font-family="ui-monospace, Menlo, monospace" font-size="10.5">► permissions/</text>
+      <text x="20" y="184" fill="#92979D" font-family="ui-monospace, Menlo, monospace" font-size="10.5">► evidence/</text>
+      <text x="8" y="206" fill="#92979D" font-family="ui-monospace, Menlo, monospace" font-size="10.5">▼ tests/</text>
+      <text x="20" y="224" fill="#3FB950" font-family="ui-monospace, Menlo, monospace" font-size="10.5">• server.test.ts</text>
+      <text x="20" y="242" fill="#3FB950" font-family="ui-monospace, Menlo, monospace" font-size="10.5">• tools.test.ts</text>
+    </g>
+
+    <g transform="translate(10, 320)">
+      <rect width="230" height="375" rx="3" fill="#0C0D0E" stroke="#222529" stroke-width="1"/>
+      <text x="12" y="22" fill="#E8E8E8" font-family="ui-monospace, Menlo, monospace" font-size="10" font-weight="600">ACTIVE HYPOTHESES</text>
+      <line x1="12" y1="30" x2="218" y2="30" stroke="#1F2327" stroke-width="1"/>
+      
+      <rect x="12" y="40" width="206" height="65" rx="2" fill="#14171A" stroke="#238636" stroke-width="1"/>
+      <text x="20" y="56" fill="#3FB950" font-family="ui-monospace, Menlo, monospace" font-size="9.5" font-weight="700">H1: VERIFIED</text>
+      <text x="20" y="72" fill="#E8E8E8" font-family="-apple-system, BlinkMacSystemFont, Arial, sans-serif" font-size="10">Symlink traversal prevented by realpathSync check.</text>
+      <text x="20" y="90" fill="#92979D" font-family="ui-monospace, Menlo, monospace" font-size="9">Confidence: 96%</text>
+
+      <rect x="12" y="115" width="206" height="65" rx="2" fill="#14171A" stroke="#238636" stroke-width="1"/>
+      <text x="20" y="131" fill="#3FB950" font-family="ui-monospace, Menlo, monospace" font-size="9.5" font-weight="700">H2: VERIFIED</text>
+      <text x="20" y="147" fill="#E8E8E8" font-family="-apple-system, BlinkMacSystemFont, Arial, sans-serif" font-size="10">Command injection fixed via spawnSync array args.</text>
+      <text x="20" y="165" fill="#92979D" font-family="ui-monospace, Menlo, monospace" font-size="9">Confidence: 98%</text>
+
+      <rect x="12" y="190" width="206" height="65" rx="2" fill="#14171A" stroke="#292C30" stroke-width="1"/>
+      <text x="20" y="206" fill="#58A6FF" font-family="ui-monospace, Menlo, monospace" font-size="9.5" font-weight="700">H3: OBSERVED</text>
+      <text x="20" y="222" fill="#E8E8E8" font-family="-apple-system, BlinkMacSystemFont, Arial, sans-serif" font-size="10">Rate limiter enforces 300 requests per minute.</text>
+      <text x="20" y="240" fill="#92979D" font-family="ui-monospace, Menlo, monospace" font-size="9">Confidence: 90%</text>
+    </g>
+  </g>
+
+  <g transform="translate(276, 54)">
+    <rect width="520" height="710" fill="#0C0D0E" stroke="#222529" stroke-width="1"/>
+    <rect width="520" height="30" fill="#111315" stroke="#222529" stroke-width="1"/>
+    <text x="16" y="20" fill="#E8E8E8" font-family="ui-monospace, Menlo, monospace" font-size="10" font-weight="700">FORENSIC TIMELINE STREAM (GROUND TRUTH)</text>
+
+    <line x1="36" y1="50" x2="36" y2="690" stroke="#24272A" stroke-width="2"/>
+
+    <g transform="translate(28, 55)">
+      <circle cx="8" cy="18" r="6" fill="#0C0D0E" stroke="#3FB950" stroke-width="2"/>
+      <circle cx="8" cy="18" r="2.5" fill="#3FB950"/>
+      <rect x="24" y="0" width="450" height="95" rx="3" fill="#111315" stroke="#222529" stroke-width="1"/>
+      <rect x="36" y="10" width="94" height="18" rx="2" fill="#1A2E1F"/>
+      <text x="83" y="23" fill="#3FB950" font-family="ui-monospace, Menlo, monospace" font-size="9" font-weight="700" text-anchor="middle">GROUND TRUTH</text>
+      <text x="140" y="23" fill="#92979D" font-family="ui-monospace, Menlo, monospace" font-size="9.5">TOOL: file_read · ev_8f91a2</text>
+      <text x="430" y="23" fill="#92979D" font-family="ui-monospace, Menlo, monospace" font-size="9">0ms</text>
+
+      <text x="36" y="48" fill="#E8E8E8" font-family="ui-monospace, Menlo, monospace" font-size="10">src/server/security.ts: validatePathWithinRoot</text>
+      <rect x="36" y="56" width="426" height="28" fill="#0C0D0E"/>
+      <text x="44" y="74" fill="#3FB950" font-family="ui-monospace, Menlo, monospace" font-size="9.5">+ const canonicalTarget = fs.realpathSync(resolvedTarget);</text>
+    </g>
+
+    <g transform="translate(28, 165)">
+      <circle cx="8" cy="18" r="6" fill="#0C0D0E" stroke="#3FB950" stroke-width="2"/>
+      <circle cx="8" cy="18" r="2.5" fill="#3FB950"/>
+      <rect x="24" y="0" width="450" height="95" rx="3" fill="#111315" stroke="#222529" stroke-width="1"/>
+      <rect x="36" y="10" width="94" height="18" rx="2" fill="#1A2E1F"/>
+      <text x="83" y="23" fill="#3FB950" font-family="ui-monospace, Menlo, monospace" font-size="9" font-weight="700" text-anchor="middle">GROUND TRUTH</text>
+      <text x="140" y="23" fill="#92979D" font-family="ui-monospace, Menlo, monospace" font-size="9.5">TOOL: spawnSync · ev_c401be</text>
+      <text x="430" y="23" fill="#92979D" font-family="ui-monospace, Menlo, monospace" font-size="9">34ms</text>
+
+      <text x="36" y="48" fill="#E8E8E8" font-family="ui-monospace, Menlo, monospace" font-size="10">src/tools/builtin.ts: safe grep command invocation</text>
+      <rect x="36" y="56" width="426" height="28" fill="#0C0D0E"/>
+      <text x="44" y="74" fill="#3FB950" font-family="ui-monospace, Menlo, monospace" font-size="9.5">+ spawnSync('grep', ['-rn', '-i', '-F', ...], { shell: false })</text>
+    </g>
+
+    <g transform="translate(28, 275)">
+      <circle cx="8" cy="18" r="6" fill="#0C0D0E" stroke="#58A6FF" stroke-width="2"/>
+      <circle cx="8" cy="18" r="2.5" fill="#58A6FF"/>
+      <rect x="24" y="0" width="450" height="95" rx="3" fill="#111315" stroke="#222529" stroke-width="1"/>
+      <rect x="36" y="10" width="94" height="18" rx="2" fill="#13233A"/>
+      <text x="83" y="23" fill="#58A6FF" font-family="ui-monospace, Menlo, monospace" font-size="9" font-weight="700" text-anchor="middle">TEST EXECUTION</text>
+      <text x="140" y="23" fill="#92979D" font-family="ui-monospace, Menlo, monospace" font-size="9.5">vitest run · 8 suites</text>
+      <text x="420" y="23" fill="#92979D" font-family="ui-monospace, Menlo, monospace" font-size="9">2381ms</text>
+
+      <text x="36" y="48" fill="#E8E8E8" font-family="ui-monospace, Menlo, monospace" font-size="10">80 tests passed across all modules</text>
+      <rect x="36" y="56" width="426" height="28" fill="#0C0D0E"/>
+      <text x="44" y="74" fill="#3FB950" font-family="ui-monospace, Menlo, monospace" font-size="9.5">Duration: 973ms | Line Coverage: 75.23%</text>
+    </g>
+  </g>
+
+  <g transform="translate(806, 54)">
+    <rect width="378" height="710" fill="#111315" stroke="#222529" stroke-width="1"/>
+    <rect width="378" height="30" fill="#14171A" stroke="#222529" stroke-width="1"/>
+    <text x="16" y="20" fill="#E8E8E8" font-family="ui-monospace, Menlo, monospace" font-size="10" font-weight="700">SYNTHESIZED REPORT &amp; ACTIONS</text>
+
+    <g transform="translate(16, 46)">
+      <rect width="346" height="180" rx="4" fill="#0C0D0E" stroke="#222529" stroke-width="1"/>
+      <text x="16" y="24" fill="#E54D2E" font-family="ui-monospace, Menlo, monospace" font-size="11" font-weight="700">AUDIT VERDICT: HARDENED</text>
+      <line x1="16" y1="34" x2="330" y2="34" stroke="#1F2327" stroke-width="1"/>
+      <text x="16" y="54" fill="#E8E8E8" font-family="-apple-system, BlinkMacSystemFont, Arial, sans-serif" font-size="11">Confidence Score: 94%</text>
+      <text x="16" y="72" fill="#92979D" font-family="-apple-system, BlinkMacSystemFont, Arial, sans-serif" font-size="10.5">Ground Truth Citations: 14</text>
+      <text x="16" y="90" fill="#92979D" font-family="-apple-system, BlinkMacSystemFont, Arial, sans-serif" font-size="10.5">Historical Contradictions: 0</text>
+      <text x="16" y="108" fill="#92979D" font-family="-apple-system, BlinkMacSystemFont, Arial, sans-serif" font-size="10.5">Local Server: 127.0.0.1:4173 (Host &amp; CSRF verified)</text>
+      <text x="16" y="126" fill="#3FB950" font-family="ui-monospace, Menlo, monospace" font-size="10">Verdict: Production Ready for Local Dev</text>
+
+      <rect x="16" y="140" width="110" height="26" rx="2" fill="#E54D2E"/>
+      <text x="71" y="157" fill="#FFFFFF" font-family="-apple-system, BlinkMacSystemFont, Arial, sans-serif" font-size="10.5" font-weight="600" text-anchor="middle">Copy Report</text>
+    </g>
+
+    <g transform="translate(16, 240)">
+      <rect width="346" height="450" rx="4" fill="#0C0D0E" stroke="#222529" stroke-width="1"/>
+      <text x="16" y="24" fill="#58A6FF" font-family="ui-monospace, Menlo, monospace" font-size="10.5" font-weight="700">PERMISSION AUDIT LOG</text>
+      <line x1="16" y1="34" x2="330" y2="34" stroke="#1F2327" stroke-width="1"/>
+      
+      <g transform="translate(16, 50)">
+        <text x="0" y="14" fill="#3FB950" font-family="ui-monospace, Menlo, monospace" font-size="9.5">[ALLOW] file:read -> *</text>
+        <text x="0" y="34" fill="#3FB950" font-family="ui-monospace, Menlo, monospace" font-size="9.5">[ALLOW] git:read -> *</text>
+        <text x="0" y="54" fill="#3FB950" font-family="ui-monospace, Menlo, monospace" font-size="9.5">[ALLOW] test:run -> vitest</text>
+        <text x="0" y="74" fill="#E54D2E" font-family="ui-monospace, Menlo, monospace" font-size="9.5">[DENY] command:execute -> /bin/rm</text>
+        <text x="0" y="94" fill="#3FB950" font-family="ui-monospace, Menlo, monospace" font-size="9.5">[ALLOW] file:read -> package.json</text>
+        <text x="0" y="114" fill="#3FB950" font-family="ui-monospace, Menlo, monospace" font-size="9.5">[ALLOW] file:read -> security.ts</text>
+      </g>
+    </g>
+  </g>
+</svg>

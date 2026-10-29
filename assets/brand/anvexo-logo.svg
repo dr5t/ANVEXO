@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 180" width="880" height="180" fill="none">
+  <defs>
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="880" y2="180" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0C0D0E"/>
+      <stop offset="100%" stop-color="#141618"/>
+    </linearGradient>
+    <linearGradient id="prismTop" x1="50" y1="30" x2="130" y2="110" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#E54D2E"/>
+      <stop offset="100%" stop-color="#B83A20"/>
+    </linearGradient>
+    <linearGradient id="prismLeft" x1="50" y1="70" x2="90" y2="140" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#24272A"/>
+      <stop offset="100%" stop-color="#181A1D"/>
+    </linearGradient>
+    <linearGradient id="prismRight" x1="90" y1="70" x2="130" y2="140" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#32363B"/>
+      <stop offset="100%" stop-color="#24272A"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="880" height="180" rx="8" fill="url(#bgGrad)" stroke="#24272A" stroke-width="1.5"/>
+
+  <g transform="translate(48, 25)">
+    <polygon points="65,15 115,44 65,73 15,44" fill="url(#prismTop)" stroke="#E54D2E" stroke-width="1.5"/>
+    <polygon points="15,44 65,73 65,105 15,76" fill="url(#prismLeft)" stroke="#32363B" stroke-width="1.5"/>
+    <polygon points="65,73 115,44 115,76 65,105" fill="url(#prismRight)" stroke="#32363B" stroke-width="1.5"/>
+
+    <polyline points="15,86 65,115 115,86" fill="none" stroke="#E54D2E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <polyline points="15,96 65,125 115,96" fill="none" stroke="#58A6FF" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.8"/>
+
+    <circle cx="65" cy="15" r="3" fill="#EDEDED"/>
+    <circle cx="115" cy="44" r="3" fill="#EDEDED"/>
+    <circle cx="15" cy="44" r="3" fill="#EDEDED"/>
+    <circle cx="65" cy="73" r="3" fill="#EDEDED"/>
+  </g>
+
+  <text x="200" y="82" fill="#EDEDED" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif" font-size="44" font-weight="700" letter-spacing="4">ANVEXO</text>
+
+  <rect x="424" y="52" width="92" height="22" rx="4" fill="#1E2227" stroke="#32363B" stroke-width="1"/>
+  <text x="470" y="67" fill="#E54D2E" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', monospace" font-size="11" font-weight="600" letter-spacing="1" text-anchor="middle">v0.1.0 CORE</text>
+
+  <text x="200" y="116" fill="#8A9096" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif" font-size="15" font-weight="400" letter-spacing="0.5">Autonomous Software Investigation &amp; Codebase Intelligence Platform</text>
+  <text x="200" y="138" fill="#58A6FF" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace" font-size="12" font-weight="500" letter-spacing="0.2">ANVESHAN (Autonomous Hypothesis Engine) + ECHO (Persistent Context Matrix)</text>
+</svg>

@@ -1,0 +1,111 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 380" width="920" height="380" fill="none">
+  <defs>
+    <linearGradient id="flowBg" x1="0" y1="0" x2="920" y2="380" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0C0D0E"/>
+      <stop offset="100%" stop-color="#141618"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="920" height="380" rx="8" fill="url(#flowBg)" stroke="#24272A" stroke-width="1.5"/>
+
+  <text x="32" y="38" fill="#EDEDED" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif" font-size="14" font-weight="700" letter-spacing="1.5">INVESTIGATION EXECUTION LIFECYCLE</text>
+  <text x="735" y="38" fill="#8A9096" font-family="ui-monospace, Menlo, monospace" font-size="11">EVIDENCE-DRIVEN DAG PIPELINE</text>
+  <line x1="32" y1="50" x2="888" y2="50" stroke="#24272A" stroke-width="1"/>
+
+  <g transform="translate(32, 75)">
+    <g transform="translate(0, 0)">
+      <rect width="180" height="95" rx="6" fill="#141618" stroke="#E54D2E" stroke-width="1.5"/>
+      <rect x="12" y="12" width="60" height="18" rx="3" fill="#2E1A16"/>
+      <text x="42" y="25" fill="#E54D2E" font-family="ui-monospace, Menlo, monospace" font-size="10" font-weight="700" text-anchor="middle">STEP 01</text>
+      <text x="12" y="48" fill="#EDEDED" font-family="-apple-system, BlinkMacSystemFont, Arial, sans-serif" font-size="12" font-weight="600">Objective Input</text>
+      <text x="12" y="66" fill="#8A9096" font-family="ui-monospace, Menlo, monospace" font-size="9.5">Operator supplies bug</text>
+      <text x="12" y="80" fill="#8A9096" font-family="ui-monospace, Menlo, monospace" font-size="9.5">symptoms or query</text>
+    </g>
+
+    <line x1="180" y1="47" x2="225" y2="47" stroke="#E54D2E" stroke-width="1.5"/>
+    <polygon points="225,47 217,43 217,51" fill="#E54D2E"/>
+
+    <g transform="translate(225, 0)">
+      <rect width="180" height="95" rx="6" fill="#141618" stroke="#24272A" stroke-width="1"/>
+      <rect x="12" y="12" width="60" height="18" rx="3" fill="#1B1E22"/>
+      <text x="42" y="25" fill="#58A6FF" font-family="ui-monospace, Menlo, monospace" font-size="10" font-weight="700" text-anchor="middle">STEP 02</text>
+      <text x="12" y="48" fill="#EDEDED" font-family="-apple-system, BlinkMacSystemFont, Arial, sans-serif" font-size="12" font-weight="600">Topography &amp; Context</text>
+      <text x="12" y="66" fill="#8A9096" font-family="ui-monospace, Menlo, monospace" font-size="9.5">Scan stack, packages,</text>
+      <text x="12" y="80" fill="#8A9096" font-family="ui-monospace, Menlo, monospace" font-size="9.5">and ECHO memory graph</text>
+    </g>
+
+    <line x1="405" y1="47" x2="450" y2="47" stroke="#24272A" stroke-width="1.5"/>
+    <polygon points="450,47 442,43 442,51" fill="#8A9096"/>
+
+    <g transform="translate(450, 0)">
+      <rect width="180" height="95" rx="6" fill="#141618" stroke="#24272A" stroke-width="1"/>
+      <rect x="12" y="12" width="60" height="18" rx="3" fill="#1B1E22"/>
+      <text x="42" y="25" fill="#58A6FF" font-family="ui-monospace, Menlo, monospace" font-size="10" font-weight="700" text-anchor="middle">STEP 03</text>
+      <text x="12" y="48" fill="#EDEDED" font-family="-apple-system, BlinkMacSystemFont, Arial, sans-serif" font-size="12" font-weight="600">DAG Plan Generation</text>
+      <text x="12" y="66" fill="#8A9096" font-family="ui-monospace, Menlo, monospace" font-size="9.5">Build diagnostic steps</text>
+      <text x="12" y="80" fill="#8A9096" font-family="ui-monospace, Menlo, monospace" font-size="9.5">and search matrices</text>
+    </g>
+
+    <line x1="630" y1="47" x2="675" y2="47" stroke="#24272A" stroke-width="1.5"/>
+    <polygon points="675,47 667,43 667,51" fill="#8A9096"/>
+
+    <g transform="translate(675, 0)">
+      <rect width="180" height="95" rx="6" fill="#141618" stroke="#3FB950" stroke-width="1.5"/>
+      <rect x="12" y="12" width="60" height="18" rx="3" fill="#1A2E1F"/>
+      <text x="42" y="25" fill="#3FB950" font-family="ui-monospace, Menlo, monospace" font-size="10" font-weight="700" text-anchor="middle">STEP 04</text>
+      <text x="12" y="48" fill="#EDEDED" font-family="-apple-system, BlinkMacSystemFont, Arial, sans-serif" font-size="12" font-weight="600">Permission Check</text>
+      <text x="12" y="66" fill="#8A9096" font-family="ui-monospace, Menlo, monospace" font-size="9.5">Evaluate scope, ACLs,</text>
+      <text x="12" y="80" fill="#8A9096" font-family="ui-monospace, Menlo, monospace" font-size="9.5">single-use grants</text>
+    </g>
+  </g>
+
+  <g transform="translate(32, 215)">
+    <g transform="translate(0, 0)">
+      <rect width="180" height="95" rx="6" fill="#141618" stroke="#24272A" stroke-width="1"/>
+      <rect x="12" y="12" width="60" height="18" rx="3" fill="#1B1E22"/>
+      <text x="42" y="25" fill="#58A6FF" font-family="ui-monospace, Menlo, monospace" font-size="10" font-weight="700" text-anchor="middle">STEP 08</text>
+      <text x="12" y="48" fill="#EDEDED" font-family="-apple-system, BlinkMacSystemFont, Arial, sans-serif" font-size="12" font-weight="600">ECHO Persistence</text>
+      <text x="12" y="66" fill="#8A9096" font-family="ui-monospace, Menlo, monospace" font-size="9.5">Update memory mode,</text>
+      <text x="12" y="80" fill="#8A9096" font-family="ui-monospace, Menlo, monospace" font-size="9.5">bug index, commit hash</text>
+    </g>
+
+    <line x1="225" y1="47" x2="180" y2="47" stroke="#24272A" stroke-width="1.5"/>
+    <polygon points="180,47 188,43 188,51" fill="#8A9096"/>
+
+    <g transform="translate(225, 0)">
+      <rect width="180" height="95" rx="6" fill="#141618" stroke="#E54D2E" stroke-width="1.5"/>
+      <rect x="12" y="12" width="60" height="18" rx="3" fill="#2E1A16"/>
+      <text x="42" y="25" fill="#E54D2E" font-family="ui-monospace, Menlo, monospace" font-size="10" font-weight="700" text-anchor="middle">STEP 07</text>
+      <text x="12" y="48" fill="#EDEDED" font-family="-apple-system, BlinkMacSystemFont, Arial, sans-serif" font-size="12" font-weight="600">Findings &amp; Report</text>
+      <text x="12" y="66" fill="#8A9096" font-family="ui-monospace, Menlo, monospace" font-size="9.5">Synthesize root cause,</text>
+      <text x="12" y="80" fill="#8A9096" font-family="ui-monospace, Menlo, monospace" font-size="9.5">confidence, limitations</text>
+    </g>
+
+    <line x1="450" y1="47" x2="405" y2="47" stroke="#E54D2E" stroke-width="1.5"/>
+    <polygon points="405,47 413,43 413,51" fill="#E54D2E"/>
+
+    <g transform="translate(450, 0)">
+      <rect width="180" height="95" rx="6" fill="#141618" stroke="#24272A" stroke-width="1"/>
+      <rect x="12" y="12" width="60" height="18" rx="3" fill="#1B1E22"/>
+      <text x="42" y="25" fill="#58A6FF" font-family="ui-monospace, Menlo, monospace" font-size="10" font-weight="700" text-anchor="middle">STEP 06</text>
+      <text x="12" y="48" fill="#EDEDED" font-family="-apple-system, BlinkMacSystemFont, Arial, sans-serif" font-size="12" font-weight="600">Evidence Ledger</text>
+      <text x="12" y="66" fill="#8A9096" font-family="ui-monospace, Menlo, monospace" font-size="9.5">Scrub secrets, record</text>
+      <text x="12" y="80" fill="#8A9096" font-family="ui-monospace, Menlo, monospace" font-size="9.5">UUID tagged observations</text>
+    </g>
+
+    <line x1="675" y1="47" x2="630" y2="47" stroke="#24272A" stroke-width="1.5"/>
+    <polygon points="630,47 638,43 638,51" fill="#8A9096"/>
+
+    <g transform="translate(675, 0)">
+      <rect width="180" height="95" rx="6" fill="#141618" stroke="#24272A" stroke-width="1"/>
+      <rect x="12" y="12" width="60" height="18" rx="3" fill="#1B1E22"/>
+      <text x="42" y="25" fill="#58A6FF" font-family="ui-monospace, Menlo, monospace" font-size="10" font-weight="700" text-anchor="middle">STEP 05</text>
+      <text x="12" y="48" fill="#EDEDED" font-family="-apple-system, BlinkMacSystemFont, Arial, sans-serif" font-size="12" font-weight="600">Sandboxed Execution</text>
+      <text x="12" y="66" fill="#8A9096" font-family="ui-monospace, Menlo, monospace" font-size="9.5">Run files, git, tests,</text>
+      <text x="12" y="80" fill="#8A9096" font-family="ui-monospace, Menlo, monospace" font-size="9.5">bounded by AbortSignal</text>
+    </g>
+  </g>
+
+  <path d="M 765 170 L 765 192 L 765 215" fill="none" stroke="#3FB950" stroke-width="1.5"/>
+  <polygon points="765,215 761,207 769,207" fill="#3FB950"/>
+</svg>

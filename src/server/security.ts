@@ -16,6 +16,9 @@ export function validatePathWithinRoot(targetPath: string, rootPath: string): st
   if (!rootPath || typeof rootPath !== 'string') {
     throw new SecurityError('Root path must be a non-empty string', 400);
   }
+  if (targetPath.includes('\0') || rootPath.includes('\0')) {
+    throw new SecurityError('Null byte injection detected in path', 400);
+  }
 
   const resolvedRoot = path.resolve(rootPath);
   const canonicalRoot = fs.existsSync(resolvedRoot) ? fs.realpathSync(resolvedRoot) : resolvedRoot;
@@ -93,15 +96,35 @@ export function applySecurityHeaders(res: ServerResponse): void {
   );
 }
 
-export function applyCorsHeaders(req: IncomingMessage, res: ServerResponse, allowedOrigins: string[] = ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:5173', 'http://127.0.0.1:5173', 'http://localhost:4173', 'http://127.0.0.1:4173']): boolean {
+export function applyCorsHeaders(
+  req: IncomingMessage,
+  res: ServerResponse,
+  allowedOrigins: string[] = [
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+    'http://localhost:5173',
+    'http://127.0.0.1:5173',
+    'http://localhost:4173',
+    'http://127.0.0.1:4173',
+  ],
+): boolean {
   const origin = req.headers.origin;
   if (!origin) {
     return true;
   }
 
-  const isAllowed = allowedOrigins.includes(origin)
-    || origin.startsWith('http://localhost:')
-    || origin.startsWith('http://127.0.0.1:');
+  let isAllowed = allowedOrigins.includes(origin);
+  if (!isAllowed) {
+    try {
+      const parsed = new URL(origin);
+      const host = parsed.hostname.toLowerCase();
+      if (host === 'localhost' || host === '127.0.0.1' || host === '::1' || host === '[::1]') {
+        isAllowed = true;
+      }
+    } catch {
+      isAllowed = false;
+    }
+  }
 
   if (isAllowed) {
     res.setHeader('Access-Control-Allow-Origin', origin);
@@ -112,4 +135,14 @@ export function applyCorsHeaders(req: IncomingMessage, res: ServerResponse, allo
   }
 
   return false;
+}
+
+export function validateSecFetchSite(req: IncomingMessage): boolean {
+  const secFetchSite = req.headers['sec-fetch-site'];
+  if (secFetchSite && typeof secFetchSite === 'string') {
+    if (secFetchSite.toLowerCase() === 'cross-site') {
+      return false;
+    }
+  }
+  return true;
 }

@@ -26,4 +26,5 @@ export {
   DEFAULT_CONFIG,
   MemoryMode,
 } from './types.js';
+export { redactSecrets } from './redaction.js';
 export * as logger from './logger.js';

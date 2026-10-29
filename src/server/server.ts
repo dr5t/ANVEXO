@@ -54,7 +54,7 @@ export class AnvexoServer {
         resolve();
         return;
       }
-      this.router.getRateLimiter().destroy();
+      this.router.destroy();
       this.server.close(err => {
         if (err) reject(err);
         else {

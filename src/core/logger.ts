@@ -1,4 +1,5 @@
 import { LogLevel } from './types.js';
+import { redactSecrets } from './redaction.js';
 
 let currentLevel = LogLevel.INFO;
 
@@ -15,7 +16,8 @@ function formatTimestamp(): string {
 }
 
 function formatMessage(level: string, component: string, message: string): string {
-  return `[${formatTimestamp()}] [${level}] [${component}] ${message}`;
+  const sanitized = redactSecrets(message);
+  return `[${formatTimestamp()}] [${level}] [${component}] ${sanitized}`;
 }
 
 export function debug(component: string, message: string): void {

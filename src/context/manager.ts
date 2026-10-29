@@ -1,4 +1,4 @@
-import { execSync } from 'node:child_process';
+import { spawnSync } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import type {
   ProjectContext,
@@ -232,7 +232,13 @@ export class ContextManager {
 
   private getCurrentCommit(repoRoot: string): string {
     try {
-      return execSync('git rev-parse HEAD', { cwd: repoRoot, encoding: 'utf-8', timeout: 5000 }).trim();
+      const res = spawnSync('git', ['rev-parse', 'HEAD'], {
+        cwd: repoRoot,
+        encoding: 'utf-8',
+        timeout: 5000,
+        shell: false,
+      });
+      return (res.stdout || '').trim();
     } catch {
       return '';
     }
