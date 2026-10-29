@@ -22,15 +22,15 @@ export function validatePathWithinRoot(targetPath: string, rootPath: string): st
 
   const resolvedRoot = path.resolve(rootPath);
   const canonicalRoot = fs.existsSync(resolvedRoot) ? fs.realpathSync(resolvedRoot) : resolvedRoot;
-  const resolvedTarget = path.resolve(canonicalRoot, targetPath);
+  const uncanonicalTarget = path.isAbsolute(targetPath) ? path.resolve(targetPath) : path.resolve(resolvedRoot, targetPath);
 
-  const initialRel = path.relative(canonicalRoot, resolvedTarget);
+  const initialRel = path.relative(resolvedRoot, uncanonicalTarget);
   if (initialRel.startsWith('..') || path.isAbsolute(initialRel)) {
     throw new SecurityError(`Path traversal attempt detected: ${targetPath} escapes root ${rootPath}`, 403);
   }
 
-  if (fs.existsSync(resolvedTarget)) {
-    const canonicalTarget = fs.realpathSync(resolvedTarget);
+  if (fs.existsSync(uncanonicalTarget)) {
+    const canonicalTarget = fs.realpathSync(uncanonicalTarget);
     const canonicalRel = path.relative(canonicalRoot, canonicalTarget);
     if (canonicalRel.startsWith('..') || path.isAbsolute(canonicalRel)) {
       throw new SecurityError(`Symlink escape detected: ${targetPath} resolves outside root ${rootPath}`, 403);
@@ -38,7 +38,8 @@ export function validatePathWithinRoot(targetPath: string, rootPath: string): st
     return canonicalTarget;
   }
 
-  let current = path.dirname(resolvedTarget);
+  let current = path.dirname(uncanonicalTarget);
+  let resolvedCanonicalParent = canonicalRoot;
   while (current !== path.dirname(current)) {
     if (fs.existsSync(current)) {
       const canonicalParent = fs.realpathSync(current);
@@ -46,12 +47,14 @@ export function validatePathWithinRoot(targetPath: string, rootPath: string): st
       if (parentRel.startsWith('..') || path.isAbsolute(parentRel)) {
         throw new SecurityError(`Symlink parent escape detected: ${targetPath} resolves outside root ${rootPath}`, 403);
       }
+      resolvedCanonicalParent = canonicalParent;
       break;
     }
     current = path.dirname(current);
   }
 
-  return resolvedTarget;
+  const remainder = path.relative(current, uncanonicalTarget);
+  return path.resolve(resolvedCanonicalParent, remainder);
 }
 
 export function validateRepositoryExists(repoPath: string): string {
