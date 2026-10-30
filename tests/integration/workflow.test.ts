@@ -1,8 +1,9 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import * as path from 'node:path';
 import { EngineeringWorkflowRunner } from '../../src/engine/workflow.js';
 import { InvestigationEngine } from '../../src/engine/index.js';
 import { DecisionMemoryManager } from '../../src/memory/manager.js';
+import { ChangeImpactSimulator } from '../../src/impact/index.js';
 
 describe('EngineeringWorkflowRunner Integration', () => {
   const repoRoot = path.resolve(process.cwd());
@@ -10,6 +11,10 @@ describe('EngineeringWorkflowRunner Integration', () => {
 
   beforeEach(() => {
     runner = new EngineeringWorkflowRunner(repoRoot);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   it('executes full 8-stage engineering workflow across all 5 capabilities', async () => {
@@ -93,5 +98,47 @@ describe('EngineeringWorkflowRunner Integration', () => {
     expect(report.impactReport).toBeDefined();
     expect(report.proofReport).toBeDefined();
     expect(report.autonomyPolicy.mode).toBe('controlled_autonomous');
+  });
+
+  it('recovers when impact analysis fails and reports the failed stage', async () => {
+    vi.spyOn(ChangeImpactSimulator.prototype, 'simulate')
+      .mockRejectedValue(new Error('Impact analysis unavailable'));
+
+    const report = await runner.run({
+      repositoryPath: repoRoot,
+      bugDescription: 'Recover from impact analysis failure',
+      targetFile: 'src/engine/workflow.ts',
+      reproductionCommand: 'node -e "process.exit(1)"',
+      autoApprove: true,
+      skipTests: true,
+    });
+
+    expect(report.stageFailures).toEqual([{
+      stage: 'impact_analysis',
+      message: 'Impact analysis unavailable',
+    }]);
+    expect(runner.formatReport(report)).toContain('impact_analysis: Impact analysis unavailable');
+    expect(report.reproductionSession).toBeDefined();
+    expect(report.proofReport.claims.length).toBeGreaterThan(0);
+  });
+
+  it('returns available workflow results when impact analysis is unavailable', async () => {
+    vi.spyOn(ChangeImpactSimulator.prototype, 'simulate')
+      .mockRejectedValue(new Error('simulator timed out'));
+
+    const report = await runner.run({
+      repositoryPath: repoRoot,
+      bugDescription: 'Preserve partial workflow results',
+      targetFile: 'src/engine/workflow.ts',
+      reproductionCommand: 'node -e "process.exit(0)"',
+      autoApprove: true,
+      skipTests: true,
+    });
+
+    expect(report.impactReport).toBeUndefined();
+    expect(report.investigation.evidence.length).toBeGreaterThan(0);
+    expect(report.reproductionSession).toBeDefined();
+    expect(report.proofReport.claims.length).toBeGreaterThan(0);
+    expect(report.stageFailures).toHaveLength(1);
   });
 });
