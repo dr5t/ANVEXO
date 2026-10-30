@@ -240,7 +240,7 @@ export class GeminiProvider implements ModelProvider {
       body.tools = tools;
     }
 
-    const url = `${this.baseUrl}/v1beta/models/${modelName}:generateContent?key=${encodeURIComponent(this.apiKey)}`;
+    const url = `${this.baseUrl}/v1beta/models/${modelName}:generateContent`;
 
     const controller = new AbortController();
     let timedOut = false;

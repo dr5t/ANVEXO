@@ -47,8 +47,10 @@ export GEMINI_API_KEY="your-google-ai-studio-api-key"
 
 Endpoint URL constructed:
 ```text
-https://generativelanguage.googleapis.com/v1beta/models/{modelName}:generateContent?key={API_KEY}
+https://generativelanguage.googleapis.com/v1beta/models/{modelName}:generateContent
 ```
+
+The API key is sent in the `x-goog-api-key` request header, not in the URL.
 
 The provider uses generic errors for hosted HTTP failures and does not include the API response body in those errors. Do not send private repository content to a hosted provider unless permitted by your data-handling policy.
 

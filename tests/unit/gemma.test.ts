@@ -203,7 +203,11 @@ describe('GemmaProvider', () => {
       expect(mockFetch).toHaveBeenCalledTimes(1);
       const [url, options] = mockFetch.mock.calls[0];
       expect(url).toContain('https://generativelanguage.googleapis.com/v1beta/models/gemma-4-31b-it:generateContent');
-      expect(new URL(String(url)).searchParams.has('key')).toBe(true);
+      expect(new URL(String(url)).searchParams.has('key')).toBe(false);
+      expect(options.headers).toEqual({
+        'Content-Type': 'application/json',
+        'x-goog-api-key': 'test-secret-key',
+      });
 
       const parsedBody = JSON.parse(options.body as string);
       expect(parsedBody.contents[0].parts[0].text).toBe('Inspect issue');

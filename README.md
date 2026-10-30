@@ -258,7 +258,7 @@ Restart ANVEXO (or your terminal session) after changing environment variables f
 - **Provider Model Catalog**: `gemini-3.8-flash`, `gemini-2.5-flash`, `gemini-2.5-pro`, `gemini-1.5-flash`, `gemini-1.5-pro`
 - **Multimodal Payloads**: Inline image data with maximum payload size of 20MB
 - **Accepted Image MIME Types**: `image/png`, `image/jpeg`, `image/webp`, `image/gif`, `image/heic`, `image/heif`
-- **Authentication**: Sent via `x-goog-api-key` header and query parameter `?key=`
+- **Authentication**: Sent via the `x-goog-api-key` header; credentials are not included in request URLs
 
 ### <img src="docs/assets/icons/test.svg" width="18" height="18" alt="" valign="middle" /> Running Test Verification
 
