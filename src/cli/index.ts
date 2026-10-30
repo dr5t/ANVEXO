@@ -18,6 +18,11 @@ import { GitService } from '../git/index.js';
 import { CommandDispatcher } from '../commands/index.js';
 import { AgentRuntime } from '../agent/index.js';
 import { McpClient } from '../mcp/index.js';
+import { ChangeImpactSimulator } from '../impact/index.js';
+import { BugReproductionLab } from '../reproduction/index.js';
+import { ProofVerifier } from '../proof/index.js';
+import { DecisionMemoryManager, type DecisionMemoryType } from '../memory/index.js';
+import { SafeAutonomyEngine, type AutonomyMode } from '../autonomy/index.js';
 
 const program = new Command();
 
@@ -515,6 +520,176 @@ program
     process.on('SIGINT', shutdown);
     process.on('SIGTERM', shutdown);
     await new Promise(() => {});
+  });
+
+program
+  .command('impact')
+  .description('Simulate downstream change impact for a file, module, or proposed diff')
+  .argument('<target>', 'File, module, or symbol to simulate impact for')
+  .option('-r, --repo <path>', 'Repository root path', process.cwd())
+  .option('-d, --diff <path>', 'Optional git diff file for incremental analysis')
+  .option('--json', 'Output report as JSON', false)
+  .action(async (target: string, opts: { repo: string; diff?: string; json: boolean }) => {
+    const fs = await import('node:fs');
+    let diffContent: string | undefined;
+    if (opts.diff && fs.existsSync(opts.diff)) {
+      diffContent = fs.readFileSync(opts.diff, 'utf-8');
+    }
+    const simulator = new ChangeImpactSimulator(opts.repo);
+    const report = await simulator.simulate({
+      repoRoot: opts.repo,
+      target,
+      proposedDiff: diffContent,
+    });
+    if (opts.json) {
+      process.stdout.write(JSON.stringify(report, null, 2) + '\n');
+    } else {
+      process.stdout.write(simulator.formatReport(report) + '\n');
+    }
+  });
+
+program
+  .command('reproduce')
+  .description('Execute a controlled bug reproduction in isolated sandbox')
+  .argument('<description>', 'Bug symptom, error message, or description')
+  .option('-r, --repo <path>', 'Repository root path', process.cwd())
+  .option('-c, --cmd <command>', 'Reproduction command to execute')
+  .option('-t, --test <path>', 'Specific reproduction test file')
+  .option('--verify-fix', 'Attempt fix verification by re-running reproduction and regression suite', false)
+  .option('--regression-cmd <command>', 'Command to run full regression test suite', 'npm test')
+  .option('--json', 'Output session as JSON', false)
+  .action(async (desc: string, opts: { repo: string; cmd?: string; test?: string; verifyFix: boolean; regressionCmd: string; json: boolean }) => {
+    const lab = new BugReproductionLab(opts.repo);
+    let session = await lab.runReproduction({
+      repoRoot: opts.repo,
+      bugDescription: desc,
+      reproductionCommand: opts.cmd,
+      reproductionTestPath: opts.test,
+    });
+    if (opts.verifyFix && session.isReproduced) {
+      session = await lab.verifyFix(session, opts.regressionCmd);
+    }
+    if (opts.json) {
+      process.stdout.write(JSON.stringify(session, null, 2) + '\n');
+    } else {
+      process.stdout.write(lab.formatReport(session) + '\n');
+    }
+    process.exit(session.isReproduced || session.isFixed ? 0 : 1);
+  });
+
+program
+  .command('verify')
+  .description('Execute evidence-backed Proof Mode verification')
+  .argument('[path]', 'Repository root path', process.cwd())
+  .option('-o, --objective <objective>', 'Objective or claim to verify', 'Repository verification baseline')
+  .option('--json', 'Output proof report as JSON', false)
+  .action(async (repoPath: string, opts: { objective: string; json: boolean }) => {
+    const engine = new InvestigationEngine();
+    const rep = await engine.investigate({
+      objective: opts.objective,
+      repositoryPath: repoPath,
+      autoApprove: true,
+    });
+    const verifier = new ProofVerifier(repoPath);
+    if (rep.evidence) {
+      verifier.ingestEvidenceRecords(rep.evidence);
+    }
+    const proofReport = verifier.generateReport(rep.id);
+    if (opts.json) {
+      process.stdout.write(JSON.stringify(proofReport, null, 2) + '\n');
+    } else {
+      process.stdout.write(verifier.formatReport(proofReport) + '\n');
+    }
+  });
+
+const memoryCmd = program
+  .command('memory')
+  .description('Manage persistent Project Decision Memory');
+
+memoryCmd
+  .command('list')
+  .description('List project decision records')
+  .option('-r, --repo <path>', 'Repository root path', process.cwd())
+  .option('-t, --type <type>', 'Filter by memory type')
+  .option('-s, --search <query>', 'Search keywords')
+  .option('--json', 'Output as JSON', false)
+  .action((opts: { repo: string; type?: string; search?: string; json: boolean }) => {
+    const mm = new DecisionMemoryManager(opts.repo);
+    const records = mm.list({
+      types: opts.type ? [opts.type as DecisionMemoryType] : undefined,
+      search: opts.search,
+    });
+    if (opts.json) {
+      process.stdout.write(JSON.stringify(records, null, 2) + '\n');
+    } else {
+      process.stdout.write(`Project Decision Memory (${records.length} records):\n\n`);
+      for (const r of records) {
+        process.stdout.write(`[${r.type.toUpperCase()}] ${r.summary} (${r.status})\n`);
+        process.stdout.write(`  ${r.explanation}\n`);
+        if (r.relatedFiles.length > 0) {
+          process.stdout.write(`  Files: ${r.relatedFiles.join(', ')}\n`);
+        }
+        process.stdout.write('\n');
+      }
+    }
+  });
+
+memoryCmd
+  .command('add')
+  .description('Add a new decision memory record')
+  .option('-r, --repo <path>', 'Repository root path', process.cwd())
+  .requiredOption('-t, --type <type>', 'Memory type (architecture_decision, implementation_choice, rejected_solution, etc.)')
+  .requiredOption('-s, --summary <summary>', 'Summary headline')
+  .requiredOption('-e, --explanation <explanation>', 'Detailed rationale')
+  .option('-f, --files <files>', 'Comma-separated related files')
+  .option('--tags <tags>', 'Comma-separated tags')
+  .action((opts: { repo: string; type: string; summary: string; explanation: string; files?: string; tags?: string }) => {
+    const mm = new DecisionMemoryManager(opts.repo);
+    const rec = mm.add({
+      type: opts.type as DecisionMemoryType,
+      summary: opts.summary,
+      explanation: opts.explanation,
+      relatedFiles: opts.files ? opts.files.split(',').map(f => f.trim()) : [],
+      tags: opts.tags ? opts.tags.split(',').map(t => t.trim()) : [],
+    });
+    process.stdout.write(`Created decision record: ${rec.id} [${rec.type}]\n`);
+  });
+
+memoryCmd
+  .command('conflicts <proposal>')
+  .description('Check a proposal against project decision memory for conflicts')
+  .option('-r, --repo <path>', 'Repository root path', process.cwd())
+  .action((proposal: string, opts: { repo: string }) => {
+    const mm = new DecisionMemoryManager(opts.repo);
+    const conflicts = mm.checkConflicts(proposal);
+    if (conflicts.length === 0) {
+      process.stdout.write('[PASS] No conflicts with documented project decisions.\n');
+    } else {
+      process.stdout.write(`[WARNING] Found ${conflicts.length} conflict(s):\n\n`);
+      for (const c of conflicts) {
+        process.stdout.write(`! [${c.severity.toUpperCase()}] ${c.summary}\n  ${c.explanation}\n\n`);
+      }
+    }
+  });
+
+const autonomyCmd = program
+  .command('autonomy')
+  .description('Inspect or manage Safe Autonomy Engine execution policies');
+
+autonomyCmd
+  .command('status')
+  .description('Show current autonomy mode and security budget')
+  .action(() => {
+    const engine = new SafeAutonomyEngine('assisted');
+    const state = engine.getState();
+    const policy = engine.getPolicy();
+    process.stdout.write(`Mode:                      ${policy.mode.toUpperCase()}\n`);
+    process.stdout.write(`Require Mutation Approval: ${policy.requireApprovalForMutations ? 'YES' : 'NO'}\n`);
+    process.stdout.write(`Require Command Approval:  ${policy.requireApprovalForCommands ? 'YES' : 'NO'}\n`);
+    process.stdout.write(`Max Time Budget:           ${policy.budget.maxDurationSeconds}s\n`);
+    process.stdout.write(`Max Tool Invocations:      ${policy.budget.maxToolInvocations}\n`);
+    process.stdout.write(`Max File Modifications:    ${policy.budget.maxFileModifications}\n`);
+    process.stdout.write(`Protected Paths:           ${policy.protectedPaths.length} patterns\n`);
   });
 
 program.parse();

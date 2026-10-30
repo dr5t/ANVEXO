@@ -3,6 +3,7 @@ export { OfflineHeuristicProvider, OfflineModelProvider } from './offline.js';
 export { AnthropicProvider } from './anthropic.js';
 export { OpenAIProvider } from './openai.js';
 export { GeminiProvider } from './gemini.js';
+export { GemmaProvider } from './gemma.js';
 export { OllamaProvider } from './ollama.js';
 export { ProviderRegistry, getDefaultProviderRegistry } from './registry.js';
 export { ProviderFactory } from './factory.js';

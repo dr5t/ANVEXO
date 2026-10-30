@@ -2278,3 +2278,225 @@ body {
   }
 }
 
+/* =========================================================================
+   Engineering Intelligence Views (Proof, Impact, Repro, Autonomy, Memory)
+   ========================================================================= */
+
+.autonomy-selector-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-hairline);
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.autonomy-badge-label {
+  color: var(--accent-orange);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.autonomy-select {
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  outline: none;
+  cursor: pointer;
+}
+
+.autonomy-select option {
+  background: var(--bg-surface-elevated);
+  color: var(--text-primary);
+}
+
+.ei-panel {
+  padding: 16px;
+  overflow-y: auto;
+  height: calc(100% - 42px);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ei-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-hairline);
+}
+
+.ei-input-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  width: 100%;
+}
+
+.ei-input {
+  flex: 1;
+  background: var(--bg-editor);
+  border: 1px solid var(--border-hairline);
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  padding: 8px 12px;
+  border-radius: 4px;
+  outline: none;
+}
+
+.ei-input:focus {
+  border-color: var(--accent-orange);
+}
+
+.ei-textarea {
+  width: 100%;
+  min-height: 80px;
+  background: var(--bg-editor);
+  border: 1px solid var(--border-hairline);
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  padding: 8px 12px;
+  border-radius: 4px;
+  outline: none;
+  resize: vertical;
+}
+
+.ei-textarea:focus {
+  border-color: var(--accent-orange);
+}
+
+.ei-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 12px;
+}
+
+.ei-stat-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-hairline);
+  border-radius: 6px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ei-stat-value {
+  font-family: var(--font-mono);
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.ei-stat-label {
+  font-size: 10.5px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.ei-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-hairline);
+  border-radius: 6px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ei-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.ei-card-title {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--text-primary);
+}
+
+.badge-verified {
+  background: var(--status-pass-subtle);
+  color: var(--status-pass);
+  border: 1px solid var(--status-pass-border);
+}
+
+.badge-partial {
+  background: var(--status-pending-subtle);
+  color: var(--status-pending);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+}
+
+.badge-contradicted {
+  background: var(--status-fail-subtle);
+  color: var(--status-fail);
+  border: 1px solid rgba(248, 81, 73, 0.4);
+}
+
+.badge-unverified {
+  background: var(--bg-card);
+  color: var(--text-muted);
+  border: 1px solid var(--border-hairline);
+}
+
+.badge-risk-low {
+  background: var(--status-pass-subtle);
+  color: var(--status-pass);
+  border: 1px solid var(--status-pass-border);
+}
+
+.badge-risk-medium {
+  background: var(--status-info-subtle);
+  color: var(--status-info);
+  border: 1px solid rgba(88, 166, 255, 0.4);
+}
+
+.badge-risk-high {
+  background: var(--status-pending-subtle);
+  color: var(--status-pending);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+}
+
+.badge-risk-critical {
+  background: var(--status-fail-subtle);
+  color: var(--status-fail);
+  border: 1px solid rgba(248, 81, 73, 0.5);
+  font-weight: bold;
+}
+
+.ei-conflict-banner {
+  background: rgba(248, 81, 73, 0.1);
+  border: 1px solid rgba(248, 81, 73, 0.4);
+  border-radius: 6px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: var(--status-fail);
+}
+
+.ei-code-box {
+  background: var(--bg-editor);
+  border: 1px solid var(--border-hairline);
+  border-radius: 4px;
+  padding: 10px;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--text-secondary);
+  overflow-x: auto;
+  white-space: pre-wrap;
+  max-height: 220px;
+}
+

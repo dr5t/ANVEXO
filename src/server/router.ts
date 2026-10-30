@@ -7,7 +7,7 @@ import { discoverProject } from '../discovery/index.js';
 import { ContextManager } from '../context/index.js';
 import { PermissionScope, PermissionDecision, MemoryMode, logger } from '../core/index.js';
 import { ConfigManager } from '../core/config.js';
-import { ProviderFactory } from '../providers/index.js';
+import { ProviderFactory, GemmaProvider } from '../providers/index.js';
 import { SkillManager } from '../skills/index.js';
 import { RuleManager } from '../rules/index.js';
 import { PluginManager } from '../plugins/index.js';
@@ -19,6 +19,11 @@ import { PermissionManager } from '../permissions/index.js';
 import { RateLimiter } from './rate-limiter.js';
 import { JobManager } from './job-manager.js';
 import { renderDocsHtml } from './docs-site.js';
+import { ChangeImpactSimulator } from '../impact/index.js';
+import { BugReproductionLab } from '../reproduction/index.js';
+import { ProofVerifier } from '../proof/index.js';
+import { DecisionMemoryManager, type DecisionMemoryType } from '../memory/index.js';
+import { SafeAutonomyEngine, type AutonomyMode } from '../autonomy/index.js';
 import {
   applySecurityHeaders,
   applyCorsHeaders,
@@ -65,6 +70,7 @@ export class ApiRouter {
   private engine: InvestigationEngine;
   private contextManager: ContextManager;
   private terminalManager: TerminalManager;
+  private autonomyEngine: SafeAutonomyEngine;
   private host: string;
 
   constructor(host: string = '127.0.0.1') {
@@ -76,6 +82,7 @@ export class ApiRouter {
     this.engine = new InvestigationEngine();
     this.contextManager = new ContextManager();
     this.terminalManager = new TerminalManager();
+    this.autonomyEngine = new SafeAutonomyEngine('assisted');
   }
 
   getJobManager(): JobManager {
@@ -196,7 +203,16 @@ export class ApiRouter {
       return;
     }
 
-    const heavyPaths = ['/api/investigate', '/api/context/rebuild', '/api/context/clear', '/api/agent/prompt'];
+    const heavyPaths = [
+      '/api/investigate',
+      '/api/context/rebuild',
+      '/api/context/clear',
+      '/api/agent/prompt',
+      '/api/impact',
+      '/api/reproduce',
+      '/api/reproduce/verify',
+      '/api/verify',
+    ];
     if (heavyPaths.includes(pathname)) {
       const heavyCheck = this.heavyRateLimiter.check(clientIp);
       if (!heavyCheck.allowed) {
@@ -712,6 +728,180 @@ export class ApiRouter {
           body.decision as PermissionDecision,
         );
         this.sendJson(res, 200, { message: `Granted ${body.decision} for ${body.scope} on ${body.resource}` });
+        return;
+      }
+
+      if (method === 'POST' && pathname === '/api/impact') {
+        const body = await this.readJsonBody(req);
+        if (!body.repo || typeof body.repo !== 'string' || !body.target || typeof body.target !== 'string') {
+          this.sendJson(res, 400, { error: 'repo and target are required' });
+          return;
+        }
+        const validatedRepo = validateRepositoryExists(body.repo as string);
+        const simulator = new ChangeImpactSimulator(validatedRepo);
+        const report = await simulator.simulate(body.target as string, {
+          symbol: typeof body.symbol === 'string' ? body.symbol : undefined,
+          proposedDiff: typeof body.gitDiff === 'string' ? body.gitDiff : (typeof body.proposedDiff === 'string' ? body.proposedDiff : undefined),
+        });
+        this.sendJson(res, 200, report);
+        return;
+      }
+
+      if (method === 'POST' && pathname === '/api/reproduce') {
+        const body = await this.readJsonBody(req);
+        if (!body.repo || typeof body.repo !== 'string' || !body.bugDescription || typeof body.bugDescription !== 'string') {
+          this.sendJson(res, 400, { error: 'repo and bugDescription are required' });
+          return;
+        }
+        const validatedRepo = validateRepositoryExists(body.repo as string);
+        const lab = new BugReproductionLab(validatedRepo);
+        const session = await lab.runReproduction(body.bugDescription as string, {
+          command: typeof body.command === 'string' ? body.command : undefined,
+          reproductionTestPath: typeof body.reproductionFile === 'string' ? body.reproductionFile : (typeof body.reproductionTestPath === 'string' ? body.reproductionTestPath : undefined),
+          timeoutMs: typeof body.timeoutMs === 'number' ? body.timeoutMs : undefined,
+        });
+        this.sendJson(res, 200, session);
+        return;
+      }
+
+      if (method === 'POST' && pathname === '/api/reproduce/verify') {
+        const body = await this.readJsonBody(req);
+        if (!body.repo || typeof body.repo !== 'string' || !body.sessionId || typeof body.sessionId !== 'string') {
+          this.sendJson(res, 400, { error: 'repo and sessionId are required' });
+          return;
+        }
+        const validatedRepo = validateRepositoryExists(body.repo as string);
+        const lab = new BugReproductionLab(validatedRepo);
+        const fixSummary = typeof body.proposedFixSummary === 'string' ? body.proposedFixSummary : 'Applied proposed fix';
+        const session = await lab.verifyFix(body.sessionId as string, fixSummary, {
+          regressionCommand: typeof body.regressionCommand === 'string' ? body.regressionCommand : undefined,
+        });
+        this.sendJson(res, 200, session);
+        return;
+      }
+
+      if (method === 'POST' && pathname === '/api/verify') {
+        const body = await this.readJsonBody(req);
+        if (!body.repo || typeof body.repo !== 'string') {
+          this.sendJson(res, 400, { error: 'repo is required' });
+          return;
+        }
+        const validatedRepo = validateRepositoryExists(body.repo as string);
+        const verifier = new ProofVerifier(validatedRepo);
+        if (Array.isArray(body.claims)) {
+          for (const c of body.claims) {
+            if (c && typeof c.statement === 'string' && typeof c.claimType === 'string') {
+              verifier.recordClaim(c.claimType as any, c.statement, c.evidenceRefs || []);
+            }
+          }
+        }
+        if (Array.isArray(body.evidence)) {
+          verifier.ingestEvidenceRecords(body.evidence as any);
+        }
+        const report = verifier.generateReport();
+        this.sendJson(res, 200, report);
+        return;
+      }
+
+      if (method === 'GET' && pathname === '/api/autonomy') {
+        this.sendJson(res, 200, {
+          mode: this.autonomyEngine.getMode(),
+          policy: this.autonomyEngine.getPolicy(),
+          state: this.autonomyEngine.getState(),
+        });
+        return;
+      }
+
+      if (method === 'POST' && pathname === '/api/autonomy') {
+        const body = await this.readJsonBody(req);
+        if (!body.mode || typeof body.mode !== 'string') {
+          this.sendJson(res, 400, { error: 'mode is required (observe | suggest | assisted | controlled_autonomous)' });
+          return;
+        }
+        const validModes: AutonomyMode[] = ['observe', 'suggest', 'assisted', 'controlled_autonomous'];
+        if (!validModes.includes(body.mode as AutonomyMode)) {
+          this.sendJson(res, 400, { error: `Invalid mode. Must be one of: ${validModes.join(', ')}` });
+          return;
+        }
+        const policyUpdates: any = {};
+        if (body.maxBudget && typeof body.maxBudget === 'object') policyUpdates.maxBudget = body.maxBudget;
+        if (Array.isArray(body.allowedPaths)) policyUpdates.allowedPaths = body.allowedPaths;
+        if (Array.isArray(body.deniedCommands)) policyUpdates.deniedCommands = body.deniedCommands;
+        this.autonomyEngine.setMode(body.mode as AutonomyMode, policyUpdates);
+        this.sendJson(res, 200, {
+          message: `Autonomy mode set to ${body.mode}`,
+          mode: this.autonomyEngine.getMode(),
+          policy: this.autonomyEngine.getPolicy(),
+        });
+        return;
+      }
+
+      if (method === 'GET' && pathname === '/api/memory') {
+        const repo = parsedUrl.searchParams.get('repo') || process.cwd();
+        const validatedRepo = validateRepositoryExists(repo);
+        const type = parsedUrl.searchParams.get('type') || undefined;
+        const tag = parsedUrl.searchParams.get('tag') || undefined;
+        const file = parsedUrl.searchParams.get('file') || undefined;
+        const memoryManager = new DecisionMemoryManager(validatedRepo);
+        const memories = await memoryManager.listMemories({
+          types: type ? [type as DecisionMemoryType] : undefined,
+          tags: tag ? [tag] : undefined,
+          files: file ? [file] : undefined,
+        });
+        this.sendJson(res, 200, { repo: validatedRepo, count: memories.length, memories });
+        return;
+      }
+
+      if (method === 'POST' && pathname === '/api/memory') {
+        const body = await this.readJsonBody(req);
+        if (!body.repo || typeof body.repo !== 'string' || !body.type || !body.summary || !body.explanation) {
+          this.sendJson(res, 400, { error: 'repo, type, summary, and explanation are required' });
+          return;
+        }
+        const validatedRepo = validateRepositoryExists(body.repo as string);
+        const memoryManager = new DecisionMemoryManager(validatedRepo);
+        const record = await memoryManager.recordMemory({
+          type: body.type as DecisionMemoryType,
+          summary: body.summary as string,
+          explanation: body.explanation as string,
+          relatedFiles: Array.isArray(body.relatedFiles) ? (body.relatedFiles as string[]) : [],
+          relatedSymbols: Array.isArray(body.relatedSymbols) ? (body.relatedSymbols as string[]) : [],
+          rejectedAlternatives: Array.isArray(body.rejectedAlternatives) ? (body.rejectedAlternatives as string[]) : [],
+          tradeOffs: Array.isArray(body.tradeOffs) ? (body.tradeOffs as string[]) : [],
+          tags: Array.isArray(body.tags) ? (body.tags as string[]) : [],
+        });
+        this.sendJson(res, 201, record);
+        return;
+      }
+
+      if (method === 'POST' && pathname === '/api/memory/conflicts') {
+        const body = await this.readJsonBody(req);
+        if (!body.repo || typeof body.repo !== 'string' || !body.proposal || typeof body.proposal !== 'string') {
+          this.sendJson(res, 400, { error: 'repo and proposal are required' });
+          return;
+        }
+        const validatedRepo = validateRepositoryExists(body.repo as string);
+        const memoryManager = new DecisionMemoryManager(validatedRepo);
+        const conflicts = await memoryManager.checkConflicts(
+          body.proposal as string,
+          Array.isArray(body.targetFiles) ? (body.targetFiles as string[]) : undefined
+        );
+        this.sendJson(res, 200, { conflicts, count: conflicts.length });
+        return;
+      }
+
+      if ((method === 'DELETE' || method === 'POST') && pathname === '/api/memory/delete') {
+        const body = await this.readJsonBody(req);
+        const id = (body.id as string) || parsedUrl.searchParams.get('id');
+        const repo = (body.repo as string) || parsedUrl.searchParams.get('repo');
+        if (!repo || !id) {
+          this.sendJson(res, 400, { error: 'repo and id are required' });
+          return;
+        }
+        const validatedRepo = validateRepositoryExists(repo);
+        const memoryManager = new DecisionMemoryManager(validatedRepo);
+        const success = await memoryManager.deleteMemory(id);
+        this.sendJson(res, success ? 200 : 404, { success, id });
         return;
       }
 

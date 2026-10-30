@@ -163,6 +163,7 @@ export class ConfigManager {
       anthropic: process.env.ANTHROPIC_API_KEY,
       openai: process.env.OPENAI_API_KEY,
       gemini: process.env.GEMINI_API_KEY,
+      gemma: process.env.GEMMA_API_KEY || process.env.GEMINI_API_KEY,
       ollama: process.env.OLLAMA_API_KEY,
       offline: undefined,
     };

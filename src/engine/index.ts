@@ -8,6 +8,8 @@ import { EvidenceCollector } from '../evidence/index.js';
 import { createInvestigationPlan } from '../planner/index.js';
 import { formatReport, generateFindings } from '../reporting/index.js';
 import { ContextManager } from '../context/index.js';
+import { ProofVerifier } from '../proof/index.js';
+import { DecisionMemoryManager } from '../memory/index.js';
 
 export interface InvestigationOptions {
   objective: string;
@@ -182,7 +184,33 @@ export class InvestigationEngine {
       });
     }
 
+    const memoryManager = new DecisionMemoryManager(options.repositoryPath);
+    const memoryConflicts = memoryManager.checkConflicts(options.objective);
+    for (const mc of memoryConflicts) {
+      report.findings.push({
+        claim: `Conflict with Project Decision Memory: ${mc.summary}`,
+        evidenceIds: [],
+        verificationStatus: VerificationStatus.CONTRADICTED,
+        confidence: 0.9,
+        details: mc.explanation,
+      });
+    }
+
     report.unverifiedClaims = this.collectUnverifiedClaims(report);
+
+    const proofVerifier = new ProofVerifier(options.repositoryPath);
+    proofVerifier.ingestEvidenceRecords(allEvidence);
+    for (const f of report.findings) {
+      const claim = proofVerifier.recordClaim({
+        statement: f.claim,
+        category: f.claim.toLowerCase().includes('test') ? 'test_execution' : 'general',
+        rationale: f.details,
+      });
+      for (const evId of f.evidenceIds) {
+        proofVerifier.attachEvidence(claim.id, evId, f.verificationStatus === VerificationStatus.VERIFIED);
+      }
+    }
+    report.proofReport = proofVerifier.generateReport(report.id);
 
     await this.contextManager.recordInvestigation(report);
 

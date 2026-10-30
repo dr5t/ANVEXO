@@ -161,6 +161,7 @@ export interface InvestigationReport {
   unverifiedClaims: string[];
   startedAt: Date;
   completedAt: Date;
+  proofReport?: import('../proof/types.js').ProofReport;
 }
 
 export interface Finding {
@@ -249,7 +250,7 @@ export interface ProjectContext {
   contradictions: ContradictionRecord[];
 }
 
-export type ProviderId = 'anthropic' | 'openai' | 'gemini' | 'ollama' | 'offline';
+export type ProviderId = 'anthropic' | 'openai' | 'gemini' | 'gemma' | 'ollama' | 'offline';
 
 export interface ModelInfo {
   id: string;
@@ -279,12 +280,19 @@ export interface ToolCallPayload {
   arguments: Record<string, unknown>;
 }
 
+export interface ChatImagePart {
+  mimeType: string; // e.g. 'image/png' | 'image/jpeg' | 'image/webp' | 'image/gif'
+  data: string;     // Base64 encoded payload
+  label?: string;
+}
+
 export interface ChatMessage {
   role: ChatRole;
   content: string;
   name?: string;
   toolCallId?: string;
   toolCalls?: ToolCallPayload[];
+  images?: ChatImagePart[];
 }
 
 export interface CompletionRequest {

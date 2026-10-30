@@ -12,6 +12,8 @@ import type { PermissionManager } from '../permissions/index.js';
 import type { RuleManager } from '../rules/index.js';
 import type { SkillManager } from '../skills/index.js';
 import type { ToolRegistry } from '../tools/index.js';
+import { SafeAutonomyEngine, type AutonomyMode } from '../autonomy/index.js';
+import { DecisionMemoryManager } from '../memory/index.js';
 
 export interface AgentRuntimeOptions {
   repoPath: string;
@@ -20,7 +22,10 @@ export interface AgentRuntimeOptions {
   tools: ToolRegistry;
   ruleManager: RuleManager;
   skillManager?: SkillManager;
+  autonomyEngine?: SafeAutonomyEngine;
+  decisionMemory?: DecisionMemoryManager;
   mode?: AgentMode;
+  autonomyMode?: AutonomyMode;
   maxIterations?: number;
 }
 
@@ -43,6 +48,8 @@ export class AgentRuntime {
   private defaultMode: AgentMode;
   private maxIterations: number;
   private sessions: Map<string, AgentSession> = new Map();
+  private autonomyEngine: SafeAutonomyEngine;
+  private decisionMemory: DecisionMemoryManager;
 
   constructor(options: AgentRuntimeOptions) {
     this.repoPath = options.repoPath;
@@ -53,6 +60,16 @@ export class AgentRuntime {
     this.skillManager = options.skillManager;
     this.defaultMode = options.mode || 'interactive';
     this.maxIterations = options.maxIterations || 15;
+    this.autonomyEngine = options.autonomyEngine || new SafeAutonomyEngine(options.autonomyMode || 'assisted');
+    this.decisionMemory = options.decisionMemory || new DecisionMemoryManager(options.repoPath);
+  }
+
+  getAutonomyEngine(): SafeAutonomyEngine {
+    return this.autonomyEngine;
+  }
+
+  getDecisionMemory(): DecisionMemoryManager {
+    return this.decisionMemory;
   }
 
   createSession(mode?: AgentMode): AgentSession {
@@ -104,6 +121,11 @@ export class AgentRuntime {
       if (skills.length > 0) {
         sections.push('Available skills:\n' + skills.map((s) => `- ${s.id}: ${s.description}`).join('\n'));
       }
+    }
+
+    const memoryPrompt = this.decisionMemory.buildAgentContextPrompt();
+    if (memoryPrompt) {
+      sections.push(memoryPrompt);
     }
 
     return sections.join('\n\n');
@@ -282,10 +304,52 @@ export class AgentRuntime {
           continue;
         }
 
+        const resource = typeof call.arguments.path === 'string' ? (call.arguments.path as string) : '*';
+        const command = typeof call.arguments.command === 'string' ? (call.arguments.command as string) : undefined;
+        const isMutation = call.name.includes('write') || call.name.includes('delete') || call.name.includes('create');
+
+        const autonomyCheck = this.autonomyEngine.validateAction({
+          scope: toolDef.requiredPermission,
+          resource,
+          command,
+          isMutation,
+        });
+
+        if (!autonomyCheck.allowed) {
+          if (autonomyCheck.requiresApproval) {
+            onEvent?.({
+              type: 'waiting_approval',
+              toolName: call.name,
+              toolArgs: call.arguments,
+              content: autonomyCheck.reason || `Tool ${call.name} requires approval under ${this.autonomyEngine.getMode()} mode`,
+            });
+            session.messages.push({
+              role: 'tool',
+              name: call.name,
+              toolCallId: call.id,
+              content: JSON.stringify({ error: autonomyCheck.reason || 'Action requires approval' }),
+            });
+            continue;
+          } else {
+            onEvent?.({
+              type: 'error',
+              toolName: call.name,
+              content: `[BLOCKED BY SAFE AUTONOMY ENGINE] ${autonomyCheck.reason}`,
+            });
+            session.messages.push({
+              role: 'tool',
+              name: call.name,
+              toolCallId: call.id,
+              content: JSON.stringify({ error: `[AUTONOMY BLOCKED] ${autonomyCheck.reason}` }),
+            });
+            continue;
+          }
+        }
+
         if (session.mode === 'interactive' && (toolDef.risk === 'high' || toolDef.risk === 'medium')) {
           const allowed = await this.permissions.check({
             scope: toolDef.requiredPermission,
-            resource: typeof call.arguments.path === 'string' ? call.arguments.path : '*',
+            resource,
             description: `Tool ${call.name} invocation`,
             risk: toolDef.risk,
           });
@@ -317,6 +381,8 @@ export class AgentRuntime {
             metadata: {},
           };
         }
+
+        this.autonomyEngine.recordToolExecution(toolDef.requiredPermission, isMutation);
 
         const resultContent = result.success
           ? result.output

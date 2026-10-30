@@ -2,6 +2,7 @@ import { ConfigManager } from '../core/config.js';
 import { ModelInfo, ModelProvider, ProviderId } from '../core/types.js';
 import { AnthropicProvider } from './anthropic.js';
 import { GeminiProvider } from './gemini.js';
+import { GemmaProvider } from './gemma.js';
 import { OfflineModelProvider } from './offline.js';
 import { OllamaProvider } from './ollama.js';
 import { OpenAIProvider } from './openai.js';
@@ -19,11 +20,13 @@ export class ProviderFactory {
     const anthropicKey = this.configManager.getApiKey('anthropic');
     const openaiKey = this.configManager.getApiKey('openai');
     const geminiKey = this.configManager.getApiKey('gemini');
+    const gemmaKey = this.configManager.getApiKey('gemma');
 
     this.providers.set('offline', new OfflineModelProvider());
     this.providers.set('anthropic', new AnthropicProvider(anthropicKey));
     this.providers.set('openai', new OpenAIProvider(openaiKey));
     this.providers.set('gemini', new GeminiProvider(geminiKey));
+    this.providers.set('gemma', new GemmaProvider({ apiKey: gemmaKey }));
     this.providers.set('ollama', new OllamaProvider());
   }
 
@@ -69,6 +72,12 @@ export class ProviderFactory {
         id: 'gemini',
         name: 'Google Gemini',
         isConfigured: Boolean(this.configManager.getApiKey('gemini')),
+        isLocal: false,
+      },
+      {
+        id: 'gemma',
+        name: 'Google Gemma 4 (Open Models)',
+        isConfigured: Boolean(this.configManager.getApiKey('gemma')),
         isLocal: false,
       },
       {

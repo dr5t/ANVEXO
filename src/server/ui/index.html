@@ -55,6 +55,15 @@
         <span id="statusDot" class="status-dot idle" aria-hidden="true"></span>
         <span id="statusText">READY</span>
       </div>
+      <div class="autonomy-selector-wrap" title="Safe Autonomy Engine Policy">
+        <span class="autonomy-badge-label">POLICY:</span>
+        <select id="autonomyModeSelect" class="autonomy-select" aria-label="Safe Autonomy Policy">
+          <option value="assisted" selected>ASSISTED</option>
+          <option value="observe">OBSERVE</option>
+          <option value="suggest">SUGGEST</option>
+          <option value="controlled_autonomous">CONTROLLED</option>
+        </select>
+      </div>
       <a href="/docs" target="_blank" class="btn btn-icon-only" aria-label="Documentation Platform" title="Documentation Platform (/docs)">
         <svg class="anvexo-icon btn-icon docs-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path class="anvexo-doc-cover" d="M4 19.5 C4 18.1 5.1 17 6.5 17 H20 V3.5 H6.5 C5.1 3.5 4 4.6 4 6 Z"/>
@@ -94,7 +103,10 @@
     <button class="cmd-preset-btn" data-cmd="test" title="Execute unit and integration test suite">$ test</button>
     <button class="cmd-preset-btn" data-cmd="trace" title="Inspect chronological evidence trace">$ trace</button>
     <button class="cmd-preset-btn" data-cmd="report" title="View synthesized findings and report">$ report</button>
-    <button class="cmd-preset-btn" data-cmd="rebuild" title="Rebuild ECHO dependency graph and commit index">$ rebuild</button>
+    <button class="cmd-preset-btn" data-cmd="proof" title="Inspect empirical proof report">$ proof</button>
+    <button class="cmd-preset-btn" data-cmd="impact" title="Simulate downstream change impact">$ impact</button>
+    <button class="cmd-preset-btn" data-cmd="reproduce" title="Bug reproduction lab">$ reproduce</button>
+    <button class="cmd-preset-btn" data-cmd="memory" title="Project decision memory">$ memory</button>
   </div>
 
   <div id="workbenchShell" class="workbench-shell">
@@ -266,6 +278,33 @@
               <line x1="12" y1="15" x2="16.5" y2="15"/>
             </svg>
             <span>Tool Console</span>
+          </button>
+          <button class="tab-btn" data-tab="proof" aria-label="Proof Mode tab">
+            <svg class="anvexo-icon btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              <path d="M9 12l2 2 4-4"/>
+            </svg>
+            <span>Proof Mode</span>
+          </button>
+          <button class="tab-btn" data-tab="impact" aria-label="Change Impact tab">
+            <svg class="anvexo-icon btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="9"/>
+              <path d="M12 8v4l3 3"/>
+            </svg>
+            <span>Change Impact</span>
+          </button>
+          <button class="tab-btn" data-tab="reproduce" aria-label="Bug Repro Lab tab">
+            <svg class="anvexo-icon btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M6 18h12M9 14h6M8 10h8M12 3v3"/>
+            </svg>
+            <span>Bug Repro Lab</span>
+          </button>
+          <button class="tab-btn" data-tab="memory" aria-label="Decision Memory tab">
+            <svg class="anvexo-icon btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+            </svg>
+            <span>Decision Memory</span>
           </button>
         </nav>
 
