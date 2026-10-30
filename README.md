@@ -54,7 +54,7 @@ Unlike statistical coding assistants that hallucinate fixes based on token proba
 4. Redacts secrets and stamps observations into an immutable evidence ledger.
 5. Employs cross-run contradiction detection to prevent reintroducing known regressions.
 
-All processing occurs strictly on your machine (`127.0.0.1:4173`) with zero covert network egress.
+Repository analysis and stored project data run locally by default. Hosted model providers and configured integrations may send request data to external services. The local HTTP workbench binds to `127.0.0.1:4173` by default.
 
 ---
 
@@ -317,6 +317,8 @@ npx anvexo config list
 npx anvexo config get model.default_provider
 npx anvexo config set model.default_provider anthropic
 ```
+
+Gemma uses the local Ollama-compatible endpoint by default. Setting `GEMMA_API_KEY` or `GEMINI_API_KEY` selects the hosted Gemini API route. `GEMMA_MODEL` and `GEMMA_BASE_URL` configure the model and endpoint; see the [Gemma configuration guide](docs/providers/GEMMA_CONFIGURATION.md). Hosted requests send the supplied prompt and investigation context to the configured service.
 
 ---
 

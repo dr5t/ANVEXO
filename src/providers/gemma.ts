@@ -66,10 +66,10 @@ export class GemmaProvider implements ModelProvider {
   constructor(options: GemmaProviderOptions = {}) {
     this.apiKey = options.apiKey?.trim() || process.env.GEMMA_API_KEY?.trim() || process.env.GEMINI_API_KEY?.trim();
     this.route = options.route || (this.apiKey ? 'gemini-api' : 'local');
-    this.baseUrl = (options.baseUrl?.trim() || (this.route === 'gemini-api'
+    this.baseUrl = (options.baseUrl?.trim() || process.env.GEMMA_BASE_URL?.trim() || (this.route === 'gemini-api'
       ? 'https://generativelanguage.googleapis.com'
       : 'http://127.0.0.1:11434')).replace(/\/+$/, '');
-    this.defaultModel = options.defaultModel?.trim() || (this.route === 'gemini-api' ? 'gemma-4-31b-it' : 'gemma4:latest');
+    this.defaultModel = options.defaultModel?.trim() || process.env.GEMMA_MODEL?.trim() || (this.route === 'gemini-api' ? 'gemma-4-31b-it' : 'gemma4:latest');
     this.timeoutMs = options.timeoutMs ?? 45000;
     if (!Number.isFinite(this.timeoutMs) || this.timeoutMs <= 0) {
       throw new Error('Gemma timeout must be a positive number of milliseconds.');
