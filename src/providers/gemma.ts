@@ -212,7 +212,7 @@ export class GemmaProvider implements ModelProvider {
       );
     }
 
-    const modelName = this.defaultModel;
+    const modelName = request.model?.trim() || this.defaultModel;
     if (!/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(modelName)) {
       throw new Error('Invalid Gemma model configuration. Set GEMMA_MODEL to a valid model identifier.');
     }
@@ -295,12 +295,17 @@ export class GemmaProvider implements ModelProvider {
       },
     ] : undefined;
 
+    const generationConfig: Record<string, unknown> = {
+      temperature: request.temperature ?? 0.2,
+      maxOutputTokens: request.maxTokens ?? 4096,
+    };
+    if (request.stopSequences && request.stopSequences.length > 0) {
+      generationConfig.stopSequences = request.stopSequences;
+    }
+
     const body: Record<string, unknown> = {
       contents,
-      generationConfig: {
-        temperature: request.temperature ?? 0.2,
-        maxOutputTokens: request.maxTokens ?? 4096,
-      },
+      generationConfig,
     };
     if (tools) body.tools = tools;
 
@@ -440,7 +445,7 @@ export class GemmaProvider implements ModelProvider {
   }
 
   private async completeViaLocal(request: CompletionRequest): Promise<CompletionResponse> {
-    const model = this.defaultModel;
+    const model = request.model?.trim() || this.defaultModel;
     const prompt = request.messages.map(m => `[${m.role.toUpperCase()}]: ${m.content || ''}`).join('\n\n');
 
     const images: string[] = [];
@@ -467,6 +472,7 @@ export class GemmaProvider implements ModelProvider {
         options: {
           temperature: request.temperature ?? 0.2,
           num_predict: request.maxTokens ?? 4096,
+          ...(request.stopSequences && request.stopSequences.length > 0 ? { stop: request.stopSequences } : {}),
         },
       };
       if (images.length > 0) {
