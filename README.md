@@ -79,6 +79,7 @@ Modern software troubleshooting in complex codebases is fragmented, slow, and er
 - **Heuristic Diagnostic Planning**: Assembles 10–15 step diagnostic plans tailored to operator objectives, combining file listings, git status checks, commit log reviews, unstaged diff inspections, configuration reads, and targeted test runs.
 - **Evidence Verification States**: Categorizes observations into five rigorous states: `observed`, `inferred`, `hypothesized`, `verified`, and `contradicted`.
 - **Automated Secret Scrubbing**: Redacts sensitive API keys (`sk-...`, `ghp_...`, `xoxb-...`), cloud credentials, and PEM certificates prior to ledger persistence.
+- **Structured Multi-Format Reporting & Auto-Persistence**: Automatically exports and persists completed investigations as machine-readable JSON (`.anvexo/reports/report-<id>.json`) and GitHub-Flavored Markdown (`.anvexo/reports/report-<id>.md`) with verifiable evidence tables, diff blocks, and Proof Mode summaries.
 - **Honest Limitation Disclosures**: Discloses unresolved uncertainties, skipped steps, and confidence bounds directly in synthesized reports.
 
 ### <img src="docs/assets/icons/echo.svg" width="18" height="18" alt="" valign="middle" /> 2. ECHO: Persistent Codebase Intelligence
