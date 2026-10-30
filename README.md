@@ -385,6 +385,16 @@ The local HTTP server listens on `127.0.0.1:4173` by default. All endpoints enfo
 | `GET` | `/api/permissions/audit` | None | Retrieves immutable permission audit events |
 | `POST` | `/api/agent/prompt` | JSON: `{ repo, prompt, options }` | Dispatches task to shared agent runtime |
 
+### Cloud Deployment (Render, Docker, PaaS)
+
+ANVEXO deploys as a web service on Render, Docker, and other cloud providers:
+
+- **Build Command**: `npm install && npm run build`
+- **Start Command**: `npm start` (or `node dist/index.js`)
+- **Port & Host**: Automatically binds to `process.env.PORT` (defaults to `4173`) and `process.env.HOST` (defaults to `0.0.0.0` in cloud environments, `127.0.0.1` locally).
+- **Health Check Endpoint**: `/api/health`
+- **Environment Variables**: `GEMINI_API_KEY`, `GEMINI_MODEL`, `GEMMA_API_KEY`, `HOST`, `PORT`, `ALLOWED_HOSTS`, `ALLOWED_ORIGINS`.
+
 ---
 
 <a id="security-audits--defensive-controls"></a>
