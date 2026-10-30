@@ -48,24 +48,29 @@ ANVEXO does not use Gemma 4 as a superficial chatbot. It leverages Gemma 4 for *
 
 ### 1.3 Reproducible Test Verification
 
-- **Mocked Unit Test Harness**:
+- **Configuration Reference**: Full setup and model parameters documented in [`docs/providers/GEMMA_CONFIGURATION.md`](../providers/GEMMA_CONFIGURATION.md).
+- **Mocked Unit Test Harness (24 passing unit tests)**:
   ```bash
   npx vitest run tests/unit/gemma.test.ts
   ```
-  Verifies multimodal payload packing, MIME validation, 5MB image limit guarding, model parameter routing, and fallback parsing without requiring API keys or network calls.
+  Verifies multimodal payload packing, MIME validation, 5MB image limit guarding, local Ollama image array forwarding, model parameter routing, API key scrubbing in error messages, and fallback parsing without requiring API keys or network calls.
 - **Live / Daemon Integration Test Harness**:
   ```bash
-  GEMMA_API_KEY="your-api-key" npx vitest run tests/integration/gemma.test.ts
+  npm run test:gemma
+  ```
+  Or specifying explicit credentials:
+  ```bash
+  GEMMA_API_KEY="your-api-key" npm run test:gemma
   ```
   Or using local Ollama:
   ```bash
-  GEMMA_BASE_URL="http://127.0.0.1:11434" npx vitest run tests/integration/gemma.test.ts
+  GEMMA_BASE_URL="http://127.0.0.1:11434" npm run test:gemma
   ```
   If credentials are not detected in the environment, the suite skips live network calls with an informative diagnostic message rather than failing.
 
 ### 1.4 Known Gaps & Incomplete Items
 
-- Dedicated CLI flag `anvexo gemma <objective>` is staged in backlog (`ISSUE-03`) to allow direct command-line invocation.
+- Dedicated CLI flag `anvexo gemma <objective>` is staged in backlog (`DEF-01`) to allow direct command-line invocation.
 - Continuous streaming token response (`completeStream`) currently buffers completion chunks rather than piping tokens directly to stdout.
 
 ---

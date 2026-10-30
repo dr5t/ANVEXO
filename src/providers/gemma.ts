@@ -342,6 +342,15 @@ export class GemmaProvider implements ModelProvider {
           totalTokens: data.usageMetadata.totalTokenCount,
         } : undefined,
       };
+    } catch (err: unknown) {
+      if ((err as Error)?.name === 'AbortError') {
+        throw new Error(`Gemma (Gemini API) inference timed out after ${this.timeoutMs}ms`);
+      }
+      let msg = err instanceof Error ? err.message : String(err);
+      if (this.apiKey) {
+        msg = msg.split(this.apiKey).join('[REDACTED_API_KEY]');
+      }
+      throw new Error(msg);
     } finally {
       clearTimeout(timeout);
     }
@@ -349,7 +358,17 @@ export class GemmaProvider implements ModelProvider {
 
   private async completeViaLocal(request: CompletionRequest): Promise<CompletionResponse> {
     const model = this.defaultModel;
-    const prompt = request.messages.map(m => `[${m.role.toUpperCase()}]: ${m.content}`).join('\n\n');
+    const prompt = request.messages.map(m => `[${m.role.toUpperCase()}]: ${m.content || ''}`).join('\n\n');
+
+    const images: string[] = [];
+    for (const m of request.messages) {
+      if (m.images && m.images.length > 0) {
+        for (const img of m.images) {
+          this.validateImage(img);
+          images.push(img.data.replace(/^data:image\/[a-z]+;base64,/, ''));
+        }
+      }
+    }
 
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), this.timeoutMs);
@@ -358,18 +377,23 @@ export class GemmaProvider implements ModelProvider {
     }
 
     try {
+      const body: Record<string, unknown> = {
+        model,
+        prompt,
+        stream: false,
+        options: {
+          temperature: request.temperature ?? 0.2,
+          num_predict: request.maxTokens ?? 4096,
+        },
+      };
+      if (images.length > 0) {
+        body.images = images;
+      }
+
       const res = await fetch(`${this.baseUrl}/api/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model,
-          prompt,
-          stream: false,
-          options: {
-            temperature: request.temperature ?? 0.2,
-            num_predict: request.maxTokens ?? 4096,
-          },
-        }),
+        body: JSON.stringify(body),
         signal: controller.signal,
       });
 
@@ -536,7 +560,8 @@ export class GemmaProvider implements ModelProvider {
       throw new Error(`Unsupported image MIME type: ${img.mimeType}. Supported formats: PNG, JPEG, WEBP, GIF.`);
     }
 
-    const approxBytes = img.data.length * 0.75;
+    const base64Data = img.data.replace(/^data:image\/[a-z]+;base64,/, '');
+    const approxBytes = base64Data.length * 0.75;
     const maxBytes = 5 * 1024 * 1024;
     if (approxBytes > maxBytes) {
       throw new Error(`Screenshot exceeds maximum allowed size of 5MB (approx ${Math.round(approxBytes / 1024)} KB)`);
