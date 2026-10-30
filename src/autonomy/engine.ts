@@ -84,11 +84,6 @@ export class SafeAutonomyEngine {
     this.state.exceededReason = undefined;
   }
 
-  /**
-   * Primary runtime enforcement check.
-   * Evaluates an attempted action against autonomy mode, protected resources,
-   * dangerous commands, and budget constraints.
-   */
   validateAction(params: {
     scope: PermissionScope;
     resource: string;
@@ -97,30 +92,25 @@ export class SafeAutonomyEngine {
   }): { allowed: boolean; requiresApproval: boolean; reason?: string } {
     this.checkTimeBudget();
 
-    // 1. Check budget exhaustion
     if (this.state.isBudgetExceeded) {
       this.recordViolation(params.scope, params.resource, `Execution halted: ${this.state.exceededReason}`, 'budget_exceeded');
       return { allowed: false, requiresApproval: false, reason: this.state.exceededReason };
     }
 
-    // 2. Check protected paths
     if (this.isProtectedPath(params.resource)) {
       const reason = `Access to protected resource '${params.resource}' is strictly forbidden by policy.`;
       this.recordViolation(params.scope, params.resource, reason, 'protected_path_access');
       return { allowed: false, requiresApproval: false, reason };
     }
 
-    // 3. Check dangerous shell commands
     if (params.command && this.isDangerousCommand(params.command)) {
       const reason = `Command contains dangerous execution pattern blocked by defensive controls: ${params.command}`;
       this.recordViolation(params.scope, params.command, reason, 'dangerous_command');
       return { allowed: false, requiresApproval: false, reason };
     }
 
-    // 4. Enforce mode-specific restrictions
     switch (this.mode) {
       case 'observe': {
-        // Observe mode strictly forbids all mutations, file writes, and commands
         if (params.isMutation || params.scope === PermissionScope.FILE_WRITE || params.scope === PermissionScope.FILE_DELETE) {
           const reason = 'Observe mode strictly forbids workspace mutations. Change proposal only.';
           this.recordViolation(params.scope, params.resource, reason, 'observe_mutation_blocked');
@@ -135,7 +125,6 @@ export class SafeAutonomyEngine {
       }
 
       case 'suggest': {
-        // Suggest mode allows analysis and diff generation, but requires explicit approval to apply changes
         if (params.isMutation || params.scope === PermissionScope.FILE_WRITE || params.scope === PermissionScope.FILE_DELETE) {
           return {
             allowed: false,
@@ -154,7 +143,6 @@ export class SafeAutonomyEngine {
       }
 
       case 'assisted': {
-        // Assisted mode requires approval for mutations and commands unless pre-approved
         if (params.isMutation || params.scope === PermissionScope.FILE_WRITE || params.scope === PermissionScope.FILE_DELETE) {
           if (this.policy.requireApprovalForMutations) {
             return {
@@ -175,7 +163,6 @@ export class SafeAutonomyEngine {
       }
 
       case 'controlled_autonomous': {
-        // Autonomous execution within defined budgets
         if (params.isMutation || params.scope === PermissionScope.FILE_WRITE) {
           if (this.state.fileModificationsCount >= this.policy.budget.maxFileModifications) {
             this.state.isBudgetExceeded = true;

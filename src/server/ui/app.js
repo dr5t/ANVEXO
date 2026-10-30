@@ -321,6 +321,11 @@ function switchTab(tabId) {
   document.querySelectorAll('.pane-right .tab-content').forEach(content => {
     content.classList.toggle('active', content.id === `tab-${tabId}`);
   });
+  if (tabId === 'memory') {
+    fetchMemoryRecords();
+  } else if (tabId === 'proof' && !window.hasLoadedProof) {
+    runProofVerification();
+  }
 }
 
 function initDrawer() {
@@ -373,7 +378,17 @@ async function executeCommandPreset(cmd) {
     switchTab('trace');
   } else if (cmd === 'report') {
     switchTab('report');
-
+  } else if (cmd === 'proof') {
+    switchTab('proof');
+    runProofVerification();
+  } else if (cmd === 'impact') {
+    switchTab('impact');
+    runImpactSimulation();
+  } else if (cmd === 'reproduce') {
+    switchTab('reproduce');
+  } else if (cmd === 'memory') {
+    switchTab('memory');
+    fetchMemoryRecords();
   } else if (cmd === 'test') {
     document.getElementById('objectiveInput').value = 'Run automated test suite and verify security boundaries';
     triggerInvestigation();
@@ -543,6 +558,12 @@ function initEvents() {
       document.getElementById('terminalView').innerText = 'Console cleared.';
     });
   }
+
+  initAutonomyControls();
+  initProofControls();
+  initImpactControls();
+  initReproControls();
+  initMemoryControls();
 }
 
 function initSettingsModal() {
@@ -1202,6 +1223,11 @@ function renderReport(report) {
   `;
   container.appendChild(rawCard);
 
+  if (report.proofReport) {
+    renderProofReport(report.proofReport);
+    window.hasLoadedProof = true;
+  }
+
   switchTab('report');
 }
 
@@ -1407,3 +1433,614 @@ function appendTelemetryLog(msg) {
   stream.appendChild(entry);
   stream.scrollTop = stream.scrollHeight;
 }
+
+async function initAutonomyControls() {
+  const sel = document.getElementById('autonomyModeSelect');
+  if (!sel) return;
+  try {
+    const res = await fetch('/api/autonomy');
+    if (res.ok) {
+      const data = await res.json();
+      if (data.mode) {
+        sel.value = data.mode;
+      }
+    }
+  } catch {}
+
+  sel.addEventListener('change', async () => {
+    const newMode = sel.value;
+    try {
+      const res = await fetch('/api/autonomy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode: newMode }),
+      });
+      if (res.ok) {
+        appendTelemetryLog(`[AUTONOMY] Safe Autonomy Engine mode switched to: [${newMode.toUpperCase()}]`);
+      } else {
+        const err = await res.json();
+        alert(`Failed to update autonomy mode: ${err.error || 'Unknown error'}`);
+      }
+    } catch (err) {
+      appendTelemetryLog(`[ERROR] Autonomy policy update error: ${err.message}`);
+    }
+  });
+}
+
+function initProofControls() {
+  const btn = document.getElementById('refreshProofBtn');
+  if (btn) {
+    btn.addEventListener('click', () => runProofVerification());
+  }
+}
+
+async function runProofVerification() {
+  const pathInput = document.getElementById('pathInput');
+  const currentPath = pathInput.value.trim() || '.';
+  const container = document.getElementById('proofContainer');
+  const badge = document.getElementById('proofStatusBadge');
+  if (badge) badge.innerText = 'VERIFYING...';
+  if (container) container.innerHTML = '<div class="empty-state">Evaluating evidence ledger against registered claims...</div>';
+
+  try {
+    const res = await fetch('/api/verify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ repo: currentPath }),
+    });
+    if (res.ok) {
+      const report = await res.json();
+      renderProofReport(report);
+    } else {
+      const err = await res.json();
+      if (container) container.innerHTML = `<div class="log-entry error">Verification failed: ${escapeHtml(err.error || 'Unknown error')}</div>`;
+      if (badge) badge.innerText = 'ERROR';
+    }
+  } catch (err) {
+    if (container) container.innerHTML = `<div class="log-entry error">Network error: ${escapeHtml(err.message)}</div>`;
+    if (badge) badge.innerText = 'ERROR';
+  }
+}
+
+function renderProofReport(report) {
+  const container = document.getElementById('proofContainer');
+  const badge = document.getElementById('proofStatusBadge');
+  if (!container) return;
+
+  if (badge) {
+    badge.innerText = (report.overallStatus || 'unverified').toUpperCase();
+    badge.className = `badge ${report.overallStatus === 'verified' ? 'badge-verified' : report.overallStatus === 'partially_verified' ? 'badge-partial' : report.overallStatus === 'failed' ? 'badge-contradicted' : 'badge-unverified'}`;
+  }
+
+  const statGrid = `
+    <div class="ei-stat-grid">
+      <div class="ei-stat-card">
+        <span class="ei-stat-value">${report.claims ? report.claims.length : 0}</span>
+        <span class="ei-stat-label">Total Claims</span>
+      </div>
+      <div class="ei-stat-card">
+        <span class="ei-stat-value">${report.checksPassedCount || 0}/${report.checksAttemptedCount || 0}</span>
+        <span class="ei-stat-label">Checks Passed</span>
+      </div>
+      <div class="ei-stat-card">
+        <span class="ei-stat-value">${report.dynamicExecutionsCount || 0}</span>
+        <span class="ei-stat-label">Dynamic Executions</span>
+      </div>
+      <div class="ei-stat-card">
+        <span class="ei-stat-value">${report.staticAnalysesCount || 0}</span>
+        <span class="ei-stat-label">Static Analyses</span>
+      </div>
+    </div>
+  `;
+
+  let claimsHtml = '';
+  if (report.claims && report.claims.length > 0) {
+    claimsHtml = report.claims.map(claim => {
+      const claimBadgeClass = claim.status === 'verified' ? 'badge-verified' : claim.status === 'partially_verified' ? 'badge-partial' : claim.status === 'failed' ? 'badge-contradicted' : 'badge-unverified';
+      const checksList = (claim.checks || []).map(check => {
+        const marker = check.passed ? '<span style="color: var(--status-pass);">✓ PASSED</span>' : '<span style="color: var(--status-fail);">✗ FAILED</span>';
+        const execLabel = check.isExecution ? '<span class="badge badge-sm badge-info">DYNAMIC EXECUTION</span>' : '<span class="badge badge-sm">STATIC/INSPECTION</span>';
+        const cmdInfo = check.commandExecuted ? `<div style="font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); margin-top: 4px;">Command: ${escapeHtml(check.commandExecuted)} (exit code: ${check.exitCode})</div>` : '';
+        const errInfo = check.error ? `<div style="color: var(--status-fail); font-size: 11px; margin-top: 2px;">Error: ${escapeHtml(check.error)}</div>` : '';
+        return `
+          <div style="padding: 8px 10px; border-bottom: 1px solid var(--border-hairline); display: flex; flex-direction: column; gap: 2px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-size: 12px; font-weight: 500;">${marker} ${escapeHtml(check.name)}</span>
+              ${execLabel}
+            </div>
+            <div style="font-size: 11px; color: var(--text-secondary);">${escapeHtml(check.description)}</div>
+            ${cmdInfo}
+            ${errInfo}
+          </div>
+        `;
+      }).join('');
+
+      const uncertaintiesHtml = (claim.unresolvedUncertainties && claim.unresolvedUncertainties.length > 0)
+        ? `<div style="margin-top: 8px; font-size: 11px; color: var(--status-pending);">Uncertainties: ${claim.unresolvedUncertainties.map(u => escapeHtml(u)).join('; ')}</div>`
+        : '';
+
+      return `
+        <div class="ei-card">
+          <div class="ei-card-header">
+            <span class="ei-card-title">${escapeHtml(claim.statement)}</span>
+            <span class="badge ${claimBadgeClass}">[${escapeHtml((claim.status || '').toUpperCase())}]</span>
+          </div>
+          ${claim.rationale ? `<div style="font-size: 11.5px; color: var(--text-secondary);">${escapeHtml(claim.rationale)}</div>` : ''}
+          <div style="background: var(--bg-card); border: 1px solid var(--border-hairline); border-radius: 4px; overflow: hidden; margin-top: 6px;">
+            ${checksList || '<div style="padding: 8px; font-size: 11px; color: var(--text-muted);">No checks associated.</div>'}
+          </div>
+          ${uncertaintiesHtml}
+        </div>
+      `;
+    }).join('');
+  } else {
+    claimsHtml = '<div class="empty-state">No claims registered. Run an investigation to generate verified empirical claims.</div>';
+  }
+
+  let nextStepsHtml = '';
+  if (report.suggestedNextSteps && report.suggestedNextSteps.length > 0) {
+    nextStepsHtml = `
+      <div class="ei-card" style="border-left: 3px solid var(--accent-orange);">
+        <span class="ei-card-title">RECOMMENDED NEXT VERIFICATION STEPS</span>
+        <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 4px;">
+          ${report.suggestedNextSteps.map(s => `<div style="font-size: 11.5px; color: var(--text-primary);">→ ${escapeHtml(s)}</div>`).join('')}
+        </div>
+      </div>
+    `;
+  }
+
+  container.innerHTML = statGrid + claimsHtml + nextStepsHtml;
+}
+
+function initImpactControls() {
+  const btn = document.getElementById('runImpactBtn');
+  if (btn) {
+    btn.addEventListener('click', () => runImpactSimulation());
+  }
+}
+
+async function runImpactSimulation(targetOverride) {
+  const pathInput = document.getElementById('pathInput');
+  const currentPath = pathInput.value.trim() || '.';
+  const targetInput = document.getElementById('impactTargetInput');
+  const target = targetOverride || (targetInput ? targetInput.value.trim() : '') || 'src/index.ts';
+  if (targetInput) targetInput.value = target;
+
+  const container = document.getElementById('impactContainer');
+  const badge = document.getElementById('impactRiskBadge');
+  if (badge) badge.innerText = 'SIMULATING...';
+  if (container) container.innerHTML = `<div class="empty-state">Tracing dependency graph and blast radius for ${escapeHtml(target)}...</div>`;
+
+  try {
+    const res = await fetch('/api/impact', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ repo: currentPath, target }),
+    });
+    if (res.ok) {
+      const report = await res.json();
+      renderImpactReport(report);
+    } else {
+      const err = await res.json();
+      if (container) container.innerHTML = `<div class="log-entry error">Impact simulation failed: ${escapeHtml(err.error || 'Unknown error')}</div>`;
+      if (badge) badge.innerText = 'ERROR';
+    }
+  } catch (err) {
+    if (container) container.innerHTML = `<div class="log-entry error">Network error: ${escapeHtml(err.message)}</div>`;
+    if (badge) badge.innerText = 'ERROR';
+  }
+}
+
+function renderImpactReport(report) {
+  const container = document.getElementById('impactContainer');
+  const badge = document.getElementById('impactRiskBadge');
+  if (!container) return;
+
+  const riskClass = `badge-risk-${report.riskLevel || 'low'}`;
+  if (badge) {
+    badge.innerText = `RISK: ${(report.riskLevel || 'low').toUpperCase()} (${report.riskScore || 0}/100)`;
+    badge.className = `badge ${riskClass}`;
+  }
+
+  const statGrid = `
+    <div class="ei-stat-grid">
+      <div class="ei-stat-card">
+        <span class="ei-stat-value">${report.riskScore || 0}/100</span>
+        <span class="ei-stat-label">Risk Score</span>
+      </div>
+      <div class="ei-stat-card">
+        <span class="ei-stat-value">${report.directDependencies ? report.directDependencies.length : 0}</span>
+        <span class="ei-stat-label">Direct Dependencies</span>
+      </div>
+      <div class="ei-stat-card">
+        <span class="ei-stat-value">${report.reverseDependencies ? report.reverseDependencies.length : 0}</span>
+        <span class="ei-stat-label">Downstream Dependents</span>
+      </div>
+      <div class="ei-stat-card">
+        <span class="ei-stat-value">${report.relatedTests ? report.relatedTests.length : 0}</span>
+        <span class="ei-stat-label">Relevant Tests</span>
+      </div>
+      <div class="ei-stat-card">
+        <span class="ei-stat-value">${report.affectedEndpoints ? report.affectedEndpoints.length : 0}</span>
+        <span class="ei-stat-label">API Endpoints</span>
+      </div>
+    </div>
+  `;
+
+  let riskFactorsHtml = '';
+  if (report.riskFactors && report.riskFactors.length > 0) {
+    riskFactorsHtml = `
+      <div class="ei-conflict-banner">
+        <span style="font-weight: 600;">DETECTED RISK FACTORS</span>
+        ${report.riskFactors.map(rf => `<div>! ${escapeHtml(rf)}</div>`).join('')}
+      </div>
+    `;
+  }
+
+  const downstreamList = (report.reverseDependencies || []).map(rd => `
+    <div style="padding: 6px 10px; border-bottom: 1px solid var(--border-hairline); font-family: var(--font-mono); font-size: 11px; display: flex; align-items: center; justify-content: space-between;">
+      <span>← ${escapeHtml(rd)}</span>
+      <span class="badge badge-sm">AFFECTED</span>
+    </div>
+  `).join('');
+
+  const endpointsList = (report.affectedEndpoints || []).map(ep => `
+    <div style="padding: 6px 10px; border-bottom: 1px solid var(--border-hairline); font-size: 11.5px; display: flex; align-items: center; gap: 8px;">
+      <span class="badge badge-sm badge-info">${escapeHtml(ep.method)}</span>
+      <span style="font-family: var(--font-mono); font-size: 11px;">${escapeHtml(ep.path)}</span>
+      <span style="color: var(--text-muted); font-size: 10.5px;">(${escapeHtml(ep.handlerFile)})</span>
+    </div>
+  `).join('');
+
+  const testsList = (report.relatedTests || []).map(t => `
+    <div style="padding: 6px 10px; border-bottom: 1px solid var(--border-hairline); font-family: var(--font-mono); font-size: 11px; color: var(--status-pass);">
+      ✓ ${escapeHtml(t)}
+    </div>
+  `).join('');
+
+  const recommendationsList = (report.recommendedValidationSteps || []).map(rec => `
+    <div style="font-size: 11.5px; color: var(--text-primary); margin-top: 4px;">
+      → ${escapeHtml(rec)}
+    </div>
+  `).join('');
+
+  container.innerHTML = `
+    ${statGrid}
+    ${riskFactorsHtml}
+    <div class="ei-card">
+      <span class="ei-card-title">DOWNSTREAM REVERSE DEPENDENCIES (${(report.reverseDependencies || []).length})</span>
+      <div style="background: var(--bg-card); border: 1px solid var(--border-hairline); border-radius: 4px; max-height: 180px; overflow-y: auto;">
+        ${downstreamList || '<div style="padding: 8px; font-size: 11px; color: var(--text-muted);">No reverse dependents identified.</div>'}
+      </div>
+    </div>
+    <div class="ei-card">
+      <span class="ei-card-title">AFFECTED API ENDPOINTS (${(report.affectedEndpoints || []).length})</span>
+      <div style="background: var(--bg-card); border: 1px solid var(--border-hairline); border-radius: 4px; max-height: 140px; overflow-y: auto;">
+        ${endpointsList || '<div style="padding: 8px; font-size: 11px; color: var(--text-muted);">No HTTP endpoints affected.</div>'}
+      </div>
+    </div>
+    <div class="ei-card">
+      <span class="ei-card-title">RELEVANT TEST SUITES (${(report.relatedTests || []).length})</span>
+      <div style="background: var(--bg-card); border: 1px solid var(--border-hairline); border-radius: 4px; max-height: 140px; overflow-y: auto;">
+        ${testsList || '<div style="padding: 8px; font-size: 11px; color: var(--text-muted);">No targeted test suites identified.</div>'}
+      </div>
+    </div>
+    <div class="ei-card">
+      <span class="ei-card-title">RECOMMENDED VALIDATION STEPS</span>
+      ${recommendationsList || '<div style="font-size: 11px; color: var(--text-muted);">Run standard regression suite.</div>'}
+    </div>
+  `;
+}
+
+let activeReproSession = null;
+
+function initReproControls() {
+  const runBtn = document.getElementById('runReproBtn');
+  const verifyBtn = document.getElementById('verifyFixBtn');
+
+  if (runBtn) {
+    runBtn.addEventListener('click', () => runReproduction());
+  }
+  if (verifyBtn) {
+    verifyBtn.addEventListener('click', () => verifyReproductionFix());
+  }
+}
+
+async function runReproduction() {
+  const pathInput = document.getElementById('pathInput');
+  const currentPath = pathInput.value.trim() || '.';
+  const descInput = document.getElementById('reproDescInput');
+  const cmdInput = document.getElementById('reproCmdInput');
+  const bugDesc = (descInput ? descInput.value.trim() : '') || 'Test reproduction';
+  const cmd = cmdInput ? cmdInput.value.trim() : '';
+
+  const container = document.getElementById('reproduceContainer');
+  const badge = document.getElementById('reproStatusBadge');
+  const verifyBtn = document.getElementById('verifyFixBtn');
+  if (verifyBtn) verifyBtn.style.display = 'none';
+
+  if (badge) badge.innerText = 'EXECUTING...';
+  if (container) container.innerHTML = `<div class="empty-state">Executing reproduction sandbox for: ${escapeHtml(bugDesc)}...</div>`;
+
+  try {
+    const res = await fetch('/api/reproduce', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        repo: currentPath,
+        bugDescription: bugDesc,
+        command: cmd || undefined,
+      }),
+    });
+    if (res.ok) {
+      activeReproSession = await res.json();
+      renderReproSession(activeReproSession);
+    } else {
+      const err = await res.json();
+      if (container) container.innerHTML = `<div class="log-entry error">Reproduction failed: ${escapeHtml(err.error || 'Unknown error')}</div>`;
+      if (badge) badge.innerText = 'ERROR';
+    }
+  } catch (err) {
+    if (container) container.innerHTML = `<div class="log-entry error">Network error: ${escapeHtml(err.message)}</div>`;
+    if (badge) badge.innerText = 'ERROR';
+  }
+}
+
+async function verifyReproductionFix() {
+  if (!activeReproSession || !activeReproSession.id) return;
+  const pathInput = document.getElementById('pathInput');
+  const currentPath = pathInput.value.trim() || '.';
+  const badge = document.getElementById('reproStatusBadge');
+
+  if (badge) badge.innerText = 'VERIFYING FIX...';
+  appendTelemetryLog(`[REPRODUCTION] Verifying fix for session ${activeReproSession.id}...`);
+
+  try {
+    const res = await fetch('/api/reproduce/verify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        repo: currentPath,
+        sessionId: activeReproSession.id,
+      }),
+    });
+    if (res.ok) {
+      activeReproSession = await res.json();
+      renderReproSession(activeReproSession);
+    } else {
+      const err = await res.json();
+      alert(`Fix verification error: ${err.error || 'Unknown error'}`);
+    }
+  } catch (err) {
+    alert(`Fix verification network error: ${err.message}`);
+  }
+}
+
+function renderReproSession(session) {
+  const container = document.getElementById('reproduceContainer');
+  const badge = document.getElementById('reproStatusBadge');
+  const verifyBtn = document.getElementById('verifyFixBtn');
+  if (!container) return;
+
+  const isReproduced = session.isReproduced;
+  const isFixed = session.isFixed;
+  const statusStr = (session.status || '').toUpperCase();
+
+  if (badge) {
+    badge.innerText = `STATUS: ${statusStr}`;
+    badge.className = `badge ${isFixed ? 'badge-verified' : isReproduced ? 'badge-contradicted' : 'badge-unverified'}`;
+  }
+
+  if (verifyBtn) {
+    verifyBtn.style.display = isReproduced && !isFixed ? 'inline-block' : 'none';
+  }
+
+  let initialExecHtml = '';
+  if (session.initialExecution) {
+    initialExecHtml = `
+      <div class="ei-card">
+        <div class="ei-card-header">
+          <span class="ei-card-title">INITIAL REPRODUCTION ATTEMPT</span>
+          <span class="badge ${session.initialExecution.exitCode !== 0 ? 'badge-contradicted' : 'badge-verified'}">EXIT CODE ${session.initialExecution.exitCode}</span>
+        </div>
+        <div style="font-family: var(--font-mono); font-size: 11px; color: var(--text-secondary);">Command: ${escapeHtml(session.initialExecution.command)} (${session.initialExecution.durationMs}ms)</div>
+        <pre class="ei-code-box">${escapeHtml(session.initialExecution.stdout || session.initialExecution.stderr || 'No console output produced.')}</pre>
+      </div>
+    `;
+  }
+
+  let postFixExecHtml = '';
+  if (session.postFixExecution) {
+    postFixExecHtml = `
+      <div class="ei-card">
+        <div class="ei-card-header">
+          <span class="ei-card-title">POST-FIX VERIFICATION RUN</span>
+          <span class="badge ${session.postFixExecution.exitCode === 0 ? 'badge-verified' : 'badge-contradicted'}">EXIT CODE ${session.postFixExecution.exitCode}</span>
+        </div>
+        <div style="font-family: var(--font-mono); font-size: 11px; color: var(--text-secondary);">Command: ${escapeHtml(session.postFixExecution.command)} (${session.postFixExecution.durationMs}ms)</div>
+        <pre class="ei-code-box">${escapeHtml(session.postFixExecution.stdout || session.postFixExecution.stderr || 'No console output produced.')}</pre>
+      </div>
+    `;
+  }
+
+  let unverifiedHtml = '';
+  if (session.unverifiedClaims && session.unverifiedClaims.length > 0) {
+    unverifiedHtml = `
+      <div class="ei-conflict-banner">
+        <span style="font-weight: 600;">LIMITATIONS &amp; UNVERIFIED CLAIMS</span>
+        ${session.unverifiedClaims.map(u => `<div>! ${escapeHtml(u)}</div>`).join('')}
+      </div>
+    `;
+  }
+
+  container.innerHTML = `
+    <div class="ei-card">
+      <div class="ei-card-header">
+        <span class="ei-card-title">${escapeHtml(session.bugDescription)}</span>
+        <span class="badge ${isReproduced ? 'badge-contradicted' : 'badge-unverified'}">${isReproduced ? 'CONFIRMED REPRODUCED' : 'NOT REPRODUCED'}</span>
+      </div>
+      <div style="font-size: 12px; color: var(--text-secondary);">${escapeHtml(session.summary)}</div>
+    </div>
+    ${initialExecHtml}
+    ${postFixExecHtml}
+    ${unverifiedHtml}
+  `;
+}
+
+function initMemoryControls() {
+  const toggleBtn = document.getElementById('toggleAddMemoryBtn');
+  const cancelBtn = document.getElementById('cancelMemoryBtn');
+  const saveBtn = document.getElementById('saveMemoryBtn');
+  const form = document.getElementById('memoryAddForm');
+  const typeFilter = document.getElementById('memoryTypeFilter');
+  const searchInput = document.getElementById('memorySearchInput');
+
+  if (toggleBtn && form) {
+    toggleBtn.addEventListener('click', () => {
+      form.style.display = form.style.display === 'none' ? 'flex' : 'none';
+    });
+  }
+  if (cancelBtn && form) {
+    cancelBtn.addEventListener('click', () => {
+      form.style.display = 'none';
+    });
+  }
+  if (saveBtn) {
+    saveBtn.addEventListener('click', () => saveMemoryRecord());
+  }
+  if (typeFilter) {
+    typeFilter.addEventListener('change', () => fetchMemoryRecords());
+  }
+  if (searchInput) {
+    let debounceTimer;
+    searchInput.addEventListener('input', () => {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => fetchMemoryRecords(), 250);
+    });
+  }
+}
+
+async function fetchMemoryRecords() {
+  const pathInput = document.getElementById('pathInput');
+  const currentPath = pathInput.value.trim() || '.';
+  const container = document.getElementById('memoryContainer');
+  const typeFilter = document.getElementById('memoryTypeFilter');
+  const searchInput = document.getElementById('memorySearchInput');
+
+  const selectedType = typeFilter ? typeFilter.value : '';
+  const search = searchInput ? searchInput.value.trim() : '';
+
+  let url = `/api/memory?repo=${encodeURIComponent(currentPath)}`;
+  if (selectedType) url += `&type=${encodeURIComponent(selectedType)}`;
+  if (search) url += `&search=${encodeURIComponent(search)}`;
+
+  try {
+    const res = await fetch(url);
+    if (res.ok) {
+      const data = await res.json();
+      renderMemoryRecords(data.memories || []);
+    } else {
+      if (container) container.innerHTML = '<div class="empty-state">Could not load project decision memories.</div>';
+    }
+  } catch {
+    if (container) container.innerHTML = '<div class="empty-state">Network error loading decision memory.</div>';
+  }
+}
+
+function renderMemoryRecords(memories) {
+  const container = document.getElementById('memoryContainer');
+  if (!container) return;
+
+  if (memories.length === 0) {
+    container.innerHTML = '<div class="empty-state">No decision records found for this repository. Click "+ Add Memory" to persist architectural context.</div>';
+    return;
+  }
+
+  container.innerHTML = memories.map(mem => {
+    const filesHtml = (mem.relatedFiles && mem.relatedFiles.length > 0)
+      ? `<div style="font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); margin-top: 4px;">Governed Files: ${mem.relatedFiles.map(f => escapeHtml(f)).join(', ')}</div>`
+      : '';
+
+    return `
+      <div class="ei-card" id="mem-card-${mem.id}">
+        <div class="ei-card-header">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span class="badge badge-sm badge-info">[${escapeHtml((mem.type || '').toUpperCase())}]</span>
+            <span class="ei-card-title">${escapeHtml(mem.summary)}</span>
+          </div>
+          <button class="btn btn-sm btn-danger" onclick="deleteMemoryRecord('${mem.id}')" aria-label="Delete decision memory">Delete</button>
+        </div>
+        <div style="font-size: 12px; color: var(--text-secondary); line-height: 1.5;">${escapeHtml(mem.explanation)}</div>
+        ${filesHtml}
+      </div>
+    `;
+  }).join('');
+}
+
+async function saveMemoryRecord() {
+  const pathInput = document.getElementById('pathInput');
+  const currentPath = pathInput.value.trim() || '.';
+  const typeSel = document.getElementById('newMemoryType');
+  const summaryInput = document.getElementById('newMemorySummary');
+  const explanationInput = document.getElementById('newMemoryExplanation');
+  const filesInput = document.getElementById('newMemoryFiles');
+  const form = document.getElementById('memoryAddForm');
+
+  const type = typeSel ? typeSel.value : 'architecture_decision';
+  const summary = summaryInput ? summaryInput.value.trim() : '';
+  const explanation = explanationInput ? explanationInput.value.trim() : '';
+  const files = filesInput && filesInput.value.trim() ? filesInput.value.split(',').map(f => f.trim()) : [];
+
+  if (!summary || !explanation) {
+    alert('Summary headline and detailed explanation are required.');
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/memory', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        repo: currentPath,
+        type,
+        summary,
+        explanation,
+        relatedFiles: files,
+      }),
+    });
+    if (res.ok) {
+      if (summaryInput) summaryInput.value = '';
+      if (explanationInput) explanationInput.value = '';
+      if (filesInput) filesInput.value = '';
+      if (form) form.style.display = 'none';
+      appendTelemetryLog(`[MEMORY] Persisted new ${type}: ${summary}`);
+      fetchMemoryRecords();
+    } else {
+      const err = await res.json();
+      alert(`Failed to save memory: ${err.error || 'Unknown error'}`);
+    }
+  } catch (err) {
+    alert(`Error saving memory: ${err.message}`);
+  }
+}
+
+async function deleteMemoryRecord(id) {
+  if (!confirm('Permanently delete this project decision memory record?')) return;
+  const pathInput = document.getElementById('pathInput');
+  const currentPath = pathInput.value.trim() || '.';
+
+  try {
+    const res = await fetch('/api/memory/delete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ repo: currentPath, id }),
+    });
+    if (res.ok) {
+      appendTelemetryLog(`[MEMORY] Deleted decision record ${id}`);
+      fetchMemoryRecords();
+    }
+  } catch (err) {
+    alert(`Delete failed: ${err.message}`);
+  }
+}
+window.deleteMemoryRecord = deleteMemoryRecord;

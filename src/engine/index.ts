@@ -10,6 +10,9 @@ import { formatReport, generateFindings } from '../reporting/index.js';
 import { ContextManager } from '../context/index.js';
 import { ProofVerifier } from '../proof/index.js';
 import { DecisionMemoryManager } from '../memory/index.js';
+import { EngineeringWorkflowRunner, type WorkflowOptions, type UnifiedEngineeringReport } from './workflow.js';
+
+export { EngineeringWorkflowRunner, type WorkflowOptions, type UnifiedEngineeringReport };
 
 export interface InvestigationOptions {
   objective: string;
@@ -219,6 +222,11 @@ export class InvestigationEngine {
     logger.info('engine', `Investigation complete. Steps: ${completedSteps} completed, ${failedSteps} failed, ${allEvidence.length} evidence records`);
 
     return report;
+  }
+
+  async executeWorkflow(options: WorkflowOptions): Promise<UnifiedEngineeringReport> {
+    const runner = new EngineeringWorkflowRunner(options.repositoryPath);
+    return runner.run(options);
   }
 
   formatReport(report: InvestigationReport): string {

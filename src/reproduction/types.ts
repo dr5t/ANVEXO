@@ -2,11 +2,11 @@ import type { EvidenceRecord } from '../core/types.js';
 import type { ProofReport } from '../proof/types.js';
 
 export type ReproductionStatus =
-  | 'reproduced_failure'   // The failure was actively observed and confirmed
-  | 'cannot_reproduce'     // Execution succeeded or symptom could not be reproduced
-  | 'reproduction_failed'  // Execution error during reproduction attempt
-  | 'verified_fixed'       // Initial reproduction failed, post-fix reproduction passed
-  | 'fix_unverified';      // Post-fix test did not pass or was not run
+  | 'reproduced_failure'
+  | 'cannot_reproduce'
+  | 'reproduction_failed'
+  | 'verified_fixed'
+  | 'fix_unverified';
 
 export interface ExecutionArtifact {
   command: string;
@@ -44,7 +44,7 @@ export interface BugReproductionOptions {
   bugDescription: string;
   errorMessage?: string;
   stackTrace?: string;
-  command?: string; // alias for reproductionCommand
+  command?: string;
   reproductionCommand?: string;
   reproductionTestPath?: string;
   autoFix?: boolean;

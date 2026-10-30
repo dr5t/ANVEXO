@@ -145,11 +145,6 @@ export class DecisionMemoryManager {
     return deleted;
   }
 
-  /**
-   * Conflict Detection Engine:
-   * Inspects proposed changes or user requests and flags conflicts against
-   * active architectural decisions, rejected solutions, and deprecated patterns.
-   */
   checkConflicts(proposalText: string, affectedFiles: string[] = []): MemoryConflictWarning[] {
     const warnings: MemoryConflictWarning[] = [];
     const textLower = proposalText.toLowerCase();
@@ -159,12 +154,10 @@ export class DecisionMemoryManager {
       const summaryLower = record.summary.toLowerCase();
       const explanationLower = record.explanation.toLowerCase();
 
-      // Check if files overlap
       const hasFileOverlap = affectedFiles.some(af =>
         record.relatedFiles.some(rf => rf.toLowerCase().includes(af.toLowerCase()) || af.toLowerCase().includes(rf.toLowerCase())),
       );
 
-      // 1. Rejected Solutions: warn if proposal attempts to do what was rejected
       if (record.type === 'rejected_solution') {
         const keywords = extractKeywords(record.summary);
         const matchCount = keywords.filter(kw => textLower.includes(kw)).length;
@@ -182,7 +175,6 @@ export class DecisionMemoryManager {
         }
       }
 
-      // 2. Deprecated Patterns: warn if using a deprecated pattern
       if (record.type === 'deprecated_pattern') {
         const keywords = extractKeywords(record.summary);
         const matchCount = keywords.filter(kw => textLower.includes(kw)).length;
@@ -200,7 +192,6 @@ export class DecisionMemoryManager {
         }
       }
 
-      // 3. Architecture Decisions: warn if proposal disputes or contradicts
       if (record.type === 'architecture_decision') {
         const keywords = extractKeywords(record.summary);
         const matchCount = keywords.filter(kw => textLower.includes(kw)).length;
@@ -226,7 +217,6 @@ export class DecisionMemoryManager {
     const activeMemories = this.list({ status: ['active'] });
     if (activeMemories.length === 0) return '';
 
-    // Prioritize memories relevant to affected files
     const relevant = activeMemories.filter(m =>
       affectedFiles.length === 0 ||
       m.relatedFiles.length === 0 ||
@@ -286,7 +276,27 @@ export class DecisionMemoryManager {
     }
   }
 
-  // Aliases for interface consistency
+  async recordDecision(params: {
+    type: DecisionMemoryType;
+    summary: string;
+    explanation?: string;
+    detailedExplanation?: string;
+    repositoryPath?: string;
+    sourceEvidence?: string[];
+    relatedFiles?: string[];
+    relatedSymbols?: string[];
+    rejectedAlternatives?: string[];
+    tradeOffs?: string[];
+    status?: DecisionMemoryStatus;
+    confidence?: number;
+    tags?: string[];
+  }): Promise<DecisionMemoryRecord> {
+    return this.add({
+      ...params,
+      explanation: params.explanation || params.detailedExplanation || '',
+    });
+  }
+
   async recordMemory(params: Parameters<DecisionMemoryManager['add']>[0]): Promise<DecisionMemoryRecord> {
     return this.add(params);
   }

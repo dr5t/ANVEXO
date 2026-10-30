@@ -36,13 +36,11 @@ export class BugReproductionLab {
     const evidence: EvidenceRecord[] = [];
     const unverifiedClaims: string[] = [];
 
-    // 1. Identify relevant source files from description, error message, or stack trace
     const targetFiles = this.identifyRelevantFiles(
       [options.bugDescription, options.errorMessage || '', options.stackTrace || ''].join('\n'),
       repoPath,
     );
 
-    // 2. Determine or resolve the reproduction command
     let reproductionCmd = options.reproductionCommand || options.command;
     if (!reproductionCmd) {
       reproductionCmd = this.resolveReproductionCommand(targetFiles, options.reproductionTestPath, repoPath);
@@ -66,7 +64,6 @@ export class BugReproductionLab {
       };
     }
 
-    // 3. Execute the reproduction in an isolated, sandboxed environment
     const timeoutMs = options.timeoutMs || 20000;
     const initialExecution = this.executeSandboxed(reproductionCmd, repoPath, timeoutMs);
 
@@ -87,7 +84,6 @@ export class BugReproductionLab {
       },
     });
 
-    // 4. Verify whether the bug was actually reproduced
     const isReproduced = initialExecution.exitCode !== 0;
     let status: ReproductionStatus = isReproduced ? 'reproduced_failure' : 'cannot_reproduce';
 
@@ -97,7 +93,6 @@ export class BugReproductionLab {
       );
     }
 
-    // 5. Build Proof Mode integration
     const verifier = new ProofVerifier(repoPath);
 
     const reproClaim = verifier.recordClaim({
@@ -112,7 +107,7 @@ export class BugReproductionLab {
       description: `Executed '${reproductionCmd}' in sandbox`,
       attempted: true,
       completed: true,
-      passed: isReproduced, // Passing the reproduction check means we confirmed the failure!
+      passed: isReproduced,
       isExecution: true,
       commandExecuted: reproductionCmd,
       exitCode: initialExecution.exitCode,
@@ -180,7 +175,6 @@ export class BugReproductionLab {
 
     const repoPath = this.repoRoot;
 
-    // 1. Re-run the exact reproduction command that originally failed
     const postFixExecution = this.executeSandboxed(session.reproductionCommand, repoPath, 20000);
     session.postFixExecution = postFixExecution;
 
@@ -201,10 +195,8 @@ export class BugReproductionLab {
       },
     });
 
-    // 2. Check if fix succeeded on reproduction target
     const reproPassed = postFixExecution.exitCode === 0;
 
-    // 3. Optional regression check across existing test suite
     let regressionPassed = true;
     if (regressionTestCmd) {
       const regExecution = this.executeSandboxed(regressionTestCmd, repoPath, 30000);
@@ -232,7 +224,6 @@ export class BugReproductionLab {
     session.status = session.isFixed ? 'verified_fixed' : 'fix_unverified';
     session.completedAt = new Date();
 
-    // 4. Update Proof Report with both initial and post-fix checks
     const verifier = new ProofVerifier(repoPath);
     const fixClaim = verifier.recordClaim({
       statement: `Bug fix verified for: ${session.bugDescription}`,
@@ -338,21 +329,9 @@ export class BugReproductionLab {
       return `npx vitest run ${explicitTestPath}`;
     }
 
-    // Check if any target file is itself a test file
     const testFile = targetFiles.find(f => f.includes('.test.') || f.includes('.spec.'));
     if (testFile) {
       return `npx vitest run ${testFile}`;
-    }
-
-    // Check package.json test scripts
-    const pkgPath = path.join(repoRoot, 'package.json');
-    if (fs.existsSync(pkgPath)) {
-      try {
-        const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'));
-        if (pkg.scripts?.test) {
-          return 'npm test';
-        }
-      } catch {}
     }
 
     return undefined;

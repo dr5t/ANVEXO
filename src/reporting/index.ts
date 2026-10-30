@@ -99,6 +99,31 @@ export function formatReport(report: InvestigationReport): string {
     lines.push('');
   }
 
+  if (report.proofReport) {
+    lines.push(thinDivider);
+    lines.push('PROOF MODE VERIFICATION');
+    lines.push(thinDivider);
+    lines.push(`Status:             [${report.proofReport.overallStatus.toUpperCase()}]`);
+    lines.push(`Checks:             ${report.proofReport.checksPassedCount} passed / ${report.proofReport.checksAttemptedCount} attempted (${report.proofReport.checksFailedCount} failed)`);
+    lines.push(`Executions:         ${report.proofReport.dynamicExecutionsCount} dynamic / ${report.proofReport.staticAnalysesCount} static`);
+    lines.push(`Revision Hash:      ${report.proofReport.revisionHash || 'uncommitted working tree'}`);
+    for (const claim of report.proofReport.claims) {
+      lines.push(`  [${claim.status.toUpperCase()}] ${claim.statement}`);
+      for (const check of claim.checks) {
+        const marker = check.passed ? '✓' : '✗';
+        const kind = check.isExecution ? '(Dynamic Execution)' : '(Static Analysis)';
+        lines.push(`    ${marker} ${check.name} ${kind}`);
+      }
+    }
+    if (report.proofReport.suggestedNextSteps.length > 0) {
+      lines.push('Suggested Next Verification Steps:');
+      for (const step of report.proofReport.suggestedNextSteps) {
+        lines.push(`  → ${step}`);
+      }
+    }
+    lines.push('');
+  }
+
   if (report.limitations.length > 0) {
     lines.push(thinDivider);
     lines.push('LIMITATIONS');
