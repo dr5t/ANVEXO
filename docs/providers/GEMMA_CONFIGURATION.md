@@ -85,6 +85,19 @@ Gemma produces JSON conforming to `GemmaInvestigationResult`:
 - `suggestedRegressionTests`: Test commands to prevent regressions.
 - `evidenceRecords`: Transformed into `EvidenceRecord`s with `VerificationStatus.UNVERIFIED` for code claims and `VERIFIED` for attached visual screenshots.
 
+### 4.4 CLI Command Usage
+Run direct Gemma 4 multimodal investigations from your terminal:
+```bash
+# Basic investigation
+npx anvexo gemma "Diagnose runtime crash in auth"
+
+# With multimodal screenshot, terminal log, and git diff
+npx anvexo gemma "Investigate login failure" --screenshot error.png --log trace.log --diff
+
+# Raw JSON output for machine parsing
+npx anvexo gemma "Memory leak check" --json
+```
+
 ---
 
 ## 5. Verification & Testing Instructions

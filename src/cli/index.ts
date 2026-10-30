@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 
 import { createInterface } from 'node:readline';
-import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { existsSync, mkdirSync, writeFileSync, readFileSync } from 'node:fs';
+import { join, resolve, basename, extname } from 'node:path';
 import { Command } from 'commander';
+import { GemmaProvider, type GemmaInvestigationResult } from '../providers/gemma.js';
 import { InvestigationEngine, EngineeringWorkflowRunner } from '../engine/index.js';
 import { LogLevel, MemoryMode, PermissionScope, PermissionDecision } from '../core/index.js';
 import { setLogLevel } from '../core/logger.js';
@@ -439,6 +440,191 @@ program
     process.exit(failedSteps > 0 ? 1 : 0);
   });
 
+export function formatGemmaInvestigation(
+  result: GemmaInvestigationResult,
+  objective: string,
+  repoPath: string
+): string {
+  const lines: string[] = [
+    '================================================================================',
+    'ANVEXO GEMMA 4 MULTIMODAL INVESTIGATION',
+    '================================================================================',
+    `Objective:               ${objective}`,
+    `Repository:              ${repoPath}`,
+    `Model:                   ${result.modelUsed}`,
+    `Route:                   ${result.routeUsed}`,
+    `Confidence:              ${Math.round(result.confidence * 100)}%`,
+    '',
+    '--- SUMMARY ---',
+    result.summary,
+    '',
+    '--- SUSPECTED ROOT CAUSE ---',
+    result.suspectedRootCause,
+  ];
+
+  if (result.visualEvidence) {
+    lines.push('', '--- VISUAL EVIDENCE ---', result.visualEvidence);
+  }
+
+  if (result.codeEvidence && result.codeEvidence.length > 0) {
+    lines.push('', '--- CODE EVIDENCE ---');
+    for (const ce of result.codeEvidence) {
+      const loc = ce.lineRange ? `${ce.file}:${ce.lineRange}` : ce.file;
+      lines.push(`• ${loc}`);
+      if (ce.snippet) {
+        lines.push('  ' + ce.snippet.split('\n').join('\n  '));
+      }
+    }
+  }
+
+  if (result.proposedFix) {
+    lines.push('', '--- PROPOSED FIX ---', result.proposedFix);
+  }
+
+  if (result.suggestedRegressionTests && result.suggestedRegressionTests.length > 0) {
+    lines.push('', '--- RECOMMENDED REGRESSION TESTS ---');
+    result.suggestedRegressionTests.forEach((t, i) => {
+      lines.push(`${i + 1}. ${t}`);
+    });
+  }
+
+  if (result.uncertainties && result.uncertainties.length > 0) {
+    lines.push('', '--- UNCERTAINTIES ---');
+    result.uncertainties.forEach(u => lines.push(`• ${u}`));
+  }
+
+  if (result.evidenceRecords && result.evidenceRecords.length > 0) {
+    lines.push('', `--- EVIDENCE RECORDS (${result.evidenceRecords.length}) ---`);
+    for (const ev of result.evidenceRecords) {
+      lines.push(`• [${ev.verificationStatus}] ${ev.type}: ${ev.content.slice(0, 80)}`);
+    }
+  }
+
+  lines.push('================================================================================');
+  return lines.join('\n');
+}
+
+export async function handleGemmaAction(
+  objective: string,
+  opts: {
+    path?: string;
+    screenshot?: string;
+    log?: string;
+    diff?: boolean;
+    model?: string;
+    route?: 'gemini-api' | 'local';
+    baseUrl?: string;
+    json?: boolean;
+  },
+  providerOverride?: GemmaProvider
+): Promise<number> {
+  const repoPath = resolve(opts.path || process.cwd());
+
+  let terminalLog: string | undefined;
+  if (opts.log) {
+    const logPath = resolve(opts.log);
+    if (!existsSync(logPath)) {
+      process.stderr.write(`Log file not found: ${logPath}\n`);
+      return 1;
+    }
+    terminalLog = readFileSync(logPath, 'utf8');
+  }
+
+  let gitDiff: string | undefined;
+  if (opts.diff) {
+    const git = new GitService(repoPath);
+    gitDiff = await git.getDiff(repoPath);
+  }
+
+  let screenshot: { mimeType: string; data: string; label?: string } | undefined;
+  if (opts.screenshot) {
+    const ssPath = resolve(opts.screenshot);
+    if (!existsSync(ssPath)) {
+      process.stderr.write(`Screenshot file not found: ${ssPath}\n`);
+      return 1;
+    }
+    const ext = extname(ssPath).toLowerCase();
+    const mimeMap: Record<string, string> = {
+      '.png': 'image/png',
+      '.jpg': 'image/jpeg',
+      '.jpeg': 'image/jpeg',
+      '.webp': 'image/webp',
+      '.gif': 'image/gif',
+    };
+    const mimeType = mimeMap[ext];
+    if (!mimeType) {
+      process.stderr.write(`Unsupported screenshot format: ${ext}. Supported formats: PNG, JPEG, WEBP, GIF\n`);
+      return 1;
+    }
+    const buf = readFileSync(ssPath);
+    screenshot = {
+      mimeType,
+      data: buf.toString('base64'),
+      label: basename(ssPath),
+    };
+  }
+
+  const provider = providerOverride || new GemmaProvider({
+    route: opts.route,
+    defaultModel: opts.model,
+    baseUrl: opts.baseUrl,
+  });
+
+  try {
+    const result = await provider.investigateIssue({
+      objective,
+      repoPath,
+      terminalLog,
+      gitDiff,
+      screenshot,
+    });
+
+    if (opts.json) {
+      process.stdout.write(JSON.stringify(result, null, 2) + '\n');
+    } else {
+      process.stdout.write(formatGemmaInvestigation(result, objective, repoPath) + '\n');
+    }
+    return 0;
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    process.stderr.write(`Gemma investigation error: ${msg}\n`);
+    if (msg.includes('GEMMA_API_KEY') || msg.includes('GEMINI_API_KEY') || msg.includes('Failed to reach local Gemma')) {
+      process.stderr.write('\nSetup Hint:\n');
+      process.stderr.write('  1. Hosted Google AI Studio: set GEMMA_API_KEY="AIzaSy..." in your environment.\n');
+      process.stderr.write('  2. Local Inference: start Ollama (\`ollama serve\` and \`ollama run gemma4:latest\`) or set GEMMA_BASE_URL="http://127.0.0.1:11434".\n\n');
+    }
+    return 1;
+  }
+}
+
+program
+  .command('gemma')
+  .description('Run multimodal issue investigation and regression test recommendation using Google Gemma 4')
+  .argument('<objective>', 'Bug description, issue statement, or engineering objective')
+  .option('-p, --path <path>', 'Repository root path', process.cwd())
+  .option('-s, --screenshot <file>', 'Diagnostic screenshot file (PNG, JPEG, WEBP, GIF)')
+  .option('-l, --log <file>', 'Terminal log or stack trace file')
+  .option('-d, --diff', 'Include git diff of active uncommitted changes', false)
+  .option('-m, --model <model>', 'Gemma model identifier (e.g. gemma-4-31b-it, gemma4:latest)')
+  .option('-r, --route <route>', 'Inference route (gemini-api or local)')
+  .option('--base-url <url>', 'Base URL for local Ollama/vLLM daemon')
+  .option('--json', 'Output investigation result as JSON', false)
+  .action(async (objective: string, opts: {
+    path?: string;
+    screenshot?: string;
+    log?: string;
+    diff?: boolean;
+    model?: string;
+    route?: 'gemini-api' | 'local';
+    baseUrl?: string;
+    json?: boolean;
+  }) => {
+    const exitCode = await handleGemmaAction(objective, opts);
+    if (exitCode !== 0) {
+      process.exit(exitCode);
+    }
+  });
+
 program
   .command('discover')
   .description('Detect project type and configuration')
@@ -731,4 +917,8 @@ program
     }
   });
 
-program.parse();
+export { program };
+
+if (process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
+  program.parse();
+}

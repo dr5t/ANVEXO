@@ -265,6 +265,9 @@ npx anvexo init [path]
 # Autonomous investigation (ANVESHAN)
 npx anvexo investigate [path] -o "Diagnose memory drift" --auto-approve
 
+# Gemma 4 multimodal investigation & regression test recommendation
+npx anvexo gemma "Diagnose runtime crash" --screenshot error.png --log trace.log --diff
+
 # Repository topography discovery
 npx anvexo discover [path] --json
 
