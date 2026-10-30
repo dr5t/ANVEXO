@@ -68,7 +68,7 @@ describe('Model Providers', () => {
   });
 
   it('GeminiProvider lists models and requires API key on completion', async () => {
-    const provider = new GeminiProvider();
+    const provider = new GeminiProvider({ apiKey: '' });
     const models = await provider.listModels();
     expect(models.some(m => m.id.includes('gemini-2.5-flash'))).toBe(true);
 

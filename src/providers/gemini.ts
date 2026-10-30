@@ -33,16 +33,16 @@ export class GeminiProvider implements ModelProvider {
     const envModel = process.env.GEMINI_MODEL?.trim() || undefined;
 
     if (typeof apiKeyOrOptions === 'object' && apiKeyOrOptions !== null) {
-      const key = apiKeyOrOptions.apiKey?.trim() || envKey;
+      const key = apiKeyOrOptions.apiKey !== undefined ? apiKeyOrOptions.apiKey.trim() : envKey;
       this.apiKey = key || undefined;
       this.baseUrl = (apiKeyOrOptions.baseUrl?.trim() || envBaseUrl || 'https://generativelanguage.googleapis.com').replace(/\/+$/, '');
-      this.defaultModel = apiKeyOrOptions.defaultModel?.trim() || envModel || 'gemini-2.5-flash';
+      this.defaultModel = apiKeyOrOptions.defaultModel?.trim() || envModel || 'gemini-3.8-flash';
       this.timeoutMs = apiKeyOrOptions.timeoutMs ?? 30_000;
     } else {
-      const key = apiKeyOrOptions?.trim() || envKey;
+      const key = apiKeyOrOptions !== undefined ? apiKeyOrOptions.trim() : envKey;
       this.apiKey = key || undefined;
       this.baseUrl = (baseUrl?.trim() || envBaseUrl || 'https://generativelanguage.googleapis.com').replace(/\/+$/, '');
-      this.defaultModel = envModel || 'gemini-2.5-flash';
+      this.defaultModel = envModel || 'gemini-3.8-flash';
       this.timeoutMs = 30_000;
     }
   }
@@ -66,6 +66,16 @@ export class GeminiProvider implements ModelProvider {
 
   async listModels(): Promise<ModelInfo[]> {
     return [
+      {
+        id: 'gemini-3.8-flash',
+        name: 'Gemini 3.8 Flash',
+        provider: 'gemini',
+        contextWindow: 1_000_000,
+        maxOutputTokens: 65_536,
+        supportsStreaming: true,
+        supportsToolCalling: true,
+        isLocal: false,
+      },
       {
         id: 'gemini-2.5-flash',
         name: 'Gemini 2.5 Flash',

@@ -28,7 +28,7 @@ describe('GeminiProvider', () => {
       expect(provider.name).toBe('Google Gemini');
       expect(provider.getApiKey()).toBe('env-secret-key');
       expect(provider.getBaseUrl()).toBe('https://generativelanguage.googleapis.com');
-      expect(provider.getDefaultModel()).toBe('gemini-2.5-flash');
+      expect(provider.getDefaultModel()).toBe('gemini-3.8-flash');
     });
 
     it('prefers explicit constructor key over environment variable', () => {
@@ -74,7 +74,10 @@ describe('GeminiProvider', () => {
       const provider = new GeminiProvider();
       const models = await provider.listModels();
 
-      expect(models.length).toBe(4);
+      expect(models.length).toBe(5);
+
+      const flash38 = models.find(m => m.id === 'gemini-3.8-flash');
+      expect(flash38).toBeDefined();
 
       const flash25 = models.find(m => m.id === 'gemini-2.5-flash');
       expect(flash25).toBeDefined();
@@ -150,7 +153,7 @@ describe('GeminiProvider', () => {
 
       expect(mockFetch).toHaveBeenCalledTimes(1);
       const [url, options] = mockFetch.mock.calls[0];
-      expect(String(url)).toContain('/v1beta/models/gemini-2.5-flash:generateContent');
+      expect(String(url)).toContain('/v1beta/models/gemini-3.8-flash:generateContent');
       expect(new URL(String(url)).searchParams.get('key')).toBe('test-api-key');
 
       expect(options.headers).toEqual({

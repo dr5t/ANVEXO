@@ -3,6 +3,12 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { UserPreferences, ProviderId, McpServerConfig } from './types.js';
 
+if (typeof process.loadEnvFile === 'function') {
+  try {
+    process.loadEnvFile();
+  } catch {}
+}
+
 export const DEFAULT_USER_PREFERENCES: UserPreferences = {
   theme: 'obsidian-slate',
   editorFont: 'JetBrains Mono, monospace',
