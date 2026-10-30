@@ -6,6 +6,8 @@ import type { EvidenceRecord } from '../core/types.js';
 import { EvidenceType, VerificationStatus, redactSecrets } from '../core/index.js';
 import { getCleanSubprocessEnv } from '../tools/builtin.js';
 import { ProofVerifier } from '../proof/verifier.js';
+import { validatePathWithinRoot } from '../server/security.js';
+import { isShellExecutable, parseCommandLine, resolveShellFreeCommand } from '../terminal/command.js';
 import type {
   BugReproductionOptions,
   BugReproductionSession,
@@ -16,6 +18,7 @@ import type {
 export class BugReproductionLab {
   private repoRoot: string;
   private static globalSessions: Map<string, BugReproductionSession> = new Map();
+  private static sessionRoots: WeakMap<BugReproductionSession, string> = new WeakMap();
 
   constructor(repoRoot: string) {
     this.repoRoot = path.resolve(repoRoot);
@@ -31,10 +34,17 @@ export class BugReproductionLab {
         : bugDescOrOptions;
 
     const startedAt = new Date();
-    const repoPath = path.resolve(options.repoRoot || this.repoRoot);
     const sessionId = randomUUID();
     const evidence: EvidenceRecord[] = [];
     const unverifiedClaims: string[] = [];
+    let repoPath: string;
+
+    try {
+      repoPath = fs.realpathSync(path.resolve(options.repoRoot || this.repoRoot));
+      if (!fs.statSync(repoPath).isDirectory()) throw new Error('Invalid repository root');
+    } catch {
+      return this.createRejectedSession(options, startedAt, [], 'Reproduction rejected: repository root could not be resolved.');
+    }
 
     const targetFiles = this.identifyRelevantFiles(
       [options.bugDescription, options.errorMessage || '', options.stackTrace || ''].join('\n'),
@@ -42,8 +52,16 @@ export class BugReproductionLab {
     );
 
     let reproductionCmd = options.reproductionCommand || options.command;
-    if (!reproductionCmd) {
-      reproductionCmd = this.resolveReproductionCommand(targetFiles, options.reproductionTestPath, repoPath);
+    try {
+      if (!reproductionCmd) {
+        reproductionCmd = this.resolveReproductionCommand(targetFiles, options.reproductionTestPath, repoPath);
+      }
+    } catch {
+      return this.createRejectedSession(options, startedAt, targetFiles, 'Reproduction rejected: test path must resolve to a file inside the repository root.');
+    }
+
+    if (reproductionCmd && (!parseCommandLine(reproductionCmd) || isShellExecutable(parseCommandLine(reproductionCmd)?.executable || ''))) {
+      return this.createRejectedSession(options, startedAt, targetFiles, 'Reproduction rejected: shell syntax and shell executables are not allowed.');
     }
 
     if (!reproductionCmd) {
@@ -142,6 +160,7 @@ export class BugReproductionLab {
       unverifiedClaims,
     };
     BugReproductionLab.globalSessions.set(sessionId, sessionResult);
+    BugReproductionLab.sessionRoots.set(sessionResult, repoPath);
     return sessionResult;
   }
 
@@ -173,7 +192,7 @@ export class BugReproductionLab {
       return session;
     }
 
-    const repoPath = this.repoRoot;
+    const repoPath = BugReproductionLab.sessionRoots.get(session) || this.repoRoot;
 
     const postFixExecution = this.executeSandboxed(session.reproductionCommand, repoPath, 20000);
     session.postFixExecution = postFixExecution;
@@ -269,15 +288,28 @@ export class BugReproductionLab {
   private executeSandboxed(command: string, cwd: string, timeoutMs: number): ExecutionArtifact {
     const startTime = Date.now();
     const cleanEnv = getCleanSubprocessEnv();
+    const parsedCommand = parseCommandLine(command);
+
+    if (!parsedCommand || isShellExecutable(parsedCommand.executable)) {
+      return {
+        command: redactSecrets(command),
+        exitCode: 1,
+        stdout: '',
+        stderr: 'Command rejected: shell syntax and shell executables are not allowed.',
+        durationMs: Date.now() - startTime,
+        timestamp: new Date(),
+      };
+    }
 
     try {
-      const res = spawnSync(command, {
+      const invocation = resolveShellFreeCommand(parsedCommand, cwd);
+      const res = spawnSync(invocation.executable, invocation.args, {
         cwd,
         encoding: 'utf-8',
         timeout: timeoutMs,
         maxBuffer: 5_000_000,
         env: cleanEnv,
-        shell: true,
+        shell: false,
       });
 
       const stdout = redactSecrets((res.stdout || '').trim());
@@ -286,7 +318,7 @@ export class BugReproductionLab {
       const exitCode = res.status !== null ? res.status : (res.error ? 1 : 0);
 
       return {
-        command,
+        command: redactSecrets(command),
         exitCode,
         stdout,
         stderr,
@@ -296,7 +328,7 @@ export class BugReproductionLab {
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       return {
-        command,
+        command: redactSecrets(command),
         exitCode: 1,
         stdout: '',
         stderr: redactSecrets(msg),
@@ -325,16 +357,58 @@ export class BugReproductionLab {
     explicitTestPath: string | undefined,
     repoRoot: string,
   ): string | undefined {
-    if (explicitTestPath && fs.existsSync(path.join(repoRoot, explicitTestPath))) {
-      return `npx vitest run ${explicitTestPath}`;
+    if (explicitTestPath) {
+      return this.createVitestCommand(this.resolveTestPath(explicitTestPath, repoRoot));
     }
 
     const testFile = targetFiles.find(f => f.includes('.test.') || f.includes('.spec.'));
     if (testFile) {
-      return `npx vitest run ${testFile}`;
+      return this.createVitestCommand(this.resolveTestPath(testFile, repoRoot));
     }
 
     return undefined;
+  }
+
+  private resolveTestPath(testPath: string, repoRoot: string): string {
+    if (path.win32.isAbsolute(testPath) && !path.isAbsolute(testPath)) {
+      throw new Error('Invalid test path');
+    }
+
+    const normalizedPath = testPath.replace(/[\\/]/g, path.sep);
+    const resolvedPath = validatePathWithinRoot(normalizedPath, repoRoot);
+    if (!fs.statSync(resolvedPath).isFile()) throw new Error('Invalid test path');
+
+    const relativePath = path.relative(repoRoot, resolvedPath);
+    if (relativePath.startsWith('..') || path.isAbsolute(relativePath)) throw new Error('Invalid test path');
+    return relativePath.split(path.sep).join('/');
+  }
+
+  private createVitestCommand(testPath: string): string {
+    return `npx vitest run ${JSON.stringify(testPath)}`;
+  }
+
+  private createRejectedSession(
+    options: BugReproductionOptions,
+    startedAt: Date,
+    targetFiles: string[],
+    summary: string,
+  ): BugReproductionSession {
+    return {
+      id: randomUUID(),
+      bugDescription: options.bugDescription,
+      errorMessage: options.errorMessage,
+      stackTrace: options.stackTrace,
+      targetFiles,
+      reproductionTestFile: options.reproductionTestPath,
+      status: 'reproduction_failed',
+      isReproduced: false,
+      isFixed: false,
+      evidence: [],
+      startedAt,
+      completedAt: new Date(),
+      summary,
+      unverifiedClaims: ['Reproduction input was rejected before execution'],
+    };
   }
 
   formatReport(session: BugReproductionSession): string {

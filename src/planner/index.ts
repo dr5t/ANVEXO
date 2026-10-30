@@ -125,12 +125,12 @@ function extractKeywords(objective: string): string[] {
 
 function getTestCommand(project: ProjectMetadata): string | null {
   switch (project.testRunner) {
-    case 'vitest': return 'npx vitest run --reporter=verbose 2>&1';
-    case 'jest': return 'npx jest --verbose --no-coverage 2>&1';
-    case 'mocha': return 'npx mocha --reporter spec 2>&1';
-    case 'pytest': return 'python -m pytest -v 2>&1';
-    case 'cargo': return 'cargo test 2>&1';
-    case 'ava': return 'npx ava --verbose 2>&1';
+    case 'vitest': return 'npx vitest run --reporter=verbose';
+    case 'jest': return 'npx jest --verbose --no-coverage';
+    case 'mocha': return 'npx mocha --reporter spec';
+    case 'pytest': return 'python -m pytest -v';
+    case 'cargo': return 'cargo test';
+    case 'ava': return 'npx ava --verbose';
     default: return null;
   }
 }

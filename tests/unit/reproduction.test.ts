@@ -1,4 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
+import * as fs from 'node:fs';
+import * as os from 'node:os';
+import * as path from 'node:path';
 import { BugReproductionLab } from '../../src/reproduction/lab.js';
 
 describe('BugReproductionLab', () => {
@@ -43,6 +46,48 @@ describe('BugReproductionLab', () => {
 
     expect(session.isReproduced).toBe(false);
     expect(session.status).toBe('cannot_reproduce');
+  });
+
+  it('rejects reproduction test paths that escape the repository root', async () => {
+    const temporaryDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'anvexo-repro-boundary-'));
+    const repoRoot = path.join(temporaryDirectory, 'repo');
+    const outsideTest = path.join(temporaryDirectory, 'outside.test.ts');
+    fs.mkdirSync(repoRoot);
+    fs.writeFileSync(outsideTest, 'export {};');
+    const outsidePaths = [
+      path.relative(repoRoot, outsideTest),
+      outsideTest,
+      path.relative(repoRoot, outsideTest).replace(/\//g, '\\'),
+    ];
+
+    try {
+      for (const reproductionTestPath of outsidePaths) {
+        const session = await lab.runReproduction({
+          repoRoot,
+          bugDescription: 'Outside test path rejection',
+          reproductionTestPath,
+        });
+
+        expect(session.status).toBe('reproduction_failed');
+        expect(session.isReproduced).toBe(false);
+        expect(session.initialExecution).toBeUndefined();
+      }
+    } finally {
+      fs.rmSync(temporaryDirectory, { recursive: true, force: true });
+    }
+  });
+
+  it('continues to accept a nested reproduction test path', async () => {
+    const session = await lab.runReproduction({
+      repoRoot,
+      bugDescription: 'Nested autonomy unit test',
+      reproductionTestPath: path.join('tests', 'unit', 'autonomy.test.ts'),
+      timeoutMs: 10000,
+    });
+
+    expect(session.status).not.toBe('reproduction_failed');
+    expect(session.reproductionCommand).toContain('tests');
+    expect(session.initialExecution).toBeDefined();
   });
 
   it('identifies relevant target files from stack traces', async () => {

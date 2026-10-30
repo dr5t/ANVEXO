@@ -360,13 +360,21 @@ export class AgentRuntime {
               toolArgs: call.arguments,
               content: `Tool ${call.name} requires approval for ${toolDef.requiredPermission}`,
             });
+            session.messages.push({
+              role: 'tool',
+              name: call.name,
+              toolCallId: call.id,
+              content: JSON.stringify({ error: `Tool ${call.name} requires approval` }),
+            });
+            continue;
           }
         }
 
         const argsWithWorkspace = {
-          rootPath: this.repoPath,
-          path: this.repoPath,
           ...call.arguments,
+          path: typeof call.arguments.path === 'string' ? call.arguments.path : this.repoPath,
+          rootPath: this.repoPath,
+          autonomyMode: this.autonomyEngine.getMode(),
         };
 
         let result: ToolResult;

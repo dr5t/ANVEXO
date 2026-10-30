@@ -93,6 +93,35 @@ describe('AgentRuntime', () => {
     expect(session.status).toBe('completed');
   });
 
+  it('does not execute a command after interactive permission is denied', async () => {
+    permissions.setPromptFunction(async () => PermissionDecision.DENY);
+    let commandExecutions = 0;
+    const commandTool = tools.get('run_command');
+    if (!commandTool) throw new Error('run_command tool was not registered');
+    commandTool.execute = async () => {
+      commandExecutions++;
+      return { success: true, output: '', duration: 0, metadata: {} };
+    };
+
+    const runtime = new AgentRuntime({
+      repoPath: tempDir,
+      provider,
+      permissions,
+      tools,
+      ruleManager,
+      skillManager,
+      autonomyMode: 'controlled_autonomous',
+    });
+    const session = runtime.createSession('interactive');
+    const events: string[] = [];
+
+    await runtime.run('Run tests', session, event => events.push(event.type));
+
+    expect(commandExecutions).toBe(0);
+    expect(events).toContain('waiting_approval');
+    expect(session.messages.some(message => message.role === 'tool' && message.content.includes('requires approval'))).toBe(true);
+  });
+
   it('exposes skillManager through getter and integrates skills compactly in system prompt', async () => {
     const runtime = new AgentRuntime({
       repoPath: tempDir,
