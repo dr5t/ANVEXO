@@ -10,7 +10,7 @@
   <img src="https://img.shields.io/badge/version-0.1.0-E54D2E?style=flat-square&labelColor=141618" alt="Version 0.1.0">
   <img src="https://img.shields.io/badge/node-%3E%3D20.0.0-EDEDED?style=flat-square&labelColor=141618" alt="Node.js 20+">
   <img src="https://img.shields.io/badge/typescript-5.4+-3178C6?style=flat-square&labelColor=141618" alt="TypeScript 5.4+">
-  <img src="https://img.shields.io/badge/tests-164%20passed%20(100%25)-3FB950?style=flat-square&labelColor=141618" alt="164 Tests Passing">
+  <img src="https://img.shields.io/badge/tests-Vitest%20suite-3178C6?style=flat-square&labelColor=141618" alt="Test suite: Vitest">
   <img src="https://img.shields.io/badge/security-shell%3A%20false-3FB950?style=flat-square&labelColor=141618" alt="Subprocess Isolation">
   <img src="https://img.shields.io/badge/sandbox-127.0.0.1%3A4173-58A6FF?style=flat-square&labelColor=141618" alt="Localhost Boundary">
   <img src="https://img.shields.io/badge/license-UNLICENSED-E54D2E?style=flat-square&labelColor=141618" alt="Commercial License">
@@ -167,7 +167,7 @@ ANVEXO provides four distinct memory models to accommodate different operational
 
 The local browser workbench (`http://127.0.0.1:4173/`) provides a real-time command center:
 
-- **Header Bar**: Live status indicator (`READY`, `RUNNING`, `COMPLETED`), target repository path chip, Git branch badge, test counter (`164/164 TESTS PASSING`), Docs site link, Settings modal toggle, and primary **Investigate** button.
+- **Header Bar**: Live status indicator (`READY`, `RUNNING`, `COMPLETED`), target repository path chip, Git branch badge, test suite badge, Docs site link, Settings modal toggle, and primary **Investigate** button.
 - **Quick Command Presets**: One-click actions to run `$ scan`, `$ status`, `$ diff`, `$ test`, `$ trace`, `$ report`, and `$ rebuild`.
 - **Left Investigation Sidebar**: Objective textarea with `Cmd+Enter` shortcut, memory mode chip, and real-time DAG Execution Plan displaying status icons (`clock`, `spinner`, `check`, `error`).
 - **Center Workspace Canvas**: Tabbed multi-view interface:
@@ -441,7 +441,7 @@ ANVEXO/
 │   └── index.ts                      # Programmatic library entry point
 ├── tests/
 │   ├── integration/                  # CLI and engine lifecycle tests
-│   └── unit/                         # 18 unit test suites (164 passing tests)
+│   └── unit/                         # Unit tests for providers, server, and core modules
 ├── package.json
 ├── tsconfig.json
 └── vitest.config.ts

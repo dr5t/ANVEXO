@@ -84,7 +84,7 @@
     <text x="780" y="3.5" fill="#5A6066" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, monospace" font-size="10" letter-spacing="1">CANONICAL SANDBOX: 127.0.0.1:4173</text>
     <rect x="990" y="-8" width="130" height="22" rx="3" fill="#1B3828" stroke="#2EA043" stroke-width="0.75"/>
     <circle cx="1002" cy="3" r="2.5" fill="#3FB950"/>
-    <text x="1012" y="6" fill="#3FB950" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, monospace" font-size="10" font-weight="700">164/164 TESTS PASS</text>
+    <text x="1012" y="6" fill="#58A6FF" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, monospace" font-size="10" font-weight="700">TESTS: npm test</text>
   </g>
 
   <!-- Main Hero Content: Brand Logo & Title -->
