@@ -15,6 +15,7 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:gemma": "vitest run --config vitest.live.config.ts",
+    "test:gemini": "vitest run --config vitest.live.gemini.config.ts",
     "investigate": "node --enable-source-maps dist/cli/index.js investigate",
     "discover": "node --enable-source-maps dist/cli/index.js discover",
     "lint": "tsc --noEmit",

@@ -230,9 +230,39 @@ npm install
 npm run build
 ```
 
+### <img src="docs/assets/icons/storage.svg" width="18" height="18" alt="" valign="middle" /> Environment Configuration
+
+Copy the example environment template to create a local `.env` file:
+
+```bash
+cp .env.example .env
+```
+
+Configure your Google AI credentials and model preferences:
+
+- `GEMINI_API_KEY`: Required for Google-hosted Gemini API inference. Obtain your key from Google AI Studio.
+- `GEMINI_MODEL`: Model identifier (defaults to `gemini-2.5-flash`; verified models: `gemini-2.5-flash`, `gemini-2.5-pro`, `gemini-1.5-flash`, `gemini-1.5-pro`).
+- `GEMINI_BASE_URL`: Optional custom API endpoint (defaults to `https://generativelanguage.googleapis.com`).
+- `OLLAMA_BASE_URL`: Optional local endpoint for offline Gemma inference (`http://localhost:11434`).
+
+To configure the environment variable locally in your shell:
+
+```bash
+export GEMINI_API_KEY="your-google-ai-api-key"
+```
+
+Restart ANVEXO (or your terminal session) after changing environment variables for changes to take effect. No cloud deployment or DigitalOcean droplet is required for local development or testing.
+
+#### Verified Gemini API Specifications & Limitations:
+- **Base Endpoint**: `https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent`
+- **Supported Models**: `gemini-2.5-flash`, `gemini-2.5-pro`, `gemini-1.5-flash`, `gemini-1.5-pro`
+- **Multimodal Payloads**: Inline image data with maximum payload size of 20MB
+- **Supported Image Formats**: `image/png`, `image/jpeg`, `image/webp`, `image/heic`, `image/heif`
+- **Authentication**: Sent via `x-goog-api-key` header and query parameter `?key=`
+
 ### <img src="docs/assets/icons/test.svg" width="18" height="18" alt="" valign="middle" /> Running Test Verification
 
-Verify all 164 unit and integration tests across 20 test suites:
+Verify all unit and offline integration tests (uses mocks for API requests, requires zero cloud spend or credentials):
 
 ```bash
 npm test
@@ -243,6 +273,16 @@ Run TypeScript strict type checking:
 ```bash
 npm run lint
 ```
+
+Run live Google Gemini API smoke test (opt-in; requires real `GEMINI_API_KEY` configured locally in the environment):
+
+```bash
+npm run test:gemini
+```
+
+> **Testing Verification Model**:
+> - `npm test` runs 29 test suites (289 tests, including `tests/unit/gemini.test.ts`) entirely using offline mocks. No API key or remote connection is needed.
+> - `npm run test:gemini` runs `tests/integration/gemini.test.ts`. If `GEMINI_API_KEY` is unset, the test skips cleanly with a diagnostic notice and is marked as skipped. When a valid key is set, it performs a real inference request against Google's Gemini API.
 
 Generate test coverage report:
 
