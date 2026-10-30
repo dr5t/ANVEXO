@@ -41,6 +41,7 @@ export * from './reproduction/index.js';
 export * from './autonomy/index.js';
 export * from './memory/index.js';
 export * from './core/index.js';
+export * from './github/index.js';
 
 import { fileURLToPath } from 'node:url';
 import { resolve } from 'node:path';
