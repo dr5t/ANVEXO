@@ -1,19 +1,38 @@
-# ANVEXO Engineering Issue Backlog (Revised)
+# ANVEXO Engineering Backlog Audit
 
 ## 1. Backlog Overview & Architecture Mapping
 
-This backlog defines the approved, verified, and non-overlapping technical issues for the five-person ANVEXO engineering team.
+The IDs in this document are internal planning labels, not GitHub issue numbers. The detailed descriptions below are historical proposals and must not be treated as a current issue tracker or as verified descriptions of the current code.
 
-### Codebase & GitHub Verification Status
-- **Current Codebase State**: 26 test suites, 206 tests passing cleanly (`npm test`).
-- **Existing GitHub Issues Audit**: Verified against [https://github.com/dr5t/ANVEXO](https://github.com/dr5t/ANVEXO). Zero open issues or pull requests exist (only issue `#1` closed for initial branding).
-- **No Hallucinated Work**: Every issue directly targets concrete implementations, verified code gaps, and verifiable invariants in the existing repository.
+### Current status at `pr-for-hacktoberrfest` commit `84030f3`
+
+The audit found no open GitHub issues; pull-request state is tracked on GitHub and is not represented by these internal planning labels. The current default test run passed 29 test files and 292 tests; see [`docs/mlh-submission/VERIFICATION.md`](../mlh-submission/VERIFICATION.md) for all commands, results, and live-test limitations.
+
+| Internal ID | Current audit status |
+| :--- | :--- |
+| ISSUE-01 | Implemented: Gemma provider unit tests exist in `tests/unit/gemma.test.ts`. |
+| ISSUE-02 | Implemented narrowly: `test:gemma` runs a separate hosted text-completion smoke test. It does not test local-daemon access or multimodal investigation. |
+| ISSUE-03 | Partially implemented: failed investigation steps are recorded and the unified workflow reports impact-analysis failures. Step dependency evaluation from the original proposal is not present in the investigation engine. |
+| ISSUE-04 | Implemented: JSON and Markdown exports and report persistence exist in `src/reporting/` and are tested. |
+| ISSUE-05 | Candidate gap: `ContextManager` stores a dependency graph, but `ChangeImpactSimulator` does not accept or consume that graph. |
+| ISSUE-06 | Candidate gap: impact analysis uses regular expressions for import/export discovery; type-only imports are not distinguished, and alias resolution is not established by the current tests. |
+| ISSUE-07 | Implemented: autonomy and security regression suites exist in `tests/unit/autonomy.test.ts` and `tests/unit/security.test.ts`. |
+| ISSUE-08 | Not implemented: the inspected branch has no `.github/workflows/` directory or GitHub Actions workflow. |
+| ISSUE-09 | Gated and incomplete: there is no license audit or root `LICENSE`; `package.json` declares `UNLICENSED`. |
+| ISSUE-10 | The proposed demo harness is absent: there is no `test:demo` script or `tests/integration/demo.test.ts`. `tests/integration/workflow.test.ts` is a distinct local integration suite. |
+| DEF-01 | Implemented: the Gemma CLI command exists and has command tests. |
+| DEF-02 | No visual dependency graph exporter was found in the inspected source. |
+| DEF-03 | No streaming progress-event interface was found in the unified workflow implementation. |
+
+These are audit findings, not new GitHub issues. Remaining candidates should be reviewed and prioritized by the project lead before work is assigned.
 
 ---
 
-## 2. Issue Mapping & Ownership Matrix
+## 2. Historical Issue Mapping & Ownership
 
-### Core Accepted Issues
+The following matrix preserves the original proposals and ownership assignments for historical reference. It does not represent active GitHub issues or imply that the proposed work remains outstanding.
+
+### Original core proposals
 
 | ID | Title | Assignee | Priority | Proposed Branch Name |
 | :--- | :--- | :--- | :--- | :--- |
@@ -28,7 +47,7 @@ This backlog defines the approved, verified, and non-overlapping technical issue
 | **ISSUE-09** | **[GATED]** Open-source licensing inspection and third-party attribution audit | Akhil & Shaurya | Gated | `docs/akhil-license-audit` |
 | **ISSUE-10** | Implement end-to-end Gemma 4 verification and MLH demo validation harness | Shaurya | Core / Lead | `feat/shaurya-gemma-demo-verification` |
 
-### Deferred Work (Staged Post-Core Verification)
+### Original deferred proposals
 
 | ID | Title | Previous ID | Reason for Deferral |
 | :--- | :--- | :--- | :--- |
@@ -38,9 +57,9 @@ This backlog defines the approved, verified, and non-overlapping technical issue
 
 ---
 
-## 3. Explanation of Reassignments & Boundary Isolation
+## 3. Historical Ownership Notes
 
-To preserve strict non-overlapping responsibilities across the five team members:
+The following ownership statements are preserved from the original planning proposal and do not describe current assignments:
 1. **Bhumika (Gemma 4 Provider Reliability)**: Dedicated to `ISSUE-01` and `ISSUE-02`. Owns `src/providers/gemma.ts` and its test suites. Deferred CLI commands (`DEF-01`) avoid touching `src/cli/` before core provider behavior is rock solid.
 2. **Alok (Investigation Resilience & Reports)**: Dedicated to `ISSUE-03` and `ISSUE-04`. Owns `src/evidence/index.ts`, `src/engine/index.ts` error handling, and `src/reporting/`. Refocused from abstract hypothesis generation to concrete evidence validation and failure recovery so ANVESHAN never crashes on tool failures.
 3. **Somi (ECHO Context & TypeScript Impact)**: Dedicated to `ISSUE-05` and `ISSUE-06`. Owns `src/context/` and `src/impact/`. Unifies dependency indexing and solves real TypeScript AST/regex edge cases (type imports, re-exports) instead of premature graph visualization.
@@ -49,7 +68,9 @@ To preserve strict non-overlapping responsibilities across the five team members
 
 ---
 
-## 4. Detailed Specifications for Accepted Issues
+## 4. Original Issue Specifications
+
+The specifications in this section describe the proposed state when this backlog was written. Consult the current-status audit above and the linked source and tests before using any specification as an implementation task.
 
 ### ISSUE-01: Add comprehensive unit & mock test suite for Gemma 4 provider error handling
 - **Assignee**: Bhumika

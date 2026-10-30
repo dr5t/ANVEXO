@@ -15,7 +15,7 @@
   <img src="https://img.shields.io/badge/version-0.1.0-E54D2E?style=flat-square&labelColor=141618" alt="Version 0.1.0">
   <img src="https://img.shields.io/badge/node-%3E%3D20.0.0-EDEDED?style=flat-square&labelColor=141618" alt="Node.js 20+">
   <img src="https://img.shields.io/badge/typescript-5.4+-3178C6?style=flat-square&labelColor=141618" alt="TypeScript 5.4+">
-  <img src="https://img.shields.io/badge/tests-300%20passed%20(100%25)-3FB950?style=flat-square&labelColor=141618" alt="300 Tests Passing">
+  <img src="https://img.shields.io/badge/tests-Vitest%20suite-3178C6?style=flat-square&labelColor=141618" alt="Test suite: Vitest">
   <img src="https://img.shields.io/badge/security-shell%3A%20false-3FB950?style=flat-square&labelColor=141618" alt="Subprocess Isolation">
   <img src="https://img.shields.io/badge/license-UNLICENSED-E54D2E?style=flat-square&labelColor=141618" alt="Commercial License">
 </p>
@@ -171,7 +171,7 @@ ANVEXO provides four distinct memory models to accommodate different operational
 
 The local browser workbench (`http://127.0.0.1:4173/`) provides a real-time command center:
 
-- **Header Bar**: Live status indicator (`READY`, `RUNNING`, `COMPLETED`), target repository path chip, Git branch badge, test counter (`164/164 TESTS PASSING`), Docs site link, Settings modal toggle, and primary **Investigate** button.
+- **Header Bar**: Live status indicator (`READY`, `RUNNING`, `COMPLETED`), target repository path chip, Git branch badge, test suite badge, Docs site link, Settings modal toggle, and primary **Investigate** button.
 - **Quick Command Presets**: One-click actions to run `$ scan`, `$ status`, `$ diff`, `$ test`, `$ trace`, `$ report`, and `$ rebuild`.
 - **Left Investigation Sidebar**: Objective textarea with `Cmd+Enter` shortcut, memory mode chip, and real-time DAG Execution Plan displaying status icons (`clock`, `spinner`, `check`, `error`).
 - **Center Workspace Canvas**: Tabbed multi-view interface:
@@ -247,7 +247,7 @@ cp .env.example .env
 Configure your Google AI credentials and model preferences:
 
 - `GEMINI_API_KEY`: Required for Google-hosted Gemini API inference. Obtain your key from Google AI Studio.
-- `GEMINI_MODEL`: Model identifier (defaults to `gemini-2.5-flash`; verified models: `gemini-2.5-flash`, `gemini-2.5-pro`, `gemini-1.5-flash`, `gemini-1.5-pro`).
+- `GEMINI_MODEL`: Model identifier (defaults to `gemini-3.8-flash`; provider catalog: `gemini-3.8-flash`, `gemini-2.5-flash`, `gemini-2.5-pro`, `gemini-1.5-flash`, `gemini-1.5-pro`).
 - `GEMINI_BASE_URL`: Optional custom API endpoint (defaults to `https://generativelanguage.googleapis.com`).
 - `OLLAMA_BASE_URL`: Optional local endpoint for offline Gemma inference (`http://localhost:11434`).
 
@@ -259,12 +259,12 @@ export GEMINI_API_KEY="your-google-ai-api-key"
 
 Restart ANVEXO (or your terminal session) after changing environment variables for changes to take effect. No cloud deployment or DigitalOcean droplet is required for local development or testing.
 
-#### Verified Gemini API Specifications & Limitations:
+#### Gemini API Request Configuration:
 - **Base Endpoint**: `https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent`
-- **Supported Models**: `gemini-2.5-flash`, `gemini-2.5-pro`, `gemini-1.5-flash`, `gemini-1.5-pro`
+- **Provider Model Catalog**: `gemini-3.8-flash`, `gemini-2.5-flash`, `gemini-2.5-pro`, `gemini-1.5-flash`, `gemini-1.5-pro`
 - **Multimodal Payloads**: Inline image data with maximum payload size of 20MB
-- **Supported Image Formats**: `image/png`, `image/jpeg`, `image/webp`, `image/heic`, `image/heif`
-- **Authentication**: Sent via `x-goog-api-key` header and query parameter `?key=`
+- **Accepted Image MIME Types**: `image/png`, `image/jpeg`, `image/webp`, `image/gif`, `image/heic`, `image/heif`
+- **Authentication**: Sent via the `x-goog-api-key` header; credentials are not included in request URLs
 
 ### <img src="docs/assets/icons/test.svg" width="18" height="18" alt="" valign="middle" /> Running Test Verification
 
@@ -287,8 +287,10 @@ npm run test:gemini
 ```
 
 > **Testing Verification Model**:
-> - `npm test` runs 29 test suites (289 tests, including `tests/unit/gemini.test.ts`) entirely using offline mocks. No API key or remote connection is needed.
+> - `npm test` runs the default unit and local integration suite, including `tests/unit/gemini.test.ts`, and excludes live Gemma and Gemini provider tests. It requires no provider API key or external model request; local tests may use the filesystem and subprocesses.
 > - `npm run test:gemini` runs `tests/integration/gemini.test.ts`. If `GEMINI_API_KEY` is unset, the test skips cleanly with a diagnostic notice and is marked as skipped. When a valid key is set, it performs a real inference request against Google's Gemini API.
+
+GitHub Actions runs the install, type check, build, and default test suite for pull requests targeting `main` or `pr-for-hacktoberrfest`, and for pushes to those branches, on Node.js 20 and 22. Live provider smoke tests are excluded because they require credentials.
 
 Generate test coverage report:
 
@@ -459,7 +461,7 @@ ANVEXO/
 │   └── index.ts                      # Programmatic library entry point
 ├── tests/
 │   ├── integration/                  # CLI and engine lifecycle tests
-│   └── unit/                         # 18 unit test suites (164 passing tests)
+│   └── unit/                         # Unit tests for providers, server, and core modules
 ├── package.json
 ├── tsconfig.json
 └── vitest.config.ts

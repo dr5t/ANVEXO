@@ -154,7 +154,7 @@ describe('GeminiProvider', () => {
       expect(mockFetch).toHaveBeenCalledTimes(1);
       const [url, options] = mockFetch.mock.calls[0];
       expect(String(url)).toContain('/v1beta/models/gemini-3.8-flash:generateContent');
-      expect(new URL(String(url)).searchParams.get('key')).toBe('test-api-key');
+      expect(new URL(String(url)).searchParams.has('key')).toBe(false);
 
       expect(options.headers).toEqual({
         'Content-Type': 'application/json',

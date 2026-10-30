@@ -304,7 +304,7 @@ export class GemmaProvider implements ModelProvider {
     };
     if (tools) body.tools = tools;
 
-    const url = `${this.baseUrl}/v1beta/models/${modelName}:generateContent?key=${encodeURIComponent(this.apiKey)}`;
+    const url = `${this.baseUrl}/v1beta/models/${modelName}:generateContent`;
 
     const controller = new AbortController();
     let timedOut = false;
@@ -326,7 +326,10 @@ export class GemmaProvider implements ModelProvider {
       try {
         res = await fetch(url, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'x-goog-api-key': this.apiKey,
+          },
           body: JSON.stringify(body),
           signal: controller.signal,
         });

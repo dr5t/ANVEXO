@@ -354,6 +354,8 @@ describe('Server & Security Infrastructure', () => {
       const html = await htmlRes.text();
       expect(html).toContain('ANVEXO');
       expect(html).toContain('workbench');
+      expect(html).toContain('Run npm test to check the current test status');
+      expect(html).not.toContain('164/164');
 
       const cssRes = await fetch(`${baseUrl}/styles.css`);
       expect(cssRes.status).toBe(200);
@@ -368,6 +370,15 @@ describe('Server & Security Infrastructure', () => {
       expect(iconsRes.headers.get('content-type')).toContain('application/javascript');
       const iconsBody = await iconsRes.text();
       expect(iconsBody).toContain('AnvexoIcons');
+    });
+
+    it('serves test documentation without a hardcoded passing count', async () => {
+      const docsRes = await fetch(`${baseUrl}/docs?page=verification`);
+      expect(docsRes.status).toBe(200);
+      const docs = await docsRes.text();
+      expect(docs).toContain('npm test');
+      expect(docs).not.toContain('164/164');
+      expect(docs).not.toContain('100% pass rate');
     });
   });
 });
