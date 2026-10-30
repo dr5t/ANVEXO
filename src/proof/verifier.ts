@@ -126,7 +126,6 @@ export class ProofVerifier {
       }
     }
 
-    // Re-evaluate claim status based on all checks
     claim.status = this.evaluateClaimStatus(claim);
     return check;
   }
@@ -147,19 +146,13 @@ export class ProofVerifier {
     claim.status = this.evaluateClaimStatus(claim);
   }
 
-  /**
-   * Evaluates claim status strictly based on empirical evidence and checks.
-   * Never marks passed/verified without completed evidence.
-   */
   private evaluateClaimStatus(claim: ProofClaim): ClaimVerificationState {
     if (claim.checks.length === 0 && claim.supportingEvidenceIds.length === 0 && claim.refutingEvidenceIds.length === 0) {
       return 'unverified';
     }
 
-    // If there is any refuting evidence or failed checks, check if completely failed
     const failedChecks = claim.checks.filter((c) => c.attempted && (!c.passed || (c.exitCode !== undefined && c.exitCode !== 0)));
     if (claim.refutingEvidenceIds.length > 0 || failedChecks.length > 0) {
-      // If some passed and some failed
       const passedChecks = claim.checks.filter((c) => c.completed && c.passed);
       if (passedChecks.length > 0) {
         return 'partially_verified';
@@ -167,14 +160,11 @@ export class ProofVerifier {
       return 'failed';
     }
 
-    // Check for incomplete checks (attempted but did not complete)
     const incompleteChecks = claim.checks.filter((c) => c.attempted && !c.completed);
     if (incompleteChecks.length > 0) {
       return 'incomplete';
     }
 
-    // Enforce execution requirements:
-    // If claim category is test_execution or regression_check, it MUST have a dynamic execution check that passed
     if (claim.category === 'test_execution' || claim.category === 'regression_check') {
       const execChecks = claim.checks.filter((c) => c.isExecution && c.completed && c.passed);
       if (execChecks.length === 0) {
@@ -182,7 +172,6 @@ export class ProofVerifier {
       }
     }
 
-    // If claim category is code_modification, it must have either a git diff or file check that completed
     if (claim.category === 'code_modification') {
       const modificationChecks = claim.checks.filter(
         (c) => (c.type === 'git_inspection' || c.type === 'file_check' || c.type === 'artifact_inspection') && c.completed && c.passed,
@@ -207,10 +196,6 @@ export class ProofVerifier {
     return 'unverified';
   }
 
-  /**
-   * Automatically ingests evidence records from ANVESHAN or tool executions
-   * and verifies corresponding claims.
-   */
   ingestEvidenceRecords(evidenceList: EvidenceRecord[]): void {
     for (const record of evidenceList) {
       if (record.type === EvidenceType.TEST_RESULT) {
@@ -292,6 +277,12 @@ export class ProofVerifier {
         }
         if (check.isExecution) dynamicExecutions++;
         else staticAnalyses++;
+      }
+    }
+
+    if (failedChecks.length > 0) {
+      for (const fc of failedChecks) {
+        suggestedNextSteps.push(`Investigate and rerun failed check: "${fc.name}"${fc.error ? ' (' + fc.error + ')' : ''}`);
       }
     }
 

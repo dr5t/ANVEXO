@@ -4,7 +4,7 @@ import { createInterface } from 'node:readline';
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { Command } from 'commander';
-import { InvestigationEngine } from '../engine/index.js';
+import { InvestigationEngine, EngineeringWorkflowRunner } from '../engine/index.js';
 import { LogLevel, MemoryMode, PermissionScope, PermissionDecision } from '../core/index.js';
 import { setLogLevel } from '../core/logger.js';
 import { ConfigManager } from '../core/config.js';
@@ -690,6 +690,45 @@ autonomyCmd
     process.stdout.write(`Max Tool Invocations:      ${policy.budget.maxToolInvocations}\n`);
     process.stdout.write(`Max File Modifications:    ${policy.budget.maxFileModifications}\n`);
     process.stdout.write(`Protected Paths:           ${policy.protectedPaths.length} patterns\n`);
+  });
+
+program
+  .command('workflow')
+  .description('Execute end-to-end engineering workflow (Investigate -> Impact -> Memory -> Reproduce -> Proof)')
+  .argument('<objective>', 'Bug description, issue statement, or engineering objective')
+  .option('-r, --repo <path>', 'Repository root path', process.cwd())
+  .option('-t, --target <file>', 'Target file for change impact analysis')
+  .option('-c, --cmd <command>', 'Reproduction command')
+  .option('--repro-test <path>', 'Reproduction test file')
+  .option('-m, --mode <mode>', 'Autonomy mode (observe, suggest, assisted, controlled_autonomous)', 'assisted')
+  .option('--skip-tests', 'Skip test executions', false)
+  .option('--json', 'Output report as JSON', false)
+  .action(async (objective: string, opts: {
+    repo: string;
+    target?: string;
+    cmd?: string;
+    reproTest?: string;
+    mode: string;
+    skipTests: boolean;
+    json: boolean;
+  }) => {
+    const runner = new EngineeringWorkflowRunner(opts.repo);
+    const report = await runner.run({
+      repositoryPath: opts.repo,
+      bugDescription: objective,
+      targetFile: opts.target,
+      reproductionCommand: opts.cmd,
+      reproductionTestPath: opts.reproTest,
+      autonomyMode: opts.mode as AutonomyMode,
+      skipTests: opts.skipTests,
+      autoApprove: true,
+    });
+
+    if (opts.json) {
+      process.stdout.write(JSON.stringify(report, null, 2) + '\n');
+    } else {
+      process.stdout.write(runner.formatReport(report) + '\n');
+    }
   });
 
 program.parse();

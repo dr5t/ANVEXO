@@ -29,7 +29,7 @@ export interface GemmaInvestigationContext {
   terminalLog?: string;
   screenshot?: {
     mimeType: string;
-    data: string; // Base64 encoded image
+    data: string;
     label?: string;
   };
 }
@@ -100,7 +100,7 @@ export class GemmaProvider implements ModelProvider {
           id: 'gemma-4-31b-it',
           name: 'Gemma 4 31B Dense Instruct (Multimodal)',
           provider: 'gemma',
-          contextWindow: 262_144, // 256K tokens
+          contextWindow: 262_144,
           maxOutputTokens: 8_192,
           supportsStreaming: true,
           supportsToolCalling: true,
@@ -138,7 +138,6 @@ export class GemmaProvider implements ModelProvider {
         },
       ];
     } else {
-      // Local daemon route (e.g. Ollama)
       try {
         const res = await fetch(`${this.baseUrl}/api/tags`, { method: 'GET' });
         if (res.ok) {
@@ -158,7 +157,6 @@ export class GemmaProvider implements ModelProvider {
           }
         }
       } catch {
-        // Fall back to catalog
       }
 
       return [
@@ -200,9 +198,6 @@ export class GemmaProvider implements ModelProvider {
     return full;
   }
 
-  /**
-   * Complete via Google AI Studio / Gemini API endpoint
-   */
   private async completeViaGeminiApi(request: CompletionRequest): Promise<CompletionResponse> {
     if (!this.apiKey) {
       throw new Error(
@@ -212,7 +207,6 @@ export class GemmaProvider implements ModelProvider {
 
     const modelName = this.defaultModel;
 
-    // Convert messages and multimodal attachments
     const contents = request.messages.map(m => {
       let role = 'user';
       if (m.role === 'assistant') role = 'model';
@@ -220,7 +214,6 @@ export class GemmaProvider implements ModelProvider {
 
       const parts: Array<Record<string, unknown>> = [];
 
-      // Multimodal image attachments (screenshots, logs, UI error captures)
       if (m.images && m.images.length > 0) {
         for (const img of m.images) {
           this.validateImage(img);
@@ -354,9 +347,6 @@ export class GemmaProvider implements ModelProvider {
     }
   }
 
-  /**
-   * Complete via local daemon (e.g. Ollama or vLLM endpoint)
-   */
   private async completeViaLocal(request: CompletionRequest): Promise<CompletionResponse> {
     const model = this.defaultModel;
     const prompt = request.messages.map(m => `[${m.role.toUpperCase()}]: ${m.content}`).join('\n\n');
@@ -408,11 +398,6 @@ export class GemmaProvider implements ModelProvider {
     }
   }
 
-  /**
-   * Meaningful Gemma-Powered Investigation:
-   * Analyzes repository context, user query, and optional screenshot to generate
-   * an evidence-backed root cause hypothesis, fix recommendation, and regression tests.
-   */
   async investigateIssue(context: GemmaInvestigationContext): Promise<GemmaInvestigationResult> {
     const promptParts = [
       `You are an elite software architect and debugging specialist utilizing Google's Gemma 4 model architecture.`,
@@ -478,7 +463,6 @@ export class GemmaProvider implements ModelProvider {
         parsed = JSON.parse(jsonMatch[0]);
       }
     } catch {
-      // Fallback if model returned plain markdown
     }
 
     const summary = parsed?.summary || completion.content.slice(0, 200);
@@ -493,16 +477,15 @@ export class GemmaProvider implements ModelProvider {
     const uncertainties = Array.isArray(parsed?.uncertainties) ? parsed.uncertainties : ['Dynamic runtime execution not yet run'];
     const missingInformation = Array.isArray(parsed?.missingInformation) ? parsed.missingInformation : [];
 
-    // Synthesize traceable EvidenceRecords for Proof Mode
     const evidenceRecords: EvidenceRecord[] = [
       {
         id: randomUUID(),
-        type: EvidenceType.SOURCE_CODE,
+        type: EvidenceType.FILE_CONTENT,
         source: `gemma_analysis:${this.defaultModel}`,
         content: `Summary: ${summary}\nRoot Cause: ${suspectedRootCause}\nFix: ${proposedFix}`,
         timestamp: new Date(),
         toolName: 'gemma_analyzer',
-        verificationStatus: VerificationStatus.UNVERIFIED, // Strictly marked as unverified until dynamic execution!
+        verificationStatus: VerificationStatus.UNVERIFIED,
         linkedHypothesisIds: [],
         metadata: {
           provider: 'gemma',
@@ -517,12 +500,12 @@ export class GemmaProvider implements ModelProvider {
     if (visualEvidence) {
       evidenceRecords.push({
         id: randomUUID(),
-        type: EvidenceType.LOG_SNIPPET,
+        type: EvidenceType.COMMAND_OUTPUT,
         source: 'screenshot_attachment',
         content: visualEvidence,
         timestamp: new Date(),
         toolName: 'gemma_vision_parser',
-        verificationStatus: VerificationStatus.VERIFIED, // Visual attachment was received and parsed
+        verificationStatus: VerificationStatus.VERIFIED,
         linkedHypothesisIds: [],
         metadata: {
           mimeType: context.screenshot?.mimeType,
@@ -553,9 +536,8 @@ export class GemmaProvider implements ModelProvider {
       throw new Error(`Unsupported image MIME type: ${img.mimeType}. Supported formats: PNG, JPEG, WEBP, GIF.`);
     }
 
-    // Estimate base64 size (each char ~0.75 byte)
     const approxBytes = img.data.length * 0.75;
-    const maxBytes = 5 * 1024 * 1024; // 5MB limit
+    const maxBytes = 5 * 1024 * 1024;
     if (approxBytes > maxBytes) {
       throw new Error(`Screenshot exceeds maximum allowed size of 5MB (approx ${Math.round(approxBytes / 1024)} KB)`);
     }

@@ -33,7 +33,6 @@
   --editor-font-weight: 400;
   --editor-tab-size: 2;
 
-  /* Motion Design Tokens */
   --motion-dur-hover: 140ms;
   --motion-dur-pressed: 90ms;
   --motion-dur-icon: 160ms;
@@ -886,7 +885,6 @@ body {
   transition: transform var(--motion-dur-icon) var(--motion-ease-out), color var(--motion-dur-hover) var(--motion-ease-out);
 }
 
-/* Individual Icon Micro-Interactions */
 .activity-btn:hover .anvexo-activity-pulse,
 .activity-btn:active .anvexo-activity-pulse {
   stroke: var(--accent-orange);
@@ -2192,10 +2190,6 @@ body {
   color: var(--text-muted);
 }
 
-/* =========================================================================
-   ANVEXO Icon System Utilities & Motion
-   ========================================================================= */
-
 .anvexo-icon {
   display: inline-block;
   vertical-align: middle;
@@ -2228,10 +2222,6 @@ body {
   justify-content: center;
   margin-right: 4px;
 }
-
-/* =========================================================================
-   Reduced Motion Preferences
-   ========================================================================= */
 
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -2277,10 +2267,6 @@ body {
     transform: none !important;
   }
 }
-
-/* =========================================================================
-   Engineering Intelligence Views (Proof, Impact, Repro, Autonomy, Memory)
-   ========================================================================= */
 
 .autonomy-selector-wrap {
   display: inline-flex;
@@ -2498,5 +2484,38 @@ body {
   overflow-x: auto;
   white-space: pre-wrap;
   max-height: 220px;
+}
+
+.feature-content-container {
+  padding: 16px;
+  overflow-y: auto;
+  height: calc(100% - 42px);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.memory-form-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-hairline);
+  border-radius: 6px;
+  padding: 14px;
+  margin: 12px 16px 0 16px;
+  display: flex;
+  flex-direction: column;
+}
+
+.memory-textarea {
+  width: 100%;
+  min-height: 80px;
+  background: var(--bg-editor);
+  border: 1px solid var(--border-hairline);
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  padding: 8px 12px;
+  border-radius: 4px;
+  outline: none;
+  resize: vertical;
 }
 

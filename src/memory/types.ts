@@ -29,7 +29,7 @@ export interface DecisionMemoryRecord {
   createdAt: Date;
   lastVerifiedAt?: Date;
   status: DecisionMemoryStatus;
-  confidence: number; // 0.0 to 1.0
+  confidence: number;
   tags: string[];
 }
 

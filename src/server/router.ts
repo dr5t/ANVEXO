@@ -2,7 +2,7 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
 import { URL, fileURLToPath } from 'node:url';
 import { dirname, join, relative } from 'node:path';
 import { existsSync, readFileSync, statSync, readdirSync, writeFileSync, unlinkSync, mkdirSync } from 'node:fs';
-import { InvestigationEngine } from '../engine/index.js';
+import { InvestigationEngine, EngineeringWorkflowRunner } from '../engine/index.js';
 import { discoverProject } from '../discovery/index.js';
 import { ContextManager } from '../context/index.js';
 import { PermissionScope, PermissionDecision, MemoryMode, logger } from '../core/index.js';
@@ -212,6 +212,7 @@ export class ApiRouter {
       '/api/reproduce',
       '/api/reproduce/verify',
       '/api/verify',
+      '/api/workflow',
     ];
     if (heavyPaths.includes(pathname)) {
       const heavyCheck = this.heavyRateLimiter.check(clientIp);
@@ -799,6 +800,30 @@ export class ApiRouter {
           verifier.ingestEvidenceRecords(body.evidence as any);
         }
         const report = verifier.generateReport();
+        this.sendJson(res, 200, report);
+        return;
+      }
+
+      if (method === 'POST' && pathname === '/api/workflow') {
+        const body = await this.readJsonBody(req);
+        if (!body.repo || typeof body.repo !== 'string' || !body.bugDescription || typeof body.bugDescription !== 'string') {
+          this.sendJson(res, 400, { error: 'repo and bugDescription are required' });
+          return;
+        }
+        const validatedRepo = validateRepositoryExists(body.repo as string);
+        const runner = new EngineeringWorkflowRunner(validatedRepo);
+        const report = await runner.run({
+          repositoryPath: validatedRepo,
+          bugDescription: body.bugDescription as string,
+          errorMessage: typeof body.errorMessage === 'string' ? body.errorMessage : undefined,
+          stackTrace: typeof body.stackTrace === 'string' ? body.stackTrace : undefined,
+          targetFile: typeof body.targetFile === 'string' ? body.targetFile : undefined,
+          reproductionCommand: typeof body.reproductionCommand === 'string' ? body.reproductionCommand : (typeof body.command === 'string' ? body.command : undefined),
+          reproductionTestPath: typeof body.reproductionTestPath === 'string' ? body.reproductionTestPath : undefined,
+          autonomyMode: typeof body.autonomyMode === 'string' ? (body.autonomyMode as AutonomyMode) : undefined,
+          skipTests: Boolean(body.skipTests),
+          autoApprove: true,
+        });
         this.sendJson(res, 200, report);
         return;
       }

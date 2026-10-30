@@ -389,7 +389,112 @@
           </div>
           <pre id="terminalView" class="terminal-view" tabindex="0">ANVEXO Engine Tool Console v0.1.0&#10;Ready for autonomous execution.</pre>
         </div>
+
+        <div id="tab-proof" class="tab-content proof-view-panel" role="tabpanel">
+          <div class="tab-toolbar">
+            <div class="toolbar-left">
+              <span class="toolbar-title">PROOF MODE EVIDENCE &amp; VERIFICATION LEDGER</span>
+              <span id="proofStatusBadge" class="badge">UNVERIFIED</span>
+            </div>
+            <div class="toolbar-right">
+              <button id="refreshProofBtn" class="btn btn-sm" aria-label="Refresh Proof Mode analysis">
+                <span>Verify Now</span>
+              </button>
+            </div>
+          </div>
+          <div id="proofContainer" class="feature-content-container">
+            <div class="empty-state">
+              <div>No proof report loaded. Run an investigation or click 'Verify Now' to assess evidence against claims.</div>
+            </div>
+          </div>
+        </div>
+
+        <div id="tab-impact" class="tab-content impact-view-panel" role="tabpanel">
+          <div class="tab-toolbar">
+            <div class="toolbar-left">
+              <span class="toolbar-title">CHANGE IMPACT SIMULATOR</span>
+              <input type="text" id="impactTargetInput" class="path-input" style="width: 220px;" placeholder="Target file or module..." spellcheck="false" aria-label="Target file or module">
+              <button id="runImpactBtn" class="btn btn-sm btn-primary" aria-label="Simulate Change Impact">Simulate</button>
+            </div>
+            <div class="toolbar-right">
+              <span id="impactRiskBadge" class="badge">RISK: UNKNOWN</span>
+            </div>
+          </div>
+          <div id="impactContainer" class="feature-content-container">
+            <div class="empty-state">
+              <div>Enter a target file or module to simulate downstream blast radius, dependencies, and risk score.</div>
+            </div>
+          </div>
+        </div>
+
+        <div id="tab-reproduce" class="tab-content reproduce-view-panel" role="tabpanel">
+          <div class="tab-toolbar">
+            <div class="toolbar-left" style="gap: 8px; flex-wrap: wrap;">
+              <span class="toolbar-title">BUG REPRODUCTION LAB</span>
+              <input type="text" id="reproDescInput" class="path-input" style="width: 200px;" placeholder="Bug description or symptom..." spellcheck="false" aria-label="Bug description">
+              <input type="text" id="reproCmdInput" class="path-input" style="width: 140px;" placeholder="Optional command..." spellcheck="false" aria-label="Optional reproduction command">
+              <button id="runReproBtn" class="btn btn-sm btn-primary" aria-label="Run Bug Reproduction">Reproduce</button>
+              <button id="verifyFixBtn" class="btn btn-sm" aria-label="Verify Bug Fix" style="display: none;">Verify Fix</button>
+            </div>
+            <div class="toolbar-right">
+              <span id="reproStatusBadge" class="badge">STATUS: IDLE</span>
+            </div>
+          </div>
+          <div id="reproduceContainer" class="feature-content-container">
+            <div class="empty-state">
+              <div>Describe a bug or test failure to execute isolated reproduction in the sandbox.</div>
+            </div>
+          </div>
+        </div>
+
+        <div id="tab-memory" class="tab-content memory-view-panel" role="tabpanel">
+          <div class="tab-toolbar">
+            <div class="toolbar-left" style="gap: 8px;">
+              <span class="toolbar-title">PROJECT DECISION MEMORY</span>
+              <select id="memoryTypeFilter" class="autonomy-select" aria-label="Filter by memory type">
+                <option value="">All Types</option>
+                <option value="architecture_decision">Architecture Decisions</option>
+                <option value="implementation_choice">Implementation Choices</option>
+                <option value="confirmed_root_cause">Confirmed Root Causes</option>
+                <option value="rejected_solution">Rejected Solutions</option>
+                <option value="known_limitation">Known Limitations</option>
+                <option value="deprecated_pattern">Deprecated Patterns</option>
+                <option value="project_convention">Project Conventions</option>
+              </select>
+              <input type="text" id="memorySearchInput" class="path-input" style="width: 140px;" placeholder="Search memories..." spellcheck="false" aria-label="Search memories">
+            </div>
+            <div class="toolbar-right">
+              <button id="toggleAddMemoryBtn" class="btn btn-sm btn-primary" aria-label="Record Decision Memory">+ Add Memory</button>
+            </div>
+          </div>
+          <div id="memoryAddForm" class="memory-form-card" style="display: none;">
+            <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+              <select id="newMemoryType" class="autonomy-select" style="flex: 1;" aria-label="Decision Type">
+                <option value="architecture_decision">Architecture Decision</option>
+                <option value="implementation_choice">Implementation Choice</option>
+                <option value="confirmed_root_cause">Confirmed Root Cause</option>
+                <option value="rejected_solution">Rejected Solution</option>
+                <option value="known_limitation">Known Limitation</option>
+                <option value="deprecated_pattern">Deprecated Pattern</option>
+                <option value="project_convention">Project Convention</option>
+              </select>
+              <input type="text" id="newMemorySummary" class="path-input" style="flex: 2;" placeholder="Summary headline..." spellcheck="false" aria-label="Summary headline">
+            </div>
+            <textarea id="newMemoryExplanation" class="memory-textarea" placeholder="Detailed explanation and rationale..." spellcheck="false" aria-label="Detailed explanation"></textarea>
+            <div style="display: flex; gap: 8px; margin-top: 8px; justify-content: flex-end;">
+              <input type="text" id="newMemoryFiles" class="path-input" style="flex: 1;" placeholder="Related files (comma separated)..." spellcheck="false" aria-label="Related files">
+              <button id="saveMemoryBtn" class="btn btn-sm btn-primary" aria-label="Save Memory Record">Save Record</button>
+              <button id="cancelMemoryBtn" class="btn btn-sm" aria-label="Cancel adding memory">Cancel</button>
+            </div>
+          </div>
+          <div id="memoryContainer" class="feature-content-container">
+            <div class="empty-state">
+              <div>Loading project decision memories...</div>
+            </div>
+          </div>
+        </div>
       </section>
+
     </main>
   </div>
 

@@ -1,0 +1,126 @@
+import { describe, it, expect, beforeEach } from 'vitest';
+import { BugReproductionLab } from '../../src/reproduction/lab.js';
+
+describe('BugReproductionLab', () => {
+  let lab: BugReproductionLab;
+  const repoRoot = process.cwd();
+
+  beforeEach(() => {
+    lab = new BugReproductionLab(repoRoot);
+  });
+
+  it('observes and records reproduced failure when command exits non-zero', async () => {
+    const session = await lab.runReproduction({
+      repoRoot,
+      bugDescription: 'Simulated command failure',
+      reproductionCommand: 'node -e "process.exit(1)"',
+    });
+
+    expect(session.isReproduced).toBe(true);
+    expect(session.status).toBe('reproduced_failure');
+    expect(session.initialExecution).toBeDefined();
+    expect(session.initialExecution?.exitCode).toBe(1);
+    expect(session.proofReport).toBeDefined();
+  });
+
+  it('reports cannot_reproduce when command exits zero', async () => {
+    const session = await lab.runReproduction({
+      repoRoot,
+      bugDescription: 'Non-reproducible symptom',
+      reproductionCommand: 'node -e "process.exit(0)"',
+    });
+
+    expect(session.isReproduced).toBe(false);
+    expect(session.status).toBe('cannot_reproduce');
+    expect(session.unverifiedClaims.length).toBeGreaterThan(0);
+  });
+
+  it('handles missing reproduction command or test gracefully', async () => {
+    const session = await lab.runReproduction({
+      repoRoot,
+      bugDescription: 'No test exists for mysterious bug xyz',
+    });
+
+    expect(session.isReproduced).toBe(false);
+    expect(session.status).toBe('cannot_reproduce');
+  });
+
+  it('identifies relevant target files from stack traces', async () => {
+    const session = await lab.runReproduction({
+      repoRoot,
+      bugDescription: 'Null pointer in authentication',
+      stackTrace: 'Error at authenticateUser (/src/core/types.ts:12:3)\n  at /src/server/router.ts:40:1',
+      reproductionCommand: 'node -e "process.exit(1)"',
+    });
+
+    expect(session.targetFiles).toContain('src/core/types.ts');
+    expect(session.targetFiles).toContain('src/server/router.ts');
+  });
+
+  it('verifies fix when post-fix command succeeds', async () => {
+    const initialSession = await lab.runReproduction({
+      repoRoot,
+      bugDescription: 'Failing calculation',
+      reproductionCommand: 'node -e "process.exit(1)"',
+    });
+
+    expect(initialSession.isReproduced).toBe(true);
+
+    initialSession.reproductionCommand = 'node -e "process.exit(0)"';
+    const verifiedSession = await lab.verifyFix(initialSession, 'node -e "process.exit(0)"');
+
+    expect(verifiedSession.isFixed).toBe(true);
+    expect(verifiedSession.status).toBe('verified_fixed');
+    expect(verifiedSession.postFixExecution?.exitCode).toBe(0);
+    expect(verifiedSession.proofReport?.overallStatus).toBe('verified');
+  });
+
+  it('fails fix verification when post-fix execution fails', async () => {
+    const initialSession = await lab.runReproduction({
+      repoRoot,
+      bugDescription: 'Failing calculation',
+      reproductionCommand: 'node -e "process.exit(1)"',
+    });
+
+    const verifiedSession = await lab.verifyFix(initialSession);
+
+    expect(verifiedSession.isFixed).toBe(false);
+    expect(verifiedSession.status).toBe('fix_unverified');
+  });
+
+  it('refuses to verify fix if bug was never reproduced', async () => {
+    const initialSession = await lab.runReproduction({
+      repoRoot,
+      bugDescription: 'Benign behavior',
+      reproductionCommand: 'node -e "process.exit(0)"',
+    });
+
+    const verifiedSession = await lab.verifyFix(initialSession);
+    expect(verifiedSession.status).toBe('fix_unverified');
+    expect(verifiedSession.unverifiedClaims.some(c => c.includes('never confirmed'))).toBe(true);
+  });
+
+  it('redacts sensitive environment variables and outputs in execution sandbox', async () => {
+    const session = await lab.runReproduction({
+      repoRoot,
+      bugDescription: 'Secret leak test',
+      reproductionCommand: 'node -e "console.log(\'token: ghp_123456789012345678901234567890123456\'); process.exit(1);"',
+    });
+
+    expect(session.initialExecution?.stdout).toContain('[REDACTED');
+    expect(session.initialExecution?.stdout).not.toContain('ghp_123456789012345678901234567890123456');
+  });
+
+  it('formats comprehensive report with before and after outputs', async () => {
+    const session = await lab.runReproduction({
+      repoRoot,
+      bugDescription: 'Crashing database pool',
+      reproductionCommand: 'node -e "console.error(\'Connection pool timeout\'); process.exit(2);"',
+    });
+
+    const report = lab.formatReport(session);
+    expect(report).toContain('ANVEXO BUG REPRODUCTION LAB REPORT');
+    expect(report).toContain('Crashing database pool');
+    expect(report).toContain('Connection pool timeout');
+  });
+});

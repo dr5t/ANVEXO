@@ -32,7 +32,7 @@ export interface ChangeImpactReport {
   repositoryPath: string;
   timestamp: Date;
   directDependencies: string[];
-  reverseDependencies: string[]; // Downstream dependent files
+  reverseDependencies: string[];
   exports: string[];
   imports: string[];
   symbolReferences: SymbolReference[];
@@ -43,9 +43,9 @@ export interface ChangeImpactReport {
   databaseSchemas: AffectedDatabaseSchema[];
   securityFlows: AffectedSecurityFlow[];
   riskLevel: ImpactRiskLevel;
-  riskScore: number; // 0 to 100 calculated metric
+  riskScore: number;
   riskFactors: string[];
-  confidence: number; // 0.0 to 1.0
+  confidence: number;
   limitations: string[];
   recommendedValidationSteps: string[];
   summary: string;
@@ -53,8 +53,8 @@ export interface ChangeImpactReport {
 
 export interface ImpactSimulatorOptions {
   repoRoot?: string;
-  target: string; // file path, module, or symbol
+  target: string;
   symbol?: string;
-  proposedDiff?: string; // Optional unstaged/staged git diff for incremental analysis
+  proposedDiff?: string;
   shallow?: boolean;
 }

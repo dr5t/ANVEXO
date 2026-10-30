@@ -46,7 +46,6 @@ export class ChangeImpactSimulator {
     const resolvedRoot = path.resolve(options.repoRoot || this.repoRoot);
     this.repoRoot = resolvedRoot;
 
-    // Handle incremental diff analysis if provided
     let targets: string[] = [];
     if (options.proposedDiff) {
       targets = this.extractFilesFromDiff(options.proposedDiff, resolvedRoot);
@@ -60,7 +59,6 @@ export class ChangeImpactSimulator {
     const primaryTarget = targets[0] || options.target;
     const allRepoFiles = this.getAllSourceFiles(resolvedRoot);
 
-    // Compute direct dependencies
     const directDependencies = new Set<string>();
     const exports = new Set<string>();
     const imports = new Set<string>();
@@ -81,7 +79,6 @@ export class ChangeImpactSimulator {
       }
     }
 
-    // Compute reverse dependencies (which files import any of the targets)
     const reverseDependencies = new Set<string>();
     const targetSet = new Set(targets);
 
@@ -99,7 +96,6 @@ export class ChangeImpactSimulator {
       }
     }
 
-    // Cascade transitive dependencies (level 2)
     const affectedModules = new Set<string>([...targets, ...reverseDependencies]);
     for (const file of allRepoFiles) {
       if (affectedModules.has(file)) continue;
@@ -115,7 +111,6 @@ export class ChangeImpactSimulator {
       }
     }
 
-    // Extract symbol references for exported symbols
     const symbolReferences: SymbolReference[] = [];
     for (const exp of exports) {
       const referencedIn: string[] = [];
@@ -136,22 +131,12 @@ export class ChangeImpactSimulator {
       });
     }
 
-    // Identify affected API endpoints
     const affectedEndpoints = this.detectAffectedApiEndpoints(affectedModules, resolvedRoot);
-
-    // Identify related tests
     const relatedTests = this.detectRelatedTests(affectedModules, allRepoFiles, targets, resolvedRoot);
-
-    // Identify config and env dependencies
     const configDependencies = this.detectConfigDependencies(targets, resolvedRoot);
-
-    // Identify database schemas / models
     const databaseSchemas = this.detectDatabaseSchemas(affectedModules, resolvedRoot);
-
-    // Identify security & auth flows
     const securityFlows = this.detectSecurityFlows(affectedModules, resolvedRoot);
 
-    // Calculate risk score & risk level
     const { riskScore, riskLevel, riskFactors } = this.calculateRisk({
       reverseDependenciesCount: reverseDependencies.size,
       affectedModulesCount: affectedModules.size,
@@ -162,7 +147,6 @@ export class ChangeImpactSimulator {
       exportsCount: exports.size,
     });
 
-    // Recommendations
     const recommendedValidationSteps = this.buildRecommendations({
       target: primaryTarget,
       relatedTests,
@@ -211,7 +195,6 @@ export class ChangeImpactSimulator {
     let rel = path.isAbsolute(target) ? path.relative(repoRoot, target) : target;
     rel = rel.replace(/\\/g, '/');
     if (!rel.startsWith('src/') && !rel.startsWith('tests/') && !rel.includes('/')) {
-      // Look for match in repo
       const files = this.getAllSourceFiles(repoRoot);
       const match = files.find(f => f.endsWith(rel) || path.basename(f, path.extname(f)) === rel);
       if (match) return match;
@@ -308,8 +291,19 @@ export class ChangeImpactSimulator {
   }
 
   private resolveImportPath(fromDir: string, specifier: string, repoRoot: string): string | null {
-    const candidateBase = path.resolve(fromDir, specifier);
+    let candidateBase = path.resolve(fromDir, specifier);
     const extensions = ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.py'];
+
+    if (candidateBase.endsWith('.js')) {
+      const tsPath = candidateBase.slice(0, -3) + '.ts';
+      if (fs.existsSync(tsPath) && fs.statSync(tsPath).isFile()) {
+        return path.relative(repoRoot, tsPath).replace(/\\/g, '/');
+      }
+      const tsxPath = candidateBase.slice(0, -3) + '.tsx';
+      if (fs.existsSync(tsxPath) && fs.statSync(tsxPath).isFile()) {
+        return path.relative(repoRoot, tsxPath).replace(/\\/g, '/');
+      }
+    }
 
     for (const ext of ['', ...extensions]) {
       const p = candidateBase + ext;
@@ -318,7 +312,6 @@ export class ChangeImpactSimulator {
       }
     }
 
-    // Index file check
     for (const ext of extensions) {
       const p = path.join(candidateBase, `index${ext}`);
       if (fs.existsSync(p) && fs.statSync(p).isFile()) {
@@ -408,11 +401,18 @@ export class ChangeImpactSimulator {
         }
       }
 
-      // Also match by component basename (e.g. context.test.ts for src/context/*)
       const baseName = path.basename(tf).replace(/\.(test|spec)\.[a-zA-Z]+$/, '');
       for (const t of targets) {
         const targetBase = path.basename(t, path.extname(t));
-        if (baseName === targetBase || targetBase.includes(baseName) || baseName.includes(targetBase)) {
+        const targetDir = path.basename(path.dirname(t));
+        if (
+          baseName === targetBase ||
+          targetBase.includes(baseName) ||
+          baseName.includes(targetBase) ||
+          baseName === targetDir ||
+          baseName.includes(targetDir) ||
+          targetDir.includes(baseName)
+        ) {
           tests.add(tf);
         }
       }
@@ -507,7 +507,6 @@ export class ChangeImpactSimulator {
     let score = 0;
     const factors: string[] = [];
 
-    // Downstream reach
     if (metrics.reverseDependenciesCount > 10) {
       score += 25;
       factors.push(`High downstream impact: imported by ${metrics.reverseDependenciesCount} modules`);
@@ -518,25 +517,21 @@ export class ChangeImpactSimulator {
       score += 5;
     }
 
-    // Security sensitivity
     if (metrics.securityFlowsCount > 0) {
       score += 30;
       factors.push(`Affects ${metrics.securityFlowsCount} security or permission flow(s)`);
     }
 
-    // API surface exposure
     if (metrics.affectedEndpointsCount > 0) {
       score += 20;
       factors.push(`Potentially impacts ${metrics.affectedEndpointsCount} external HTTP API endpoint(s)`);
     }
 
-    // Database / data models
     if (metrics.databaseSchemasCount > 0) {
       score += 15;
       factors.push(`Touches ${metrics.databaseSchemasCount} data model/schema definition(s)`);
     }
 
-    // Test coverage risk
     if (metrics.relatedTestsCount === 0 && metrics.reverseDependenciesCount > 0) {
       score += 20;
       factors.push('Zero automated test suites detected covering this component or its dependents');

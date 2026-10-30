@@ -27,7 +27,7 @@ export interface VerificationCheck {
   durationMs?: number;
   evidenceId?: string;
   error?: string;
-  isExecution: boolean; // Explicitly distinguishes actual code execution from static analysis
+  isExecution: boolean;
   commandExecuted?: string;
   exitCode?: number;
 }
