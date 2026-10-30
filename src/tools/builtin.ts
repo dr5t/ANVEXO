@@ -42,10 +42,6 @@ function executeCommandTool(args: Record<string, unknown>, command: string, time
   if (isShellExecutable(parsed.executable)) {
     return { success: false, output: '', error: 'Command rejected: shell executables are not allowed.', duration: 0, metadata: {} };
   }
-  if (testOnly && !isTestCommand(parsed)) {
-    return { success: false, output: '', error: 'Command rejected: executable is not an approved test runner.', duration: 0, metadata: {} };
-  }
-
   const requestedCwd = typeof args.path === 'string' ? args.path : process.cwd();
   let cwd = path.resolve(requestedCwd);
   const rootPath = typeof args.rootPath === 'string' ? args.rootPath : undefined;
@@ -57,6 +53,10 @@ function executeCommandTool(args: Record<string, unknown>, command: string, time
     }
   }
 
+  if (testOnly && !isTestCommand(parsed, rootPath || cwd)) {
+    return { success: false, output: '', error: 'Command rejected: executable or test path is not approved.', duration: 0, metadata: {} };
+  }
+
   if (args.autonomyMode === 'observe' && !isSafeDiagnosticCommand(command, rootPath || cwd)) {
     return { success: false, output: '', error: 'Command rejected by Observe mode: only approved read-only diagnostics are allowed.', duration: 0, metadata: {} };
   }
@@ -64,9 +64,13 @@ function executeCommandTool(args: Record<string, unknown>, command: string, time
   const invocation = resolveShellFreeCommand(parsed, cwd);
   const invocationArgs = [...invocation.args];
   if (args.autonomyMode === 'observe' && path.win32.basename(invocation.executable).toLowerCase() === 'git') {
-    invocationArgs.unshift('-c', 'core.fsmonitor=false', '--no-pager');
-    if (invocationArgs.includes('diff')) invocationArgs.splice(2, 0, '-c', 'diff.external=');
-    if (invocationArgs.includes('diff') && !invocationArgs.includes('--no-ext-diff')) invocationArgs.push('--no-ext-diff');
+    const subcommandIndex = invocationArgs.findIndex(argument => ['status', 'log', 'diff', 'branch'].includes(argument));
+    if (subcommandIndex >= 0) {
+      invocationArgs.splice(subcommandIndex, 0, '--no-pager', '-c', 'core.fsmonitor=false');
+      if (invocationArgs[subcommandIndex + 3] === 'diff') {
+        invocationArgs.splice(subcommandIndex + 4, 0, '--no-ext-diff', '--no-textconv');
+      }
+    }
   }
 
   const metadata = { command: redactSecrets(command) };

@@ -58,9 +58,17 @@ describe('BugReproductionLab', () => {
       path.relative(repoRoot, outsideTest),
       outsideTest,
       path.relative(repoRoot, outsideTest).replace(/\//g, '\\'),
+      path.join('tests', '..', 'tests', 'unit', 'autonomy.test.ts'),
+      path.win32.join('Z:\\', 'outside.test.ts'),
+      '\\\\server\\share\\outside.test.ts',
     ];
 
     try {
+      try {
+        fs.symlinkSync(temporaryDirectory, path.join(repoRoot, 'linked'), 'junction');
+        outsidePaths.push(path.join('linked', 'outside.test.ts'));
+      } catch {}
+
       for (const reproductionTestPath of outsidePaths) {
         const session = await lab.runReproduction({
           repoRoot,
@@ -88,6 +96,28 @@ describe('BugReproductionLab', () => {
     expect(session.status).not.toBe('reproduction_failed');
     expect(session.reproductionCommand).toContain('tests');
     expect(session.initialExecution).toBeDefined();
+  });
+
+  it('rejects shell syntax before executing a reproduction command', async () => {
+    const temporaryDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'anvexo-repro-command-'));
+    const markerPath = path.join(temporaryDirectory, 'marker');
+    const command = `node -e "process.exit(0)" && node -e "require('node:fs').writeFileSync(process.argv[1], 'executed')" "${markerPath}"`;
+
+    try {
+      const session = await lab.runReproduction({
+        repoRoot,
+        bugDescription: 'Chained reproduction command rejection',
+        reproductionCommand: command,
+      });
+
+      expect(session.status).toBe('reproduction_failed');
+      expect(session.isReproduced).toBe(false);
+      expect(session.initialExecution).toBeUndefined();
+      expect(session.evidence).toHaveLength(0);
+      expect(fs.existsSync(markerPath)).toBe(false);
+    } finally {
+      fs.rmSync(temporaryDirectory, { recursive: true, force: true });
+    }
   });
 
   it('identifies relevant target files from stack traces', async () => {

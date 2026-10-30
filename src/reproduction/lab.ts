@@ -60,7 +60,8 @@ export class BugReproductionLab {
       return this.createRejectedSession(options, startedAt, targetFiles, 'Reproduction rejected: test path must resolve to a file inside the repository root.');
     }
 
-    if (reproductionCmd && (!parseCommandLine(reproductionCmd) || isShellExecutable(parseCommandLine(reproductionCmd)?.executable || ''))) {
+    const parsedCommand = reproductionCmd ? parseCommandLine(reproductionCmd) : undefined;
+    if (reproductionCmd && (!parsedCommand || isShellExecutable(parsedCommand.executable))) {
       return this.createRejectedSession(options, startedAt, targetFiles, 'Reproduction rejected: shell syntax and shell executables are not allowed.');
     }
 
@@ -344,8 +345,13 @@ export class BugReproductionLab {
 
     for (const match of fileMatches) {
       const clean = match.replace(/^[./\\]+/, '');
-      if (fs.existsSync(path.join(repoRoot, clean))) {
-        found.add(clean);
+      try {
+        const resolved = validatePathWithinRoot(clean, repoRoot);
+        if (fs.existsSync(resolved) && fs.statSync(resolved).isFile()) {
+          found.add(path.relative(repoRoot, resolved).split(path.sep).join('/'));
+        }
+      } catch {
+        continue;
       }
     }
 
@@ -370,6 +376,8 @@ export class BugReproductionLab {
   }
 
   private resolveTestPath(testPath: string, repoRoot: string): string {
+    const portablePath = testPath.replace(/\\/g, '/');
+    if (portablePath.split('/').includes('..')) throw new Error('Invalid test path');
     if (path.win32.isAbsolute(testPath) && !path.isAbsolute(testPath)) {
       throw new Error('Invalid test path');
     }

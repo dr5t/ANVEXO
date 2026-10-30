@@ -11,7 +11,7 @@ const shellExecutables = new Set(['bash', 'cmd', 'csh', 'dash', 'fish', 'ksh', '
 const safeTestFlags = new Set(['--coverage', '--no-coverage', '--no-color', '--passwithnotests', '--verbose', '--reporter=verbose', '-v']);
 const safeGitStatusFlags = new Set(['--short', '--porcelain', '--branch', '--untracked-files=no']);
 const safeGitLogFlags = new Set(['--oneline', '--no-decorate']);
-const safeGitDiffFlags = new Set(['--stat', '--cached', '--no-ext-diff']);
+const safeGitDiffFlags = new Set(['--stat', '--cached', '--no-ext-diff', '--no-textconv']);
 const safeGitBranchFlags = new Set(['--show-current', '--list']);
 
 export function parseCommandLine(command: string): ParsedCommand | undefined {
@@ -87,22 +87,22 @@ export function isShellExecutable(executable: string): boolean {
   return shellExecutables.has(name);
 }
 
-export function isTestCommand(command: ParsedCommand): boolean {
+export function isTestCommand(command: ParsedCommand, rootPath?: string): boolean {
   const executable = commandName(command.executable);
   const args = command.args;
 
   if (executable === 'npm') return args.length === 1 && args[0] === 'test';
-  if (executable === 'vitest') return args[0] === 'run' && isSafeTestArguments(args.slice(1));
+  if (executable === 'vitest') return args[0] === 'run' && isSafeTestArguments(args.slice(1), rootPath);
   if (executable === 'npx') {
-    if (args[0] === 'vitest') return args[1] === 'run' && isSafeTestArguments(args.slice(2));
+    if (args[0] === 'vitest') return args[1] === 'run' && isSafeTestArguments(args.slice(2), rootPath);
     if (args[0] === 'jest' || args[0] === 'mocha' || args[0] === 'ava') {
-      return isSafeTestArguments(args.slice(1));
+      return isSafeTestArguments(args.slice(1), rootPath);
     }
   }
   if (executable === 'python' || executable === 'python3') {
-    return args[0] === '-m' && args[1] === 'pytest' && isSafeTestArguments(args.slice(2));
+    return args[0] === '-m' && args[1] === 'pytest' && isSafeTestArguments(args.slice(2), rootPath);
   }
-  if (executable === 'cargo') return args[0] === 'test' && isSafeTestArguments(args.slice(1));
+  if (executable === 'cargo') return args[0] === 'test' && isSafeTestArguments(args.slice(1), rootPath);
   return false;
 }
 
@@ -113,7 +113,7 @@ export function isSafeDiagnosticCommand(command: string | undefined, rootPath?: 
 
   const executable = commandName(parsed.executable);
   const args = parsed.args;
-  if (isTestCommand(parsed)) return true;
+  if (isTestCommand(parsed, rootPath)) return true;
 
   if (executable === 'git') {
     const subcommand = args[0];
@@ -164,7 +164,7 @@ function commandName(executable: string): string {
   return path.win32.basename(executable).toLowerCase().replace(/\.(?:cmd|exe|bat)$/, '');
 }
 
-function isSafeTestArguments(args: string[]): boolean {
+function isSafeTestArguments(args: string[], rootPath?: string): boolean {
   for (let index = 0; index < args.length; index++) {
     const argument = args[index];
     if (safeTestFlags.has(argument.toLowerCase())) continue;
@@ -173,6 +173,7 @@ function isSafeTestArguments(args: string[]): boolean {
       continue;
     }
     if (argument.startsWith('-') || !isSafeRelativeArgument(argument)) return false;
+    if (rootPath && rootPath !== '*' && !isContainedPath(argument, rootPath, 'file')) return false;
   }
   return true;
 }

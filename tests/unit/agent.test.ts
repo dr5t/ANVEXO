@@ -94,7 +94,10 @@ describe('AgentRuntime', () => {
   });
 
   it('does not execute a command after interactive permission is denied', async () => {
-    permissions.setPromptFunction(async () => PermissionDecision.DENY);
+    let permissionRequests = 0;
+    permissions.setPromptFunction(async () => permissionRequests++ === 0
+      ? PermissionDecision.DENY
+      : PermissionDecision.ALLOW_ONCE);
     let commandExecutions = 0;
     const commandTool = tools.get('run_command');
     if (!commandTool) throw new Error('run_command tool was not registered');
@@ -118,6 +121,7 @@ describe('AgentRuntime', () => {
     await runtime.run('Run tests', session, event => events.push(event.type));
 
     expect(commandExecutions).toBe(0);
+    expect(permissionRequests).toBe(1);
     expect(events).toContain('waiting_approval');
     expect(session.messages.some(message => message.role === 'tool' && message.content.includes('requires approval'))).toBe(true);
   });

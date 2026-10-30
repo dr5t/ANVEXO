@@ -93,23 +93,29 @@ describe('ToolRegistry', () => {
     expect(result.output).toContain('hello');
   });
 
-  it('does not execute appended commands through run_command or test_run', async () => {
+  it('does not execute shell operators through command tools', async () => {
     const temporaryDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'anvexo-command-boundary-'));
     const markerPath = path.join(temporaryDirectory, 'marker');
     const markerCommand = `"${process.execPath}" -e "require('node:fs').writeFileSync(process.argv[1], 'executed')" "${markerPath}"`;
-    const chainedCommand = `"${process.execPath}" -e "process.exit(0)" && ${markerCommand}`;
+    const command = `"${process.execPath}" -e "process.exit(0)"`;
+    const operatorCommands = [
+      `${command} && ${markerCommand}`,
+      `${command} | ${markerCommand}`,
+      `${command} > "${markerPath}"`,
+      `${command} ; ${markerCommand}`,
+    ];
 
     try {
-      const runResult = await createRunCommandTool().execute({
-        path: temporaryDirectory,
-        command: chainedCommand,
-      });
+      for (const operatorCommand of operatorCommands) {
+        const result = await createRunCommandTool().execute({ path: temporaryDirectory, command: operatorCommand });
+        expect(result.success).toBe(false);
+        expect(fs.existsSync(markerPath)).toBe(false);
+      }
+
       const testResult = await createTestRunTool().execute({
         path: temporaryDirectory,
-        command: chainedCommand,
+        command: `${command} && ${markerCommand}`,
       });
-
-      expect(runResult.success).toBe(false);
       expect(testResult.success).toBe(false);
       expect(fs.existsSync(markerPath)).toBe(false);
     } finally {
