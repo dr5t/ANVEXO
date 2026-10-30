@@ -8,6 +8,7 @@ export type {
   InvestigationPlan,
   InvestigationStep,
   ProjectMetadata,
+  ToolDeclaration,
   ToolDefinition,
   ToolResult,
   InvestigationReport,

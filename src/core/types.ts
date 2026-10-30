@@ -132,9 +132,13 @@ export interface ProjectMetadata {
   entryPoints: string[];
 }
 
-export interface ToolDefinition {
+export interface ToolDeclaration {
   name: string;
   description: string;
+  parameters?: Record<string, unknown>;
+}
+
+export interface ToolDefinition extends ToolDeclaration {
   requiredPermission: PermissionScope;
   risk: 'low' | 'medium' | 'high' | 'critical';
   execute: (args: Record<string, unknown>) => Promise<ToolResult>;
@@ -297,9 +301,11 @@ export interface ChatMessage {
 
 export interface CompletionRequest {
   messages: ChatMessage[];
-  tools?: ToolDefinition[];
+  tools?: Array<ToolDefinition | ToolDeclaration>;
   temperature?: number;
   maxTokens?: number;
+  stopSequences?: string[];
+  model?: string;
   signal?: AbortSignal;
 }
 

@@ -136,7 +136,7 @@ export class GeminiProvider implements ModelProvider {
       throw new Error('Gemini API key is not configured. Set GEMINI_API_KEY or configure in ANVEXO settings.');
     }
 
-    const modelName = (request as { model?: string }).model?.trim() || this.defaultModel;
+    const modelName = request.model?.trim() || this.defaultModel;
     if (!/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(modelName)) {
       throw new Error('Invalid Gemini model configuration. Set GEMINI_MODEL to a valid model identifier.');
     }
@@ -228,7 +228,7 @@ export class GeminiProvider implements ModelProvider {
     if (request.maxTokens !== undefined) {
       generationConfig.maxOutputTokens = request.maxTokens;
     }
-    const stopSequences = (request as { stopSequences?: string[] }).stopSequences;
+    const stopSequences = request.stopSequences;
     if (stopSequences && stopSequences.length > 0) {
       generationConfig.stopSequences = stopSequences;
     }
