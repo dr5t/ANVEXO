@@ -19,6 +19,30 @@ describe('EvidenceCollector', () => {
     expect(collector.get(record.id)).toBe(record);
   });
 
+  it('rejects invalid evidence provenance and field types', () => {
+    const collector = new EvidenceCollector();
+    const validEvidence = {
+      type: EvidenceType.FILE_CONTENT,
+      source: 'test.ts',
+      content: '',
+      toolName: 'file_read',
+    };
+
+    expect(() => collector.add({ ...validEvidence, source: '   ' })).toThrow(/source/i);
+    expect(() => collector.add({ ...validEvidence, toolName: '' })).toThrow(/tool name/i);
+    expect(() => collector.add({ ...validEvidence, content: null as unknown as string })).toThrow(/content/i);
+    expect(() => collector.add({ ...validEvidence, type: 'invalid' as EvidenceType })).toThrow(/evidence type/i);
+    expect(() => collector.add({
+      ...validEvidence,
+      verificationStatus: 'invalid' as VerificationStatus,
+    })).toThrow(/verification status/i);
+    expect(() => collector.add({
+      ...validEvidence,
+      metadata: [] as unknown as Record<string, unknown>,
+    })).toThrow(/metadata/i);
+    expect(collector.count()).toBe(0);
+  });
+
   it('filters by type', () => {
     const collector = new EvidenceCollector();
     collector.add({ type: EvidenceType.FILE_CONTENT, source: 'a', content: 'a', toolName: 'file_read' });

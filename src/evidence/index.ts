@@ -15,6 +15,28 @@ export class EvidenceCollector {
     metadata?: Record<string, unknown>;
     verificationStatus?: VerificationStatus;
   }): EvidenceRecord {
+    if (!Object.values(EvidenceType).includes(params.type)) {
+      throw new TypeError(`Invalid evidence type: ${String(params.type)}`);
+    }
+    if (typeof params.source !== 'string' || params.source.trim().length === 0) {
+      throw new TypeError('Evidence source must be a non-empty string');
+    }
+    if (typeof params.content !== 'string') {
+      throw new TypeError('Evidence content must be a string');
+    }
+    if (typeof params.toolName !== 'string' || params.toolName.trim().length === 0) {
+      throw new TypeError('Evidence tool name must be a non-empty string');
+    }
+    if (params.metadata !== undefined &&
+      (typeof params.metadata !== 'object' || params.metadata === null || Array.isArray(params.metadata))) {
+      throw new TypeError('Evidence metadata must be an object');
+    }
+
+    const verificationStatus = params.verificationStatus ?? VerificationStatus.OBSERVED;
+    if (!Object.values(VerificationStatus).includes(verificationStatus)) {
+      throw new TypeError(`Invalid evidence verification status: ${String(verificationStatus)}`);
+    }
+
     const record: EvidenceRecord = {
       id: randomUUID(),
       type: params.type,
@@ -22,7 +44,7 @@ export class EvidenceCollector {
       content: redactSecrets(params.content),
       timestamp: new Date(),
       toolName: params.toolName,
-      verificationStatus: params.verificationStatus || VerificationStatus.OBSERVED,
+      verificationStatus,
       linkedHypothesisIds: [],
       metadata: params.metadata || {},
     };
