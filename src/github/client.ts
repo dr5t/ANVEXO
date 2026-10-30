@@ -84,7 +84,7 @@ export class GitHubClient {
       this.fetchApi<Array<{ name: string; protected?: boolean }>>(`/repos/${owner}/${repo}/branches?per_page=30`),
       this.fetchApi<Array<{ name: string }>>(`/repos/${owner}/${repo}/tags?per_page=30`),
       this.fetchApi<Array<{ id: number; tag_name: string; name: string; published_at: string; html_url: string; prerelease: boolean; body?: string }>>(`/repos/${owner}/${repo}/releases?per_page=10`),
-      this.fetchApi<{ content?: string; encoding?: string }>>(`/repos/${owner}/${repo}/readme`),
+      this.fetchApi<{ content?: string; encoding?: string }>(`/repos/${owner}/${repo}/readme`),
     ]);
 
     const branches: GitHubBranch[] = (branchesRes.data || []).map(b => ({

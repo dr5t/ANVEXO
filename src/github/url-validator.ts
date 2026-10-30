@@ -126,3 +126,8 @@ function validateRepoPart(partName: string, value: string): void {
     throw new Error(`Repository ${partName} "${value}" contains invalid characters. Only alphanumeric, dashes, dots, and underscores are permitted.`);
   }
 }
+
+export function normalizeGitHubUrl(input: string): string {
+  const parsed = parseAndValidateGitHubUrl(input);
+  return parsed.originalUrl;
+}

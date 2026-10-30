@@ -25,6 +25,14 @@ import { ProofVerifier } from '../proof/index.js';
 import { DecisionMemoryManager, type DecisionMemoryType } from '../memory/index.js';
 import { SafeAutonomyEngine, type AutonomyMode } from '../autonomy/index.js';
 import {
+  GitHubJobManager,
+  getMockRepositoriesList,
+  parseAndValidateGitHubUrl,
+  exportReportToMarkdown,
+  exportReportToJson,
+  exportReportToHtml,
+} from '../github/index.js';
+import {
   applySecurityHeaders,
   applyCorsHeaders,
   validateRepositoryExists,
@@ -71,6 +79,7 @@ export class ApiRouter {
   private contextManager: ContextManager;
   private terminalManager: TerminalManager;
   private autonomyEngine: SafeAutonomyEngine;
+  private githubJobManager: GitHubJobManager;
   private host: string;
 
   constructor(host: string = '127.0.0.1') {
@@ -83,10 +92,15 @@ export class ApiRouter {
     this.contextManager = new ContextManager();
     this.terminalManager = new TerminalManager();
     this.autonomyEngine = new SafeAutonomyEngine('assisted');
+    this.githubJobManager = new GitHubJobManager();
   }
 
   getJobManager(): JobManager {
     return this.jobManager;
+  }
+
+  getGitHubJobManager(): GitHubJobManager {
+    return this.githubJobManager;
   }
 
   getRateLimiter(): RateLimiter {
@@ -213,6 +227,7 @@ export class ApiRouter {
       '/api/reproduce/verify',
       '/api/verify',
       '/api/workflow',
+      '/api/github/investigate',
     ];
     if (heavyPaths.includes(pathname)) {
       const heavyCheck = this.heavyRateLimiter.check(clientIp);
@@ -601,6 +616,180 @@ export class ApiRouter {
         }
         this.sendJson(res, 200, { message: `Job ${id} cancelled successfully` });
         return;
+      }
+
+      if (method === 'GET' && pathname === '/api/github/mock-repos') {
+        const repos = getMockRepositoriesList();
+        this.sendJson(res, 200, repos);
+        return;
+      }
+
+      if (method === 'POST' && pathname === '/api/github/investigate') {
+        const body = await this.readJsonBody(req);
+        if (!body.url || typeof body.url !== 'string') {
+          this.sendJson(res, 400, { error: 'Missing or invalid "url" in request body' });
+          return;
+        }
+
+        const inputUrl = body.url.trim();
+        try {
+          parseAndValidateGitHubUrl(inputUrl);
+        } catch (validationErr) {
+          const msg = validationErr instanceof Error ? validationErr.message : String(validationErr);
+          this.sendJson(res, 400, { error: msg });
+          return;
+        }
+
+        const isMock = typeof body.mock === 'boolean' ? body.mock : undefined;
+        const token = typeof body.token === 'string' && body.token.trim() ? body.token.trim() : undefined;
+
+        const job = this.githubJobManager.createJob(inputUrl, isMock, token);
+        // Kick off investigation asynchronously
+        this.githubJobManager.startJob(job.id).catch((err) => {
+          logger.warn(`GitHub investigation failed for job ${job.id}:`, err);
+        });
+
+        this.sendJson(res, 202, {
+          jobId: job.id,
+          status: 'running',
+          owner: job.owner,
+          repo: job.repo,
+          url: job.url,
+          isMock: job.isMock,
+          startedAt: job.startedAt,
+        });
+        return;
+      }
+
+      if (method === 'GET' && pathname === '/api/github/jobs') {
+        const jobs = this.githubJobManager.listJobs();
+        this.sendJson(res, 200, jobs);
+        return;
+      }
+
+      if (method === 'GET' && pathname.match(/^\/api\/github\/jobs\/[^/]+$/)) {
+        const id = pathname.replace('/api/github/jobs/', '');
+        const job = this.githubJobManager.getJob(id);
+        if (!job) {
+          this.sendJson(res, 404, { error: `GitHub investigation job ${id} not found` });
+          return;
+        }
+        this.sendJson(res, 200, {
+          id: job.id,
+          url: job.url,
+          owner: job.owner,
+          repo: job.repo,
+          isMock: job.isMock,
+          status: job.status,
+          currentStage: job.currentStage,
+          stageIndex: job.stageIndex,
+          totalStages: job.totalStages,
+          percentage: job.percentage,
+          events: job.events,
+          report: job.report,
+          error: job.error,
+          startedAt: job.startedAt,
+          completedAt: job.completedAt,
+        });
+        return;
+      }
+
+      if (method === 'POST' && pathname.match(/^\/api\/github\/jobs\/[^/]+\/cancel$/)) {
+        const id = pathname.slice('/api/github/jobs/'.length, pathname.lastIndexOf('/cancel'));
+        const cancelled = this.githubJobManager.cancelJob(id);
+        if (!cancelled) {
+          this.sendJson(res, 400, { error: `Job ${id} cannot be cancelled or was not found` });
+          return;
+        }
+        this.sendJson(res, 200, { message: `Investigation job ${id} cancelled successfully` });
+        return;
+      }
+
+      if (method === 'POST' && pathname.match(/^\/api\/github\/jobs\/[^/]+\/retry$/)) {
+        const id = pathname.slice('/api/github/jobs/'.length, pathname.lastIndexOf('/retry'));
+        const newJob = this.githubJobManager.retryJob(id);
+        if (!newJob) {
+          this.sendJson(res, 404, { error: `Job ${id} not found to retry` });
+          return;
+        }
+        this.sendJson(res, 202, {
+          jobId: newJob.id,
+          status: 'running',
+          owner: newJob.owner,
+          repo: newJob.repo,
+          url: newJob.url,
+          isMock: newJob.isMock,
+          startedAt: newJob.startedAt,
+        });
+        return;
+      }
+
+      if (method === 'GET' && pathname === '/api/github/history') {
+        const history = this.githubJobManager.listHistory();
+        this.sendJson(res, 200, history);
+        return;
+      }
+
+      if (method === 'GET' && pathname.match(/^\/api\/github\/history\/[^/]+$/)) {
+        const id = pathname.replace('/api/github/history/', '');
+        const report = this.githubJobManager.getReport(id);
+        if (!report) {
+          this.sendJson(res, 404, { error: `Report ${id} not found in history` });
+          return;
+        }
+        this.sendJson(res, 200, report);
+        return;
+      }
+
+      if (method === 'DELETE' && pathname.match(/^\/api\/github\/history\/[^/]+$/)) {
+        const id = pathname.replace('/api/github/history/', '');
+        const deleted = this.githubJobManager.deleteHistory(id);
+        if (!deleted) {
+          this.sendJson(res, 404, { error: `Report ${id} not found or could not be removed` });
+          return;
+        }
+        this.sendJson(res, 200, { message: `Report ${id} removed from local history`, success: true });
+        return;
+      }
+
+      if (method === 'GET' && pathname.match(/^\/api\/github\/reports\/[^/]+\/export$/)) {
+        const id = pathname.slice('/api/github/reports/'.length, pathname.lastIndexOf('/export'));
+        const format = (parsedUrl.searchParams.get('format') || 'markdown').toLowerCase();
+        const report = this.githubJobManager.getReport(id);
+        if (!report) {
+          this.sendJson(res, 404, { error: `Investigation report ${id} not found` });
+          return;
+        }
+
+        const safeFilename = `${report.repository.owner}-${report.repository.repo}-investigation`;
+        if (format === 'json') {
+          const jsonContent = exportReportToJson(report);
+          res.writeHead(200, {
+            'Content-Type': 'application/json; charset=utf-8',
+            'Content-Disposition': `attachment; filename="${safeFilename}.json"`,
+            'Cache-Control': 'no-cache',
+          });
+          res.end(jsonContent);
+          return;
+        } else if (format === 'html') {
+          const htmlContent = exportReportToHtml(report);
+          res.writeHead(200, {
+            'Content-Type': 'text/html; charset=utf-8',
+            'Content-Disposition': `attachment; filename="${safeFilename}.html"`,
+            'Cache-Control': 'no-cache',
+          });
+          res.end(htmlContent);
+          return;
+        } else {
+          const mdContent = exportReportToMarkdown(report);
+          res.writeHead(200, {
+            'Content-Type': 'text/markdown; charset=utf-8',
+            'Content-Disposition': `attachment; filename="${safeFilename}.md"`,
+            'Cache-Control': 'no-cache',
+          });
+          res.end(mdContent);
+          return;
+        }
       }
 
       if (method === 'GET' && pathname === '/api/file') {

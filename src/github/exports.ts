@@ -268,3 +268,7 @@ function escapeHtml(text: string): string {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
 }
+
+export const exportReportToMarkdown = exportReportAsMarkdown;
+export const exportReportToJson = exportReportAsJson;
+export const exportReportToHtml = exportReportAsHtml;

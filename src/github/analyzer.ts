@@ -11,6 +11,7 @@ import type {
   DependencyManifest,
   TestExecutionSummary,
   FinalConclusion,
+  GitHubMetadata,
 } from './types.js';
 import { parseAndValidateGitHubUrl } from './url-validator.js';
 import { GitHubClient } from './client.js';

@@ -30,6 +30,14 @@ import { BugReproductionLab } from '../reproduction/index.js';
 import { ProofVerifier } from '../proof/index.js';
 import { DecisionMemoryManager, type DecisionMemoryType } from '../memory/index.js';
 import { SafeAutonomyEngine, type AutonomyMode } from '../autonomy/index.js';
+import {
+  GitHubRepositoryAnalyzer,
+  GitHubClient,
+  GitHubHistoryStore,
+  exportReportAsMarkdown,
+  exportReportAsJson,
+  exportReportAsHtml,
+} from '../github/index.js';
 
 const program = new Command();
 
@@ -920,6 +928,79 @@ program
       process.stdout.write(JSON.stringify(report, null, 2) + '\n');
     } else {
       process.stdout.write(runner.formatReport(report) + '\n');
+    }
+  });
+
+program
+  .command('github')
+  .description('Investigate a GitHub repository, contributors, code, and security')
+  .argument('[url]', 'GitHub repository URL or identifier (e.g. https://github.com/owner/repo or mock://dr5t/ANVEXO-demo)')
+  .option('-m, --mock', 'Run in mock mode with simulated data')
+  .option('-t, --token <token>', 'GitHub Personal Access Token for private repositories or higher rate limits')
+  .option('--json', 'Output full report as JSON')
+  .option('-o, --export <path>', 'Export report to file (.md, .json, or .html)')
+  .option('-v, --verbose', 'Print stage progress details')
+  .option('--list', 'List recent local GitHub investigations')
+  .action(async (urlArg: string | undefined, opts: {
+    mock?: boolean;
+    token?: string;
+    json?: boolean;
+    export?: string;
+    verbose?: boolean;
+    list?: boolean;
+  }) => {
+    const store = new GitHubHistoryStore();
+    if (opts.list || (!urlArg && !opts.mock)) {
+      const recents = store.listRecent();
+      if (recents.length === 0) {
+        process.stdout.write('No previous GitHub investigations found.\n');
+        process.stdout.write('Run `anvexo github <url>` to start an investigation.\n');
+        return;
+      }
+      process.stdout.write('Recent GitHub Investigations:\n');
+      for (const item of recents) {
+        process.stdout.write(`- [${item.id}] ${item.owner}/${item.repo} (${item.overallStatus || item.status}) [${item.startedAt}]\n`);
+      }
+      return;
+    }
+
+    const inputUrl = urlArg || 'mock://dr5t/ANVEXO-demo';
+    const client = new GitHubClient({ token: opts.token });
+    const analyzer = new GitHubRepositoryAnalyzer(client);
+
+    if (opts.verbose) {
+      process.stdout.write(`Starting ANVEXO GitHub Intelligence for: ${inputUrl}\n`);
+    }
+
+    const report = await analyzer.analyze(inputUrl, {
+      mockMode: opts.mock,
+      onProgress: (evt) => {
+        if (opts.verbose) {
+          process.stdout.write(`[${evt.stageIndex}/${evt.totalStages}] ${evt.stage}: ${evt.message}\n`);
+        }
+      },
+    });
+
+    store.saveReport(report);
+
+    if (opts.export) {
+      let content = '';
+      const ext = extname(opts.export).toLowerCase();
+      if (ext === '.json') {
+        content = exportReportAsJson(report);
+      } else if (ext === '.html') {
+        content = exportReportAsHtml(report);
+      } else {
+        content = exportReportAsMarkdown(report);
+      }
+      writeFileSync(opts.export, content, 'utf-8');
+      process.stdout.write(`Report successfully exported to: ${opts.export}\n`);
+    }
+
+    if (opts.json) {
+      process.stdout.write(JSON.stringify(report, null, 2) + '\n');
+    } else if (!opts.export) {
+      process.stdout.write(exportReportAsMarkdown(report) + '\n');
     }
   });
 
