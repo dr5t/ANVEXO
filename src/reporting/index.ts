@@ -1,5 +1,10 @@
+import { existsSync, mkdirSync, writeFileSync, readFileSync, readdirSync } from 'node:fs';
+import { join } from 'node:path';
 import type { InvestigationReport, Finding } from '../core/index.js';
 import { VerificationStatus } from '../core/index.js';
+import { formatMarkdownReport } from './markdown.js';
+
+export { formatMarkdownReport };
 
 export function formatReport(report: InvestigationReport): string {
   const lines: string[] = [];
@@ -214,4 +219,63 @@ function formatDuration(start: Date, end: Date): string {
   if (ms < 1000) return `${ms}ms`;
   if (ms < 60000) return `${(ms / 1000).toFixed(1)}s`;
   return `${(ms / 60000).toFixed(1)}min`;
+}
+
+export function formatJsonReport(report: InvestigationReport): string {
+  return JSON.stringify(report, null, 2);
+}
+
+export interface SavedReportPaths {
+  jsonPath: string;
+  markdownPath: string;
+}
+
+export async function saveReport(report: InvestigationReport, repoRoot: string): Promise<SavedReportPaths> {
+  const dir = join(repoRoot, '.anvexo', 'reports');
+  if (!existsSync(dir)) {
+    mkdirSync(dir, { recursive: true });
+  }
+
+  const jsonPath = join(dir, `report-${report.id}.json`);
+  const markdownPath = join(dir, `report-${report.id}.md`);
+
+  writeFileSync(jsonPath, formatJsonReport(report), 'utf8');
+  writeFileSync(markdownPath, formatMarkdownReport(report), 'utf8');
+
+  return { jsonPath, markdownPath };
+}
+
+export function listSavedReports(repoRoot: string): string[] {
+  const dir = join(repoRoot, '.anvexo', 'reports');
+  if (!existsSync(dir)) {
+    return [];
+  }
+  return readdirSync(dir).filter(f => f.startsWith('report-') && (f.endsWith('.json') || f.endsWith('.md')));
+}
+
+export function loadSavedReport(reportIdOrPath: string, repoRoot: string): InvestigationReport | null {
+  const dir = join(repoRoot, '.anvexo', 'reports');
+  let targetPath = reportIdOrPath;
+  if (!targetPath.endsWith('.json')) {
+    targetPath = join(dir, `report-${reportIdOrPath}.json`);
+  }
+  if (!existsSync(targetPath)) {
+    return null;
+  }
+  try {
+    const raw = readFileSync(targetPath, 'utf8');
+    const parsed = JSON.parse(raw);
+    parsed.startedAt = new Date(parsed.startedAt);
+    parsed.completedAt = new Date(parsed.completedAt);
+    if (Array.isArray(parsed.evidence)) {
+      parsed.evidence.forEach((ev: { timestamp?: string | Date }) => {
+        if (ev.timestamp) {
+          ev.timestamp = new Date(ev.timestamp);
+        }
+      });
+    }
+    return parsed as InvestigationReport;
+  } catch {
+    return null;
+  }
 }

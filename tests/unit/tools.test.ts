@@ -1,4 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
+import * as fs from 'node:fs';
+import * as os from 'node:os';
+import * as path from 'node:path';
 import { ToolRegistry } from '../../src/tools/registry.js';
 import { registerBuiltinTools } from '../../src/tools/builtin.js';
 import { PermissionManager } from '../../src/permissions/manager.js';
@@ -54,9 +57,14 @@ describe('ToolRegistry', () => {
 
   it('git_status handles non-git directory gracefully', async () => {
     pm.grant(PermissionScope.GIT_READ, '*', PermissionDecision.ALWAYS_ALLOW);
-    const result = await registry.execute('git_status', { path: '/tmp' });
-    expect(result.success).toBe(true);
-    expect(result.output).toContain('Not a Git repository');
+    const tempDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'anvexo-non-git-'));
+    try {
+      const result = await registry.execute('git_status', { path: tempDirectory });
+      expect(result.success).toBe(true);
+      expect(result.output).toContain('Not a Git repository');
+    } finally {
+      fs.rmSync(tempDirectory, { recursive: true, force: true });
+    }
   });
 
   it('file_search returns results for known pattern', async () => {
@@ -66,6 +74,7 @@ describe('ToolRegistry', () => {
       pattern: 'anvexo',
     });
     expect(result.success).toBe(true);
+    expect(result.output.toLowerCase()).toContain('anvexo');
   });
 
   it('run_command fails without permission', async () => {
@@ -91,5 +100,27 @@ describe('ToolRegistry', () => {
       pattern: '`echo INJECTED_TEST`',
     });
     expect(result.success).toBe(true);
+    expect(result.output.toLowerCase()).toContain(path.join('tests', 'unit', 'tools.test.ts').toLowerCase());
+  });
+
+  it('file_search does not follow directory symlinks outside the search root', async () => {
+    pm.grant(PermissionScope.FILE_READ, '*', PermissionDecision.ALWAYS_ALLOW);
+    const rootDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'anvexo-search-root-'));
+    const outsideDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'anvexo-search-outside-'));
+    const linkPath = path.join(rootDirectory, 'external');
+    fs.writeFileSync(path.join(outsideDirectory, 'secret.ts'), 'unique-external-marker');
+
+    try {
+      fs.symlinkSync(outsideDirectory, linkPath, 'junction');
+      const result = await registry.execute('file_search', {
+        path: rootDirectory,
+        pattern: 'unique-external-marker',
+      });
+      expect(result.success).toBe(true);
+      expect(result.output).not.toContain('unique-external-marker');
+    } finally {
+      fs.rmSync(rootDirectory, { recursive: true, force: true });
+      fs.rmSync(outsideDirectory, { recursive: true, force: true });
+    }
   });
 });

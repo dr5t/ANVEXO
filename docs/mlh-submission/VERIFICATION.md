@@ -46,21 +46,26 @@ ANVEXO applies Gemma 4 to **deterministic software debugging and failure triage*
    Gemma 4 claims are ingested into `ProofVerifier` as `VerificationStatus.UNVERIFIED`. The AI model's suggestions are never accepted as ground truth without empirical execution checks.
 
 ### 2.3 Verification Test Matrix
-- **Offline Mocked Unit Tests (`tests/unit/gemma.test.ts` - Bhumika)**:
+- **Configuration Reference**: Full setup and model parameters documented in [`docs/providers/GEMMA_CONFIGURATION.md`](../providers/GEMMA_CONFIGURATION.md).
+- **Offline Mocked Unit Tests (`tests/unit/gemma.test.ts` - 30 test cases, Bhumika)**:
   ```bash
   npx vitest run tests/unit/gemma.test.ts
   ```
-  Verifies payload serialization, image base64 validation (rejecting >5MB files), model routing, and markdown codeblock JSON extraction fallback without making external network calls.
-- **Live Integration Tests (`tests/integration/gemma.test.ts` - Bhumika)**:
+  Verifies payload serialization, multimodal payload packing, MIME validation, 5MB image limit guarding, local Ollama image array forwarding, model parameter routing, API key scrubbing in error messages, and markdown codeblock JSON extraction fallback without requiring API keys or external network calls.
+- **Live Integration Smoke Tests (`tests/integration/gemma.test.ts` - Bhumika)**:
   ```bash
-  GEMMA_API_KEY="your-key" npm run test:gemma
+  GEMMA_API_KEY="your-api-key" npm run test:gemma
   ```
-  Executes live multimodal investigation against a test fixture when credentials or a local daemon are available; prints diagnostic setup hints and skips cleanly when offline.
-- **End-to-End Demo Verification Harness (`tests/integration/demo.test.ts` - Shaurya)**:
+  The opt-in live API smoke test reads `GEMMA_API_KEY` from the environment, defaults to `gemma-4-31b-it`, and can be configured with `GEMMA_MODEL` and `GEMMA_BASE_URL` (e.g. for local Ollama daemon at `http://127.0.0.1:11434`). It executes live multimodal investigation against a test fixture when credentials or a local daemon are available; prints diagnostic setup hints and skips cleanly without making network requests when unconfigured. It is excluded from default `npm test`. See the [Gemma configuration and verification guide](../providers/GEMMA_CONFIGURATION.md) for secure key setup.
+- **End-to-End Workflow Integration Test (`tests/integration/workflow.test.ts` - Shaurya)**:
   ```bash
-  npm run test:demo
+  npx vitest run tests/integration/workflow.test.ts
   ```
-  Validates the full workflow cycle from multimodal ingestion to structured Proof Mode verification.
+  Validates the full workflow cycle from multimodal ingestion to structured Proof Mode verification. (Dedicated MLH demo validation harness `npm run test:demo` / `tests/integration/demo.test.ts` is staged under `ISSUE-10`).
+
+### 2.4 Known Gaps & Incomplete Items
+- Dedicated CLI command `anvexo gemma <objective>` (staged in backlog under `DEF-01` / `ISSUE-03`) is implemented in `src/cli/index.ts` and verified via `tests/unit/commands.test.ts`.
+- Continuous streaming token response (`stream`) currently buffers completion chunks rather than piping tokens incrementally to stdout.
 
 ---
 
@@ -80,11 +85,72 @@ ANVEXO is a full-featured engineering intelligence platform containing six integ
 - **Governance Gate**: Gated task (`ISSUE-09`). All third-party dependencies (`commander`, `simple-git`, `@types/node`, `@vitest/coverage-v8`, `typescript`, `vitest`) are inspected for compatibility (MIT / Apache-2.0), documented in `docs/legal/LICENSE_AUDIT.md`, and require explicit Project Owner (Shaurya) sign-off prior to modifying `package.json` or adding `LICENSE`.
 
 ### 3.3 Quality Automation & Contributor Standards
-- **Automated CI (`.github/workflows/ci.yml` - Akhil)**: Matrix testing across Node.js 20.x and 22.x on `ubuntu-latest` running linting, build, and all 26 test suites.
+- **Automated CI (`.github/workflows/ci.yml` - Akhil)**: Matrix testing across Node.js 20.x and 22.x on `ubuntu-latest` running linting, build, and all 28 test suites.
 - **Contributor Guides (`docs/contributing/`)**:
   - `TEAM_WORKSTREAMS.md`: Five-member ownership matrix.
   - `ISSUE_BACKLOG.md`: 10-issue core and gated specifications.
   - `PR_WORKFLOW.md`: Peer review pairs, branching rules, and boundary compliance.
+
+### 3.4 Reproducible Verification Commands
+
+Run the complete test suite locally to verify all 28 test suites and 261 tests:
+
+```bash
+# 1. Install dependencies
+npm ci
+
+# 2. Compile TypeScript and build web UI assets
+npm run build
+
+# 3. Execute complete test suite (100% passing across 28 test files)
+npm test
+
+# 4. Run end-to-end cross-feature workflow integration test
+npx vitest run tests/integration/workflow.test.ts
+
+# 5. Run live Gemma 4 smoke test (skips cleanly when credentials are unconfigured)
+npm run test:gemma
+```
+
+### 3.5 Contributor Setup & Demo Scenarios
+
+#### Local Setup in Under 2 Minutes:
+```bash
+git clone https://github.com/dr5t/ANVEXO.git
+cd ANVEXO
+npm install
+npm run build
+```
+
+#### Demo Scenario 1: CLI Investigation with Proof Mode
+```bash
+node dist/cli/index.js investigate . -o "Verify authentication test suite"
+```
+Produces an ANVESHAN diagnostic report with topography, plan execution steps, evidence records, and Proof Mode verification status.
+
+#### Demo Scenario 2: Change Impact Simulation
+```bash
+node dist/cli/index.js impact src/server/router.ts
+```
+Calculates reverse dependencies, impacted HTTP API endpoints, security flows, and a risk assessment score.
+
+#### Demo Scenario 3: End-to-End Engineering Intelligence Workflow
+```bash
+node dist/cli/index.js workflow "Investigate permission check validation in autonomy engine" --target src/autonomy/engine.ts --cmd "node -e 'process.exit(1)'"
+```
+Orchestrates the entire 8-stage pipeline across ANVESHAN, ECHO, Change Impact, Decision Memory, Autonomy, Reproduction Lab, and Proof Mode.
+
+#### Demo Scenario 4: Web UI Workbench
+```bash
+node dist/cli/index.js serve --port 3000
+```
+Open `http://localhost:3000` to interact with the visual split-screen workbench featuring Proof Mode claims, Change Impact blast radius, Reproduction Lab runner, Autonomy mode toggle, and Decision Memory manager.
+
+#### Demo Scenario 5: Gemma 4 Multimodal Investigation CLI
+```bash
+node dist/cli/index.js gemma "Investigate login timeout defect" --path .
+```
+Executes multimodal reasoning and structured regression test recommendations via Google Gemma 4.
 
 ---
 

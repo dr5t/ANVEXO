@@ -103,19 +103,21 @@ describe('Server & Security Infrastructure', () => {
     it('detects and blocks symlink escapes outside root', () => {
       const tempDir = path.join(testRoot, 'scratch_symlink_test');
       fs.mkdirSync(tempDir, { recursive: true });
-      const outsideFile = path.join(testRoot, 'package.json');
+      const outsideDir = fs.mkdtempSync(path.join(testRoot, 'scratch_symlink_outside_'));
+      fs.copyFileSync(path.join(testRoot, 'package.json'), path.join(outsideDir, 'package.json'));
       const symlinkPath = path.join(tempDir, 'link_to_outside');
 
       try {
         if (fs.existsSync(symlinkPath)) fs.unlinkSync(symlinkPath);
-        fs.symlinkSync(outsideFile, symlinkPath);
+        fs.symlinkSync(outsideDir, symlinkPath, 'junction');
 
         expect(() => {
-          validatePathWithinRoot('link_to_outside', tempDir);
+          validatePathWithinRoot(path.join('link_to_outside', 'package.json'), tempDir);
         }).toThrow(/Symlink escape detected/);
       } finally {
         if (fs.existsSync(symlinkPath)) fs.unlinkSync(symlinkPath);
         if (fs.existsSync(tempDir)) fs.rmdirSync(tempDir);
+        fs.rmSync(outsideDir, { recursive: true, force: true });
       }
     });
 

@@ -21,6 +21,10 @@ export interface GemmaProviderOptions {
   timeoutMs?: number;
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
 export interface GemmaInvestigationContext {
   objective: string;
   repoPath: string;
@@ -60,17 +64,20 @@ export class GemmaProvider implements ModelProvider {
   private timeoutMs: number;
 
   constructor(options: GemmaProviderOptions = {}) {
-    this.apiKey = options.apiKey || process.env.GEMMA_API_KEY || process.env.GEMINI_API_KEY;
+    this.apiKey = options.apiKey?.trim() || process.env.GEMMA_API_KEY?.trim() || process.env.GEMINI_API_KEY?.trim();
     this.route = options.route || (this.apiKey ? 'gemini-api' : 'local');
-    this.baseUrl = (options.baseUrl || (this.route === 'gemini-api'
+    this.baseUrl = (options.baseUrl?.trim() || (this.route === 'gemini-api'
       ? 'https://generativelanguage.googleapis.com'
       : 'http://127.0.0.1:11434')).replace(/\/+$/, '');
-    this.defaultModel = options.defaultModel || (this.route === 'gemini-api' ? 'gemma-4-31b-it' : 'gemma4:latest');
-    this.timeoutMs = options.timeoutMs || 45000;
+    this.defaultModel = options.defaultModel?.trim() || (this.route === 'gemini-api' ? 'gemma-4-31b-it' : 'gemma4:latest');
+    this.timeoutMs = options.timeoutMs ?? 45000;
+    if (!Number.isFinite(this.timeoutMs) || this.timeoutMs <= 0) {
+      throw new Error('Gemma timeout must be a positive number of milliseconds.');
+    }
   }
 
   setApiKey(key: string): void {
-    this.apiKey = key;
+    this.apiKey = key.trim() || undefined;
   }
 
   setRoute(route: GemmaRoute, baseUrl?: string): void {
@@ -206,6 +213,23 @@ export class GemmaProvider implements ModelProvider {
     }
 
     const modelName = this.defaultModel;
+    if (!/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(modelName)) {
+      throw new Error('Invalid Gemma model configuration. Set GEMMA_MODEL to a valid model identifier.');
+    }
+
+    let endpoint: URL;
+    try {
+      endpoint = new URL(this.baseUrl);
+    } catch {
+      throw new Error('Invalid Gemma API endpoint configuration. Set GEMMA_BASE_URL to a valid HTTP(S) URL.');
+    }
+    if (!['http:', 'https:'].includes(endpoint.protocol)
+      || endpoint.username
+      || endpoint.password
+      || endpoint.search
+      || endpoint.hash) {
+      throw new Error('Invalid Gemma API endpoint configuration. Use an HTTP(S) URL without credentials, query, or fragment.');
+    }
 
     const contents = request.messages.map(m => {
       let role = 'user';
@@ -283,73 +307,148 @@ export class GemmaProvider implements ModelProvider {
     const url = `${this.baseUrl}/v1beta/models/${modelName}:generateContent?key=${encodeURIComponent(this.apiKey)}`;
 
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), this.timeoutMs);
+    let timedOut = false;
+    const timeout = setTimeout(() => {
+      timedOut = true;
+      controller.abort();
+    }, this.timeoutMs);
+    const abortRequest = () => controller.abort();
     if (request.signal) {
-      request.signal.addEventListener('abort', () => controller.abort());
+      if (request.signal.aborted) {
+        controller.abort();
+      } else {
+        request.signal.addEventListener('abort', abortRequest, { once: true });
+      }
     }
 
     try {
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-        signal: controller.signal,
-      });
-
-      if (!res.ok) {
-        const errText = await res.text();
-        let sanitizedErr = errText;
-        if (this.apiKey) {
-          sanitizedErr = sanitizedErr.split(this.apiKey).join('[REDACTED_API_KEY]');
+      let res: Response;
+      try {
+        res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+          signal: controller.signal,
+        });
+      } catch {
+        if (timedOut) {
+          throw new Error(`Gemma API request timed out after ${this.timeoutMs}ms.`);
         }
-        throw new Error(`Gemma (Gemini API) error (${res.status}): ${sanitizedErr}`);
+        if (request.signal?.aborted) {
+          throw new Error('Gemma API request was aborted.');
+        }
+        throw new Error('Gemma API network request failed. Check connectivity and GEMMA_BASE_URL.');
       }
 
-      const data = await res.json() as {
-        candidates?: Array<{
-          content?: {
-            parts?: Array<{ text?: string; functionCall?: { name: string; args: Record<string, unknown> } }>;
-          };
-          finishReason?: string;
-        }>;
-        usageMetadata?: { promptTokenCount: number; candidatesTokenCount: number; totalTokenCount: number };
-      };
+      if (!res.ok) {
+        if (res.status === 401 || res.status === 403) {
+          throw new Error(`Gemma API authentication failed (HTTP ${res.status}). Check GEMMA_API_KEY and model access.`);
+        }
+        if (res.status === 400 || res.status === 404) {
+          throw new Error(`Gemma API rejected the model or request configuration (HTTP ${res.status}). Check GEMMA_MODEL and request settings.`);
+        }
+        throw new Error(`Gemma API request failed (HTTP ${res.status}).`);
+      }
 
-      const candidate = data.candidates?.[0];
+      let data: unknown;
+      try {
+        data = await res.json();
+      } catch (error) {
+        if (timedOut) {
+          throw new Error(`Gemma API request timed out after ${this.timeoutMs}ms.`);
+        }
+        if (request.signal?.aborted) {
+          throw new Error('Gemma API request was aborted.');
+        }
+        if (error instanceof SyntaxError) {
+          throw new Error('Gemma API returned malformed JSON.');
+        }
+        throw new Error('Gemma API network request failed. Check connectivity and GEMMA_BASE_URL.');
+      }
+      if (!isRecord(data) || !Array.isArray(data.candidates) || data.candidates.length === 0) {
+        throw new Error('Gemma API returned a malformed response.');
+      }
+      const candidate = data.candidates[0];
+      if (!isRecord(candidate) || !isRecord(candidate.content) || !Array.isArray(candidate.content.parts)) {
+        throw new Error('Gemma API returned a malformed response.');
+      }
+
       let textContent = '';
       const toolCalls: ToolCallPayload[] = [];
 
-      for (const part of candidate?.content?.parts || []) {
-        if (part.text) {
+      for (const part of candidate.content.parts) {
+        if (!isRecord(part)) {
+          throw new Error('Gemma API returned a malformed response.');
+        }
+        if ('text' in part && part.text !== undefined) {
+          if (typeof part.text !== 'string') {
+            throw new Error('Gemma API returned a malformed response.');
+          }
           textContent += part.text;
         }
-        if (part.functionCall) {
+        if ('functionCall' in part && part.functionCall !== undefined) {
+          if (!isRecord(part.functionCall) || typeof part.functionCall.name !== 'string') {
+            throw new Error('Gemma API returned a malformed response.');
+          }
+          const args = part.functionCall.args === undefined ? {} : part.functionCall.args;
+          if (!isRecord(args)) {
+            throw new Error('Gemma API returned a malformed response.');
+          }
           toolCalls.push({
             id: `call_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
             name: part.functionCall.name,
-            arguments: part.functionCall.args || {},
+            arguments: args,
           });
         }
+      }
+
+      if (!textContent.trim() && toolCalls.length === 0) {
+        throw new Error('Gemma API returned an empty response.');
+      }
+      if (candidate.finishReason !== undefined && typeof candidate.finishReason !== 'string') {
+        throw new Error('Gemma API returned a malformed response.');
+      }
+      const usageMetadata = data.usageMetadata;
+      let usage: CompletionResponse['usage'];
+      if (usageMetadata !== undefined) {
+        if (!isRecord(usageMetadata)
+          || typeof usageMetadata.promptTokenCount !== 'number'
+          || typeof usageMetadata.candidatesTokenCount !== 'number'
+          || typeof usageMetadata.totalTokenCount !== 'number') {
+          throw new Error('Gemma API returned a malformed response.');
+        }
+        usage = {
+          promptTokens: usageMetadata.promptTokenCount,
+          completionTokens: usageMetadata.candidatesTokenCount,
+          totalTokens: usageMetadata.totalTokenCount,
+        };
       }
 
       return {
         content: textContent,
         toolCalls: toolCalls.length > 0 ? toolCalls : undefined,
-        finishReason: candidate?.finishReason || 'stop',
-        usage: data.usageMetadata ? {
-          promptTokens: data.usageMetadata.promptTokenCount,
-          completionTokens: data.usageMetadata.candidatesTokenCount,
-          totalTokens: data.usageMetadata.totalTokenCount,
-        } : undefined,
+        finishReason: typeof candidate.finishReason === 'string' ? candidate.finishReason : 'stop',
+        usage,
       };
     } finally {
       clearTimeout(timeout);
+      request.signal?.removeEventListener('abort', abortRequest);
     }
   }
 
   private async completeViaLocal(request: CompletionRequest): Promise<CompletionResponse> {
     const model = this.defaultModel;
-    const prompt = request.messages.map(m => `[${m.role.toUpperCase()}]: ${m.content}`).join('\n\n');
+    const prompt = request.messages.map(m => `[${m.role.toUpperCase()}]: ${m.content || ''}`).join('\n\n');
+
+    const images: string[] = [];
+    for (const m of request.messages) {
+      if (m.images && m.images.length > 0) {
+        for (const img of m.images) {
+          this.validateImage(img);
+          images.push(img.data.replace(/^data:image\/[a-z]+;base64,/, ''));
+        }
+      }
+    }
 
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), this.timeoutMs);
@@ -358,18 +457,23 @@ export class GemmaProvider implements ModelProvider {
     }
 
     try {
+      const body: Record<string, unknown> = {
+        model,
+        prompt,
+        stream: false,
+        options: {
+          temperature: request.temperature ?? 0.2,
+          num_predict: request.maxTokens ?? 4096,
+        },
+      };
+      if (images.length > 0) {
+        body.images = images;
+      }
+
       const res = await fetch(`${this.baseUrl}/api/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model,
-          prompt,
-          stream: false,
-          options: {
-            temperature: request.temperature ?? 0.2,
-            num_predict: request.maxTokens ?? 4096,
-          },
-        }),
+        body: JSON.stringify(body),
         signal: controller.signal,
       });
 
@@ -536,7 +640,8 @@ export class GemmaProvider implements ModelProvider {
       throw new Error(`Unsupported image MIME type: ${img.mimeType}. Supported formats: PNG, JPEG, WEBP, GIF.`);
     }
 
-    const approxBytes = img.data.length * 0.75;
+    const base64Data = img.data.replace(/^data:image\/[a-z]+;base64,/, '');
+    const approxBytes = base64Data.length * 0.75;
     const maxBytes = 5 * 1024 * 1024;
     if (approxBytes > maxBytes) {
       throw new Error(`Screenshot exceeds maximum allowed size of 5MB (approx ${Math.round(approxBytes / 1024)} KB)`);
