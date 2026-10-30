@@ -501,7 +501,7 @@ body {
   border-color: var(--border-focus);
 }
 
-#testCounterChip {
+.test-suite-badge {
   display: inline-flex;
   align-items: center;
   gap: 5px;
@@ -512,18 +512,18 @@ body {
     color var(--motion-dur-hover) var(--motion-ease-out);
 }
 
-#testCounterChip:hover {
+.test-suite-badge:hover {
   color: var(--text-primary);
   background: var(--bg-surface-elevated);
-  border-color: var(--status-pass-border, #238636);
+  border-color: var(--border-focus);
 }
 
-#testCounterChip .test-icon {
+.test-suite-badge .test-icon {
   flex-shrink: 0;
   transition: transform var(--motion-dur-icon) var(--motion-ease-out);
 }
 
-#testCounterChip:hover .test-icon {
+.test-suite-badge:hover .test-icon {
   transform: scale(1.08);
 }
 
@@ -2518,4 +2518,3 @@ body {
   outline: none;
   resize: vertical;
 }
-
