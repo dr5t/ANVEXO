@@ -1,49 +1,71 @@
-# ANVEXO Engineering Issue Backlog
+# ANVEXO Engineering Issue Backlog (Revised)
 
-This backlog outlines 11 concrete, non-overlapping engineering issues justified by the actual ANVEXO codebase audit. No duplicate issues exist in GitHub (verified against GitHub issue list; only `#1` was closed for logo assets).
+## 1. Backlog Overview & Architecture Mapping
+
+This backlog defines the approved, verified, and non-overlapping technical issues for the five-person ANVEXO engineering team.
+
+### Codebase & GitHub Verification Status
+- **Current Codebase State**: 26 test suites, 206 tests passing cleanly (`npm test`).
+- **Existing GitHub Issues Audit**: Verified against [https://github.com/dr5t/ANVEXO](https://github.com/dr5t/ANVEXO). Zero open issues or pull requests exist (only issue `#1` closed for initial branding).
+- **No Hallucinated Work**: Every issue directly targets concrete implementations, verified code gaps, and verifiable invariants in the existing repository.
 
 ---
 
-## Issue Matrix Summary
+## 2. Issue Mapping & Ownership Matrix
 
-| # | Title | Assignee | Complexity | Labels |
+### Core Accepted Issues
+
+| ID | Title | Assignee | Priority | Proposed Branch Name |
 | :--- | :--- | :--- | :--- | :--- |
-| **ISSUE-01** | Add comprehensive unit and mock test suite for Gemma 4 provider | Member 2 | Medium | `enhancement`, `testing`, `gemma-4` |
-| **ISSUE-02** | Add live integration test runner and environment diagnostics for Gemma 4 | Member 2 | Medium | `testing`, `gemma-4` |
-| **ISSUE-03** | Add dedicated Gemma 4 CLI investigation command | Member 2 | Small | `enhancement`, `cli`, `gemma-4` |
-| **ISSUE-04** | Implement structured JSON and Markdown report exporters with persistence | Member 3 | Medium | `enhancement`, `anveshan` |
-| **ISSUE-05** | Add dynamic hypothesis generator and evaluator to ANVESHAN engine | Member 3 | Large | `enhancement`, `anveshan`, `core` |
-| **ISSUE-06** | Integrate ECHO dependency graph with ChangeImpactSimulator | Member 4 | Medium | `enhancement`, `echo`, `impact` |
-| **ISSUE-07** | Add visual ASCII and DOT dependency graph exporter to Impact Simulator | Member 4 | Medium | `enhancement`, `impact`, `cli` |
-| **ISSUE-08** | Add GitHub Actions CI workflow for automated linting, build, and tests | Member 5 | Small | `ci`, `automation` |
-| **ISSUE-09** | Add Apache-2.0 open-source license and configure package.json | Member 5 | Small | `documentation`, `legal`, `good first issue` |
-| **ISSUE-10** | Add automated Proof Mode end-to-end regression validation test suite | Member 5 | Medium | `testing`, `proof-mode` |
-| **ISSUE-11** | Enhance Unified Engineering Workflow Runner with streaming progress events | Project Lead | Medium | `architecture`, `workflow` |
+| **ISSUE-01** | Add comprehensive unit & mock test suite for Gemma 4 provider error handling | Bhumika | Core | `feat/bhumika-gemma-unit-tests` |
+| **ISSUE-02** | Add live integration test runner and environment diagnostics for Gemma 4 | Bhumika | Core | `feat/bhumika-gemma-live-tests` |
+| **ISSUE-03** | Implement ANVESHAN step dependency evaluation and workflow failure recovery | Alok | Core | `feat/alok-workflow-recovery` |
+| **ISSUE-04** | Implement structured JSON and Markdown investigation report exporters with disk persistence | Alok | Core | `feat/alok-report-exporters` |
+| **ISSUE-05** | Integrate ECHO repository context retrieval with ChangeImpactSimulator cache | Somi | Core | `feat/somi-echo-impact-integration` |
+| **ISSUE-06** | Enhance TypeScript impact analysis with type-only import and barrel export resolution | Somi | Core | `feat/somi-impact-ts-analysis` |
+| **ISSUE-07** | Implement security regression test suite for autonomy engine and execution sandbox | Akhil | Core | `test/akhil-security-hardening` |
+| **ISSUE-08** | Implement automated GitHub Actions CI workflow and contributor environment setup | Akhil | Core | `ci/akhil-github-actions` |
+| **ISSUE-09** | **[GATED]** Open-source licensing inspection and third-party attribution audit | Akhil & Shaurya | Gated | `docs/akhil-license-audit` |
+| **ISSUE-10** | Implement end-to-end Gemma 4 verification and MLH demo validation harness | Shaurya | Core / Lead | `feat/shaurya-gemma-demo-verification` |
+
+### Deferred Work (Staged Post-Core Verification)
+
+| ID | Title | Previous ID | Reason for Deferral |
+| :--- | :--- | :--- | :--- |
+| **DEF-01** | Dedicated Gemma 4 CLI investigation command (`anvexo gemma`) | ISSUE-03 | CLI convenience flag is secondary to robust provider error handling, unit tests, and live verification. |
+| **DEF-02** | Visual ASCII and Graphviz DOT dependency graph exporters | ISSUE-07 | Terminal rendering is secondary to unifying ECHO context cache and resolving TypeScript reverse dependency edge cases. |
+| **DEF-03** | Streaming progress events for Unified Engineering Workflow Runner | ISSUE-11 | Real-time event streaming is secondary to workflow failure recovery and evidence validation stability. |
 
 ---
 
-## Detailed Issue Specifications
+## 3. Explanation of Reassignments & Boundary Isolation
 
-### ISSUE-01: Add comprehensive unit and mock test suite for Gemma 4 provider
-- **Assignee**: Member 2
-- **Labels**: `enhancement`, `testing`, `gemma-4`
+To preserve strict non-overlapping responsibilities across the five team members:
+1. **Bhumika (Gemma 4 Provider Reliability)**: Dedicated to `ISSUE-01` and `ISSUE-02`. Owns `src/providers/gemma.ts` and its test suites. Deferred CLI commands (`DEF-01`) avoid touching `src/cli/` before core provider behavior is rock solid.
+2. **Alok (Investigation Resilience & Reports)**: Dedicated to `ISSUE-03` and `ISSUE-04`. Owns `src/evidence/index.ts`, `src/engine/index.ts` error handling, and `src/reporting/`. Refocused from abstract hypothesis generation to concrete evidence validation and failure recovery so ANVESHAN never crashes on tool failures.
+3. **Somi (ECHO Context & TypeScript Impact)**: Dedicated to `ISSUE-05` and `ISSUE-06`. Owns `src/context/` and `src/impact/`. Unifies dependency indexing and solves real TypeScript AST/regex edge cases (type imports, re-exports) instead of premature graph visualization.
+4. **Akhil (Security, CI & Governance)**: Dedicated to `ISSUE-07`, `ISSUE-08`, and gated `ISSUE-09`. Owns security regression testing (`src/autonomy/` and sandbox boundaries), GitHub Actions CI, and the license audit report.
+5. **Shaurya (Lead, Orchestration & Gemma Verification)**: Dedicated to `ISSUE-10` and architecture governance. Ensures end-to-end integration across all submodules and acts as the gatekeeper for gated licensing and PR approvals.
+
+---
+
+## 4. Detailed Specifications for Accepted Issues
+
+### ISSUE-01: Add comprehensive unit & mock test suite for Gemma 4 provider error handling
+- **Assignee**: Bhumika
+- **Proposed Branch**: `feat/bhumika-gemma-unit-tests`
+- **Priority**: Core
 - **Complexity**: Medium
-- **Problem Statement**:
-  `GemmaProvider` is implemented in `src/providers/gemma.ts` but has zero dedicated unit tests in `tests/`. There is no test coverage verifying routing between `gemini-api` and `local` (Ollama/vLLM), model metadata accuracy (`gemma-4-31b-it`, `gemma-4-26b-a4b-it`), multimodal payload parsing, or screenshot base64 validation limits.
-- **Why It Matters**:
-  Without unit tests, the Gemma 4 integration cannot be safely refactored or verified for the MLH "Best Use of Gemma 4" prize category.
+- **Description**:
+  `GemmaProvider` (`src/providers/gemma.ts`) currently has zero unit tests. There is no automated test coverage verifying route detection between Google AI Studio (`completeViaGeminiApi`) and local Ollama (`completeViaLocal`), token context limit handling (256K context for `gemma-4-31b-it` and `gemma-4-26b-a4b-it`), multimodal image attachment packing, base64 size limits (rejecting payloads >5MB), and resilient JSON parsing fallback when the model wraps output in markdown code blocks.
 - **Exact Files Affected**:
   - `tests/unit/gemma.test.ts` (new)
-  - `src/providers/gemma.ts` (minor fixes if needed)
-- **Proposed Implementation**:
-  1. Create `tests/unit/gemma.test.ts` using Vitest.
-  2. Mock `fetch` globally to test `completeViaGeminiApi` (Google AI Studio endpoint) and `completeViaLocal` (Ollama endpoint at `/api/generate`).
-  3. Test model listing: assert `gemma-4-31b-it` has 256K context and tool calling support.
-  4. Test image validation: assert unsupported MIME types throw, and images exceeding 5MB are rejected.
-  5. Test structured output JSON parser fallback when the model returns markdown codeblocks.
+  - `src/providers/gemma.ts` (defensive error handling refinements)
 - **Acceptance Criteria**:
-  - `tests/unit/gemma.test.ts` passes with at least 8 distinct assertions.
-  - 100% of methods in `GemmaProvider` are tested without making external network calls.
+  - `tests/unit/gemma.test.ts` contains at least 8 distinct, deterministic tests with zero external network requests.
+  - Mocked tests verify both Google AI Studio API and local Ollama REST endpoints.
+  - Unhandled JSON formatting errors and invalid MIME types throw descriptive errors rather than unhandled promise rejections.
+  - Image payloads exceeding 5MB are rejected before dispatch.
 - **Required Tests**:
   - `npx vitest run tests/unit/gemma.test.ts`
 - **Dependencies**: None.
@@ -51,255 +73,197 @@ This backlog outlines 11 concrete, non-overlapping engineering issues justified 
 ---
 
 ### ISSUE-02: Add live integration test runner and environment diagnostics for Gemma 4
-- **Assignee**: Member 2
-- **Labels**: `testing`, `gemma-4`
+- **Assignee**: Bhumika
+- **Proposed Branch**: `feat/bhumika-gemma-live-tests`
+- **Priority**: Core
 - **Complexity**: Medium
-- **Problem Statement**:
-  Currently, tests run only in offline mode. There is no automated integration script that checks if `GEMMA_API_KEY` or `GEMINI_API_KEY` is present in the environment or if a local Ollama daemon is running on port 11434, to execute a live multimodal investigation check.
-- **Why It Matters**:
-  Judges for "Best Use of Gemma 4" need a deterministic, reproducible script to test live inference when credentials or local Ollama daemons are provided.
+- **Description**:
+  Create an automated live integration test suite that detects whether `GEMMA_API_KEY` / `GEMINI_API_KEY` is present in the environment or if a local Ollama daemon is reachable on `http://127.0.0.1:11434`. When active, it executes a live multimodal investigation check against a sample fixture repository. When inactive, it reports diagnostic status and skips gracefully without failing the build.
 - **Exact Files Affected**:
   - `tests/integration/gemma.test.ts` (new)
   - `package.json` (add `"test:gemma": "vitest run tests/integration/gemma.test.ts"`)
-- **Proposed Implementation**:
-  1. Create an integration test that inspects `process.env.GEMMA_API_KEY || process.env.GEMINI_API_KEY`.
-  2. If keys are absent and local Ollama is down, skip gracefully with a clear diagnostic message rather than failing.
-  3. When configured, execute `provider.investigateIssue()` on a sample test repository fixture and assert `codeEvidence`, `proposedFix`, and `suggestedRegressionTests` are generated.
 - **Acceptance Criteria**:
-  - `npm run test:gemma` executes cleanly without breaking CI in headless environments.
-  - Accurately reports whether live Gemma 4 endpoint or local daemon responded.
+  - `npm run test:gemma` executes cleanly in CI and local developer machines.
+  - When keys or daemon are detected, live inference generates valid `codeEvidence`, `proposedFix`, and `suggestedRegressionTests`.
+  - When offline, prints clear diagnostic instructions explaining how to configure API keys or local Ollama.
 - **Required Tests**:
   - `npm run test:gemma`
 - **Dependencies**: ISSUE-01.
 
 ---
 
-### ISSUE-03: Add dedicated Gemma 4 CLI investigation command
-- **Assignee**: Member 2
-- **Labels**: `enhancement`, `cli`, `gemma-4`
-- **Complexity**: Small
-- **Problem Statement**:
-  The ANVEXO CLI offers general `anvexo investigate` and `anvexo workflow`, but does not provide an explicit `anvexo gemma <objective>` subcommand to invoke `GemmaProvider.investigateIssue()` with terminal logs and screenshot attachments directly from the command line.
-- **Why It Matters**:
-  Enables developers and MLH judges to run Gemma 4 multimodal investigations directly from their terminal using simple CLI flags (`--screenshot`, `--diff`, `--log`).
+### ISSUE-03: Implement ANVESHAN step dependency evaluation and workflow failure recovery
+- **Assignee**: Alok
+- **Proposed Branch**: `feat/alok-workflow-recovery`
+- **Priority**: Core
+- **Complexity**: Medium
+- **Description**:
+  While initial evidence field validation was landed in `src/evidence/index.ts` (`bf623d9`), ANVESHAN's `InvestigationEngine` (`src/engine/index.ts`) still executes planned steps in a flat sequential loop without evaluating step dependencies (`step.dependencies`). If an upstream diagnostic step fails (e.g. `git_status` or a shell probe times out), downstream dependent steps still blindly attempt execution instead of being marked as skipped. The engine must evaluate step dependencies, gracefully handle tool execution rejections, record structured `EvidenceType.ERROR` diagnostic entries, and accurately record all unreached or failed stages in `report.limitations`.
 - **Exact Files Affected**:
-  - `src/cli/index.ts`
-  - `tests/unit/commands.test.ts`
-- **Proposed Implementation**:
-  1. Add `anvexo gemma <objective>` command in `src/cli/index.ts`.
-  2. Support options: `-p, --path <path>`, `-s, --screenshot <file>`, `-l, --log <file>`, `-m, --model <model>`, `--json`.
-  3. Load and base64-encode screenshots when specified.
-  4. Output formatted Gemma investigation findings including suspected root cause and recommended regression tests.
+  - `src/engine/index.ts`
+  - `tests/unit/engine.test.ts` (expanded)
+  - `src/evidence/index.ts` (minor deduplication/sanitization if needed)
 - **Acceptance Criteria**:
-  - `anvexo gemma "fix crash"` executes and displays Gemma analysis.
-  - Returns exit code 0 on success and handles missing credentials with a helpful setup hint.
+  - Steps with dependencies on failed/skipped steps are automatically marked `status: 'skipped'` with descriptive dependency failure reasons.
+  - Unexpected tool execution errors or subprocess timeouts are trapped without unhandled rejections, recorded as `EvidenceType.ERROR`, and permit independent parallel steps to continue.
+  - `report.limitations` cleanly lists all skipped and failed steps.
+  - Zero regressions across existing engine tests.
 - **Required Tests**:
-  - `npx vitest run tests/unit/commands.test.ts`
-- **Dependencies**: ISSUE-01.
+  - `npx vitest run tests/unit/engine.test.ts tests/unit/evidence.test.ts`
+- **Dependencies**: None.
 
 ---
 
-### ISSUE-04: Implement structured JSON and Markdown report exporters with persistence
-- **Assignee**: Member 3
-- **Labels**: `enhancement`, `anveshan`
+### ISSUE-04: Implement structured JSON and Markdown investigation report exporters with disk persistence
+- **Assignee**: Alok
+- **Proposed Branch**: `feat/alok-report-exporters`
+- **Priority**: Core
 - **Complexity**: Medium
-- **Problem Statement**:
-  `src/reporting/index.ts` only formats reports as an ASCII terminal string via `formatReport()`. There is no structured JSON exporter or GitHub Flavored Markdown exporter, nor does ANVESHAN automatically persist completed investigation reports to disk.
-- **Why It Matters**:
-  Developers and CI pipelines require machine-readable JSON reports and formatted Markdown artifacts to share investigation findings in pull requests and bug trackers.
+- **Description**:
+  `src/reporting/index.ts` currently only formats investigation results as an ASCII terminal string via `formatReport()`. Machine-readable JSON export and GitHub Flavored Markdown (GFM) export are missing, and completed reports are not automatically persisted to disk. Developers and CI pipelines need structured output to embed in PRs and bug trackers.
 - **Exact Files Affected**:
   - `src/reporting/index.ts`
   - `src/reporting/markdown.ts` (new)
-  - `src/engine/index.ts`
+  - `src/engine/index.ts` (wire report persistence)
   - `tests/unit/reporting.test.ts` (new)
-- **Proposed Implementation**:
-  1. Implement `formatMarkdownReport(report: InvestigationReport): string` producing GitHub-style tables, diff codeblocks, and verification status badges.
-  2. Implement `saveReport(report: InvestigationReport, repoRoot: string): Promise<string>` that saves `.anvexo/reports/report-<id>.json` and `.anvexo/reports/report-<id>.md`.
-  3. Wire auto-saving into `InvestigationEngine.investigate()`.
 - **Acceptance Criteria**:
-  - Generated Markdown is clean GFM with no broken tables or unescaped characters.
-  - JSON file contains complete evidence, steps, findings, limitations, and Proof Mode data.
+  - `formatMarkdownReport(report: InvestigationReport): string` produces valid GitHub Flavored Markdown with findings tables, code diffs, and verification badges.
+  - `saveReport(report: InvestigationReport, repoRoot: string): Promise<string>` persists reports to `.anvexo/reports/report-<id>.json` and `.anvexo/reports/report-<id>.md`.
+  - Directory `.anvexo/reports/` is automatically created if missing.
 - **Required Tests**:
   - `npx vitest run tests/unit/reporting.test.ts`
 - **Dependencies**: None.
 
 ---
 
-### ISSUE-05: Add dynamic hypothesis generator and evaluator to ANVESHAN engine
-- **Assignee**: Member 3
-- **Labels**: `enhancement`, `anveshan`, `core`
-- **Complexity**: Large
-- **Problem Statement**:
-  `report.hypotheses` in `InvestigationReport` is currently hardcoded as an empty array `[]` (`src/engine/index.ts:169`). ANVESHAN does not yet actively formulate and test competing hypotheses against incoming evidence records during step execution.
-- **Why It Matters**:
-  Hypothesis-driven elimination is the core scientific principle of ANVESHAN. Making hypotheses dynamic transforms ANVESHAN into a true diagnostic reasoning engine.
-- **Exact Files Affected**:
-  - `src/engine/hypotheses.ts` (new)
-  - `src/engine/index.ts`
-  - `src/core/types.ts`
-  - `tests/unit/planner.test.ts`
-- **Proposed Implementation**:
-  1. Create `HypothesisEngine` in `src/engine/hypotheses.ts`.
-  2. Generate 2-4 candidate hypotheses based on objective keywords, uncommitted diffs, and test failure patterns.
-  3. After each step in `InvestigationEngine`, evaluate whether new evidence supports (`SUPPORTED`), refutes (`CONTRADICTED`), or leaves open each hypothesis.
-  4. Populate `report.hypotheses` with supporting/contradicting evidence IDs and final probability scores.
-- **Acceptance Criteria**:
-  - Investigations with failing tests or uncommitted changes produce populated `report.hypotheses`.
-  - Hypotheses link directly to collected `EvidenceRecord` IDs.
-- **Required Tests**:
-  - Unit tests asserting hypothesis generation and status updating.
-- **Dependencies**: ISSUE-04.
-
----
-
-### ISSUE-06: Integrate ECHO dependency graph with ChangeImpactSimulator
-- **Assignee**: Member 4
-- **Labels**: `enhancement`, `echo`, `impact`
+### ISSUE-05: Integrate ECHO repository context retrieval with ChangeImpactSimulator cache
+- **Assignee**: Somi
+- **Proposed Branch**: `feat/somi-echo-impact-integration`
+- **Priority**: Core
 - **Complexity**: Medium
-- **Problem Statement**:
-  `src/context/dependencies.ts` has a standalone dependency parser that is decoupled from `ChangeImpactSimulator` in `src/impact/simulator.ts`. This duplicates file scanning and regex extraction logic, while `ContextManager` does not share graph data with the impact engine.
-- **Why It Matters**:
-  Unifying ECHO's dependency analysis with `ChangeImpactSimulator` speeds up repository indexing, avoids redundant disk I/O, and ensures consistent reverse dependency detection.
+- **Description**:
+  `src/context/dependencies.ts` and `src/impact/simulator.ts` maintain separate file scanning and import parsing routines. This causes duplicate disk I/O and potential discrepancies in reverse dependency detection. Unify ECHO's dependency analysis with `ChangeImpactSimulator` so pre-computed dependency graphs in `.anvexo/context.json` can be directly consumed by the impact engine.
 - **Exact Files Affected**:
   - `src/context/dependencies.ts`
   - `src/context/manager.ts`
   - `src/impact/simulator.ts`
   - `tests/unit/context.test.ts`
-- **Proposed Implementation**:
-  1. Refactor `analyzeDependencies()` in `src/context/dependencies.ts` to share module resolution logic with `ChangeImpactSimulator`.
-  2. Cache the shared dependency graph inside `.anvexo/context.json`.
-  3. Update `ChangeImpactSimulator` to optionally accept precomputed graph context from `ContextManager`.
+  - `tests/unit/impact.test.ts`
 - **Acceptance Criteria**:
-  - `ChangeImpactSimulator` and `ContextManager` produce identical reverse dependency sets for the same target files.
-  - Re-running impact simulation on indexed repositories is at least 2x faster.
+  - `ChangeImpactSimulator` accepts an optional pre-computed dependency graph from `ContextManager`.
+  - Shared dependency cache is saved and retrieved from `.anvexo/context.json`.
+  - Impact simulation execution time is reduced by at least 2x on pre-indexed repositories.
 - **Required Tests**:
   - `npx vitest run tests/unit/context.test.ts tests/unit/impact.test.ts`
 - **Dependencies**: None.
 
 ---
 
-### ISSUE-07: Add visual ASCII and DOT dependency graph exporter to Impact Simulator
-- **Assignee**: Member 4
-- **Labels**: `enhancement`, `impact`, `cli`
+### ISSUE-06: Enhance TypeScript impact analysis with type-only import and barrel export resolution
+- **Assignee**: Somi
+- **Proposed Branch**: `feat/somi-impact-ts-analysis`
+- **Priority**: Core
 - **Complexity**: Medium
-- **Problem Statement**:
-  `ChangeImpactSimulator` calculates affected modules and dependencies as flat string arrays. Developers and operators cannot visually trace why a given module was identified as impacted.
-- **Why It Matters**:
-  A visual dependency hierarchy (ASCII tree or Graphviz DOT format) clarifies high-risk cascading blast radiuses at a glance.
+- **Description**:
+  `ChangeImpactSimulator` regex parsing does not reliably distinguish between runtime imports and compile-time TypeScript type imports (`import type { Foo } from './bar'`). Additionally, re-exports in barrel files (`export * from './submodule'`, `export { A, B } from './module'`) and path aliases (`@/...`) can cause reverse dependencies to be missed or inflated with zero-risk type changes.
 - **Exact Files Affected**:
   - `src/impact/simulator.ts`
   - `src/impact/types.ts`
-  - `src/impact/graph.ts` (new)
-  - `src/cli/index.ts`
   - `tests/unit/impact.test.ts`
-- **Proposed Implementation**:
-  1. Add `renderAsciiGraph(report: ChangeImpactReport): string` in `src/impact/graph.ts`.
-  2. Add `renderDotGraph(report: ChangeImpactReport): string` producing valid Graphviz DOT syntax.
-  3. Expose `--graph` and `--dot` flags on `anvexo impact <target>`.
 - **Acceptance Criteria**:
-  - `anvexo impact src/server/router.ts --graph` prints a formatted tree showing direct and downstream dependents.
-  - DOT output renders valid node/edge definitions.
+  - Type-only imports are tagged with lower risk weight compared to value imports in `ChangeImpactReport`.
+  - Barrel file re-exports (`export * from ...`) correctly trace upstream consumers.
+  - Circular module imports do not cause infinite loops or stack overflows.
 - **Required Tests**:
-  - Unit tests asserting graph output contains root target and connected nodes.
-- **Dependencies**: ISSUE-06.
+  - `npx vitest run tests/unit/impact.test.ts`
+- **Dependencies**: ISSUE-05.
 
 ---
 
-### ISSUE-08: Add GitHub Actions CI workflow for automated linting, build, and tests
-- **Assignee**: Member 5
-- **Labels**: `ci`, `automation`
+### ISSUE-07: Implement security regression test suite for autonomy engine and execution sandbox
+- **Assignee**: Akhil
+- **Proposed Branch**: `test/akhil-security-hardening`
+- **Priority**: Core
+- **Complexity**: Medium
+- **Description**:
+  While `tests/unit/security.test.ts` validates path traversal and server limits, the autonomy and tool execution boundaries lack comprehensive regression testing. Need dedicated test coverage verifying `SafeAutonomyEngine` (`src/autonomy/engine.ts`) action budget enforcement, permission scope rejection (`READ_ONLY`, `WORKSPACE_WRITE`), dangerous shell execution blocking (`rm -rf`, `sudo`, piping to shell), environment variable sanitization, and audit log tamper detection.
+- **Exact Files Affected**:
+  - `tests/unit/autonomy.test.ts` (new)
+  - `tests/unit/security.test.ts` (add sandbox regression scenarios)
+  - `src/autonomy/engine.ts` (defensive hardening if gaps are found)
+- **Acceptance Criteria**:
+  - Verifies that attempting to execute commands exceeding the action budget throws a `SecurityError` or stops execution.
+  - Verifies that attempts to invoke shell execution under `READ_ONLY` mode are strictly denied.
+  - Verifies that command arguments containing chained dangerous commands (`rm -rf /`, `curl | sh`) are intercepted.
+- **Required Tests**:
+  - `npx vitest run tests/unit/autonomy.test.ts tests/unit/security.test.ts`
+- **Dependencies**: None.
+
+---
+
+### ISSUE-08: Implement automated GitHub Actions CI workflow and contributor environment setup
+- **Assignee**: Akhil
+- **Proposed Branch**: `ci/akhil-github-actions`
+- **Priority**: Core
 - **Complexity**: Small
-- **Problem Statement**:
-  The repository currently has no `.github/workflows/` directory. Pull requests cannot be automatically checked for compilation errors, lint issues, or Vitest regressions before merging.
-- **Why It Matters**:
-  Automated CI is a foundational requirement for any serious open-source project and ensures zero regressions across all 5 contributors' parallel PRs.
+- **Description**:
+  The repository has no `.github/workflows/` directory. Create a reproducible CI pipeline that runs on pull requests and pushes to `main`. Also create `.github/PULL_REQUEST_TEMPLATE.md` and update `CONTRIBUTING.md` to ensure all 5 contributors follow the exact test and lint verification workflow.
 - **Exact Files Affected**:
   - `.github/workflows/ci.yml` (new)
-- **Proposed Implementation**:
-  1. Create `.github/workflows/ci.yml` triggered on `push` to `main` and `pull_request` to `main`.
-  2. Test across Node.js 20.x and 22.x on `ubuntu-latest`.
-  3. Run: `npm ci`, `npm run lint`, `npm run build`, and `npm test`.
-  4. Include coverage reporting via `@vitest/coverage-v8`.
+  - `.github/PULL_REQUEST_TEMPLATE.md` (new)
+  - `CONTRIBUTING.md` (new)
 - **Acceptance Criteria**:
-  - GitHub Actions runs successfully and verifies all 26 test suites.
-  - Clean build output with zero unhandled errors.
+  - CI workflow triggers on PRs and pushes to `main`.
+  - CI matrix executes on Node.js 20.x and 22.x on `ubuntu-latest`.
+  - Workflow steps: `npm ci`, `npm run lint`, `npm run build`, `npm test`.
+  - Contributor documentation provides clear, one-command setup instructions.
 - **Required Tests**:
-  - Validated locally using GitHub Actions syntax linter or dry-run.
+  - Local validation of GitHub Actions YAML syntax.
 - **Dependencies**: None.
 
 ---
 
-### ISSUE-09: Add Apache-2.0 open-source license and configure package.json
-- **Assignee**: Member 5
-- **Labels**: `documentation`, `legal`, `good first issue`
+### ISSUE-09: [GATED] Open-source licensing inspection and third-party attribution audit
+- **Assignee**: Akhil (Audit Preparation) & Shaurya (Project Owner Approval Gate)
+- **Proposed Branch**: `docs/akhil-license-audit`
+- **Priority**: Gated Task
 - **Complexity**: Small
-- **Problem Statement**:
-  `package.json` currently contains `"license": "UNLICENSED"` and the repository root lacks a standard open-source `LICENSE` file. This disqualifies ANVEXO from the MLH "Best Open-Source AI Project" category.
-- **Why It Matters**:
-  An OSI-approved open-source license (Apache-2.0) is strictly mandatory for open-source AI projects.
+- **Description**:
+  `package.json` currently declares `"license": "UNLICENSED"` and repository root lacks a `LICENSE` file. Open-source licensing (Apache-2.0) is mandatory for the MLH "Best Open-Source AI Project" category, but must be treated as a gated task:
+  1. Inspect existing licensing across all dependencies in `package.json` (`commander`, `simple-git`, `@types/node`, `@vitest/coverage-v8`, `typescript`, `vitest`).
+  2. Verify compatibility with Apache-2.0.
+  3. Prepare attribution / NOTICE documentation.
+  4. **Gate**: Submit findings to Project Owner (Shaurya) for explicit sign-off.
+  5. **Do not modify `package.json` or add `LICENSE` automatically until explicit approval is granted.**
 - **Exact Files Affected**:
-  - `LICENSE` (new, Apache-2.0)
-  - `package.json` (update `"license": "Apache-2.0"`)
-  - `README.md` (add License badge and section)
-- **Proposed Implementation**:
-  1. Add standard Apache License 2.0 text in root `LICENSE`.
-  2. Update `package.json` license identifier to `"Apache-2.0"`.
-  3. Link license in `README.md` footer.
+  - `docs/legal/LICENSE_AUDIT.md` (new audit report)
+  - `LICENSE` (staged, pending owner approval)
+  - `package.json` (license string, pending owner approval)
 - **Acceptance Criteria**:
-  - `npm pack` or `npm info` recognizes the Apache-2.0 SPDX identifier.
-  - `LICENSE` file is present in repository root.
+  - Comprehensive audit report detailing all third-party license terms (MIT, Apache-2.0) committed to `docs/legal/LICENSE_AUDIT.md`.
+  - Formal sign-off recorded from Shaurya before any license modification.
 - **Required Tests**:
-  - `npm run build` succeeds cleanly.
-- **Dependencies**: None.
+  - `npm run build`
+- **Dependencies**: Project Owner explicit approval.
 
 ---
 
-### ISSUE-10: Add automated Proof Mode end-to-end regression validation test suite
-- **Assignee**: Member 5
-- **Labels**: `testing`, `proof-mode`
+### ISSUE-10: Implement end-to-end Gemma 4 verification and MLH demo validation harness
+- **Assignee**: Shaurya
+- **Proposed Branch**: `feat/shaurya-gemma-demo-verification`
+- **Priority**: Core / Lead
 - **Complexity**: Medium
-- **Problem Statement**:
-  Proof Mode correctly enforces that test claims require dynamic execution, but lacks an automated end-to-end regression test suite verifying git revision hash capture, multi-step evidence binding, and uncertainty propagation under failure conditions.
-- **Why It Matters**:
-  Proof Mode is ANVEXO's core differentiator. A dedicated end-to-end integration test ensures its verification invariants remain unbreakable.
+- **Description**:
+  Create an end-to-end verification and demonstration harness in `tests/integration/demo.test.ts` and `src/engine/workflow.ts` that validates the complete pipeline: ingestion of code diffs, logs, and screenshots -> Gemma 4 multimodal investigation -> structured root cause and regression test recommendations -> evidence ingestion into ProofVerifier -> verified ProofReport output.
 - **Exact Files Affected**:
-  - `tests/integration/proof.test.ts` (new)
-  - `package.json` (add `"test:proof": "vitest run tests/integration/proof.test.ts"`)
-- **Proposed Implementation**:
-  1. Create `tests/integration/proof.test.ts`.
-  2. Test a multi-claim scenario: code modification + test run + regression check.
-  3. Assert that when an execution check times out or fails with exit code 1, the overall status strictly resolves to `failed` or `partially_verified`.
-  4. Assert that unresolved uncertainties downgrade status from `verified` to `partially_verified`.
-- **Acceptance Criteria**:
-  - Verifies that model assertions without execution checks are rejected as `unverified`.
-  - All tests pass deterministically.
-- **Required Tests**:
-  - `npm run test:proof`
-- **Dependencies**: None.
-
----
-
-### ISSUE-11: Enhance Unified Engineering Workflow Runner with streaming progress events
-- **Assignee**: Project Lead (You)
-- **Labels**: `architecture`, `workflow`
-- **Complexity**: Medium
-- **Problem Statement**:
-  `EngineeringWorkflowRunner` executes all 8 stages sequentially in a single batch. Neither the CLI nor the Web UI can stream real-time phase updates (e.g., "Starting Change Impact Simulation", "Executing Reproduction Lab") to the user.
-- **Why It Matters**:
-  Real-time event streaming dramatically improves the developer experience and makes multi-stage investigations transparent.
-- **Exact Files Affected**:
+  - `tests/integration/demo.test.ts` (new)
   - `src/engine/workflow.ts`
-  - `src/server/router.ts`
-  - `src/cli/index.ts`
-  - `tests/integration/workflow.test.ts`
-- **Proposed Implementation**:
-  1. Add an optional event listener callback `onProgress?: (event: WorkflowProgressEvent) => void` to `WorkflowOptions`.
-  2. Emit events at the start and completion of each stage: `investigation`, `impact`, `memory`, `autonomy`, `reproduction`, `proof`.
-  3. Update CLI `anvexo workflow` with an animated terminal spinner updating with each phase.
-  4. Update `/api/workflow` to stream SSE (Server-Sent Events) or return progress snapshots.
+  - `package.json` (add `"test:demo": "vitest run tests/integration/demo.test.ts"`)
 - **Acceptance Criteria**:
-  - CLI `anvexo workflow` renders live progress as each stage executes.
-  - Existing workflow integration tests continue to pass with 100% compliance.
+  - Validates full round-trip from multimodal input to verifiable Proof Mode status.
+  - Serves as the reproducible proof harness for MLH hackathon evaluators.
+  - Zero breakages across existing 26 test suites.
 - **Required Tests**:
-  - `npx vitest run tests/integration/workflow.test.ts`
-- **Dependencies**: ISSUE-01 through ISSUE-10.
+  - `npm run test:demo`
+  - `npm test`
+- **Dependencies**: ISSUE-01, ISSUE-03, ISSUE-05.
