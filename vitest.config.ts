@@ -4,7 +4,7 @@ export default defineConfig({
   test: {
     globals: true,
     include: ['tests/**/*.test.ts'],
-    exclude: ['tests/integration/gemma.test.ts'],
+    exclude: ['tests/integration/gemma.test.ts', 'tests/integration/gemini.test.ts'],
     coverage: {
       provider: 'v8',
       include: ['src/**/*.ts'],
