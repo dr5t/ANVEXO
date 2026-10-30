@@ -6,7 +6,7 @@ import { ToolRegistry, registerBuiltinTools } from '../tools/index.js';
 import { discoverProject } from '../discovery/index.js';
 import { EvidenceCollector } from '../evidence/index.js';
 import { createInvestigationPlan } from '../planner/index.js';
-import { formatReport, generateFindings } from '../reporting/index.js';
+import { formatReport, generateFindings, formatMarkdownReport, formatJsonReport, saveReport, type SavedReportPaths } from '../reporting/index.js';
 import { ContextManager } from '../context/index.js';
 import { ProofVerifier } from '../proof/index.js';
 import { DecisionMemoryManager } from '../memory/index.js';
@@ -217,6 +217,13 @@ export class InvestigationEngine {
 
     await this.contextManager.recordInvestigation(report);
 
+    try {
+      const saved = await saveReport(report, options.repositoryPath);
+      logger.info('engine', `Report persisted to ${saved.jsonPath} and ${saved.markdownPath}`);
+    } catch (saveErr) {
+      logger.warn('engine', `Failed to persist report to disk: ${String(saveErr)}`);
+    }
+
     const completedSteps = plan.steps.filter(s => s.status === 'completed').length;
     const failedSteps = plan.steps.filter(s => s.status === 'failed').length;
     logger.info('engine', `Investigation complete. Steps: ${completedSteps} completed, ${failedSteps} failed, ${allEvidence.length} evidence records`);
@@ -231,6 +238,18 @@ export class InvestigationEngine {
 
   formatReport(report: InvestigationReport): string {
     return formatReport(report);
+  }
+
+  formatMarkdownReport(report: InvestigationReport): string {
+    return formatMarkdownReport(report);
+  }
+
+  formatJsonReport(report: InvestigationReport): string {
+    return formatJsonReport(report);
+  }
+
+  async saveReport(report: InvestigationReport, repoRoot?: string): Promise<SavedReportPaths> {
+    return saveReport(report, repoRoot || report.repositoryPath);
   }
 
   private collectLimitations(plan: ReturnType<typeof createInvestigationPlan>, project: ProjectMetadata): string[] {
