@@ -2050,3 +2050,850 @@ async function deleteMemoryRecord(id) {
   }
 }
 window.deleteMemoryRecord = deleteMemoryRecord;
+
+/* ==========================================================================
+   GITHUB REPOSITORY INTELLIGENCE PLATFORM (CLIENT LOGIC)
+   ========================================================================== */
+
+let currentGitHubJobId = null;
+let githubPollTimer = null;
+let activeGitHubSubtab = 'overview';
+let lastGitHubReport = null;
+
+const GITHUB_STAGE_LABELS = {
+  validate_url: 'Validating GitHub Identity & URL',
+  fetch_metadata: 'Retrieving Metadata, Releases & Branches',
+  inspect_structure: 'Inspecting Codebase Structure & Topography',
+  fetch_commit_history: 'Ingesting Commit History & Timeline',
+  analyze_contributors: 'Profiling Contributor Activities & Roles',
+  inspect_milestones_and_diffs: 'Analyzing Chronological Milestones & Diffs',
+  inspect_dependencies: 'Auditing Dependencies & Lockfiles',
+  run_security_scan: 'Executing Evidence-Based Security Checks',
+  evaluate_tests: 'Inspecting Test Suite & Health Metrics',
+  collect_evidence: 'Aggregating Immutable Evidence Records',
+  deduplicate_findings: 'Applying Finding Deduplication Keys',
+  synthesize_architecture: 'Synthesizing Architecture Topology',
+  generate_conclusion: 'Synthesizing 10 Core Answers & Verdict',
+  finalize_report: 'Finalizing Report & Export Encodings',
+};
+
+function initGitHubPlatform() {
+  const analyzeBtn = document.getElementById('githubAnalyzeBtn');
+  const cancelBtn = document.getElementById('githubCancelBtn');
+  const clearBtn = document.getElementById('githubClearUrlBtn');
+  const sampleSelect = document.getElementById('githubSampleSelect');
+  const urlInput = document.getElementById('githubUrlInput');
+  const quickBtn = document.getElementById('quickAnalyzeBtn');
+
+  if (sampleSelect) {
+    sampleSelect.addEventListener('change', () => {
+      const val = sampleSelect.value;
+      if (val) {
+        urlInput.value = val.startsWith('mock://') ? val : `mock://${val}`;
+        hideGitHubAlert();
+      }
+    });
+  }
+
+  if (clearBtn && urlInput) {
+    clearBtn.addEventListener('click', () => {
+      urlInput.value = '';
+      urlInput.focus();
+    });
+  }
+
+  if (analyzeBtn) {
+    analyzeBtn.addEventListener('click', () => startGitHubInvestigation());
+  }
+
+  if (quickBtn) {
+    quickBtn.addEventListener('click', () => startGitHubInvestigation('mock://dr5t/ANVEXO-demo'));
+  }
+
+  if (cancelBtn) {
+    cancelBtn.addEventListener('click', () => cancelGitHubInvestigation());
+  }
+
+  if (urlInput) {
+    urlInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        startGitHubInvestigation();
+      }
+    });
+  }
+
+  // Pre-load recent investigations if any
+  fetchGitHubHistory();
+}
+
+function showGitHubAlert(msg, type = 'error') {
+  const banner = document.getElementById('githubAlertBanner');
+  if (!banner) return;
+  banner.textContent = msg;
+  banner.style.display = 'block';
+  if (type === 'error') {
+    banner.style.background = 'rgba(248, 81, 73, 0.12)';
+    banner.style.borderColor = 'rgba(248, 81, 73, 0.35)';
+    banner.style.color = 'var(--status-fail, #F85149)';
+  } else {
+    banner.style.background = 'rgba(245, 158, 11, 0.12)';
+    banner.style.borderColor = 'rgba(245, 158, 11, 0.35)';
+    banner.style.color = '#F59E0B';
+  }
+}
+
+function hideGitHubAlert() {
+  const banner = document.getElementById('githubAlertBanner');
+  if (banner) banner.style.display = 'none';
+}
+
+async function startGitHubInvestigation(overrideUrl) {
+  if (currentGitHubJobId) {
+    showGitHubAlert('An investigation is already in progress. Please wait or cancel it.', 'warn');
+    return;
+  }
+
+  hideGitHubAlert();
+  const urlInput = document.getElementById('githubUrlInput');
+  const inputVal = (overrideUrl || (urlInput ? urlInput.value : '')).trim();
+
+  if (!inputVal) {
+    showGitHubAlert('Please enter a GitHub repository URL or sample repo (e.g. mock://dr5t/ANVEXO-demo).');
+    return;
+  }
+
+  const analyzeBtn = document.getElementById('githubAnalyzeBtn');
+  const cancelBtn = document.getElementById('githubCancelBtn');
+  const progressContainer = document.getElementById('githubProgressContainer');
+  const progressBar = document.getElementById('githubProgressBar');
+  const progressPercent = document.getElementById('githubProgressPercent');
+  const progressCounter = document.getElementById('githubProgressCounter');
+  const progressStageTitle = document.getElementById('githubProgressStageTitle');
+  const progressMsg = document.getElementById('githubProgressMessage');
+
+  if (analyzeBtn) {
+    analyzeBtn.disabled = true;
+    analyzeBtn.innerHTML = `
+      <span class="github-spinner" style="width:13px; height:13px;"></span>
+      <span>Investigating...</span>
+    `;
+  }
+  if (cancelBtn) cancelBtn.style.display = 'inline-flex';
+  if (progressContainer) progressContainer.style.display = 'flex';
+  if (progressBar) progressBar.style.width = '5%';
+  if (progressPercent) progressPercent.textContent = '5%';
+  if (progressCounter) progressCounter.textContent = 'Stage 1 of 14';
+  if (progressStageTitle) progressStageTitle.textContent = 'Validating GitHub Identity & URL...';
+  if (progressMsg) progressMsg.textContent = `Targeting: ${inputVal}`;
+
+  appendTelemetryLog(`[GITHUB] Starting repository intelligence for: ${inputVal}`);
+
+  try {
+    const res = await fetch('/api/github/investigate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: inputVal, mock: true }),
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.error || 'Failed to start investigation');
+    }
+
+    currentGitHubJobId = data.jobId;
+    pollGitHubJob(currentGitHubJobId);
+  } catch (err) {
+    resetGitHubButtons();
+    if (progressContainer) progressContainer.style.display = 'none';
+    showGitHubAlert(err.message || 'Investigation request failed');
+  }
+}
+
+function resetGitHubButtons() {
+  const analyzeBtn = document.getElementById('githubAnalyzeBtn');
+  const cancelBtn = document.getElementById('githubCancelBtn');
+  if (analyzeBtn) {
+    analyzeBtn.disabled = false;
+    analyzeBtn.innerHTML = `
+      <svg class="anvexo-icon btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="8"></circle>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      </svg>
+      <span>Analyze Repository</span>
+    `;
+  }
+  if (cancelBtn) cancelBtn.style.display = 'none';
+}
+
+async function cancelGitHubInvestigation() {
+  if (!currentGitHubJobId) return;
+  const jobId = currentGitHubJobId;
+  clearTimeout(githubPollTimer);
+  currentGitHubJobId = null;
+
+  try {
+    await fetch(`/api/github/jobs/${jobId}/cancel`, { method: 'POST' });
+  } catch {}
+
+  resetGitHubButtons();
+  const progressContainer = document.getElementById('githubProgressContainer');
+  if (progressContainer) progressContainer.style.display = 'none';
+  showGitHubAlert('Investigation was cancelled by user.', 'warn');
+  appendTelemetryLog(`[GITHUB] Investigation ${jobId} cancelled.`);
+}
+
+async function pollGitHubJob(jobId) {
+  if (currentGitHubJobId !== jobId) return;
+
+  try {
+    const res = await fetch(`/api/github/jobs/${jobId}`);
+    if (!res.ok) {
+      throw new Error(`Could not query investigation job ${jobId}`);
+    }
+
+    const job = await res.json();
+
+    const progressBar = document.getElementById('githubProgressBar');
+    const progressPercent = document.getElementById('githubProgressPercent');
+    const progressCounter = document.getElementById('githubProgressCounter');
+    const progressStageTitle = document.getElementById('githubProgressStageTitle');
+    const progressMsg = document.getElementById('githubProgressMessage');
+
+    const pct = Math.max(5, Math.min(100, Math.round(job.percentage || 0)));
+    if (progressBar) progressBar.style.width = `${pct}%`;
+    if (progressPercent) progressPercent.textContent = `${pct}%`;
+    if (progressCounter) progressCounter.textContent = `Stage ${job.stageIndex || 1} of ${job.totalStages || 14}`;
+
+    const stageLabel = GITHUB_STAGE_LABELS[job.currentStage] || job.currentStage;
+    if (progressStageTitle) progressStageTitle.textContent = stageLabel;
+
+    if (job.events && job.events.length > 0) {
+      const lastEvent = job.events[job.events.length - 1];
+      if (progressMsg) progressMsg.textContent = lastEvent.message;
+    }
+
+    if (job.status === 'completed' && job.report) {
+      currentGitHubJobId = null;
+      resetGitHubButtons();
+      if (progressBar) progressBar.style.width = '100%';
+      if (progressPercent) progressPercent.textContent = '100%';
+      if (progressStageTitle) progressStageTitle.textContent = 'Investigation Complete';
+      if (progressMsg) progressMsg.textContent = 'All 14 stages synthesized into evidence-based report.';
+
+      lastGitHubReport = job.report;
+      renderGitHubReport(job.report);
+      appendTelemetryLog(`[GITHUB] Investigation completed successfully for ${job.owner}/${job.repo}`);
+
+      setTimeout(() => {
+        const progressContainer = document.getElementById('githubProgressContainer');
+        if (progressContainer) progressContainer.style.display = 'none';
+      }, 1600);
+      return;
+    }
+
+    if (job.status === 'failed') {
+      currentGitHubJobId = null;
+      resetGitHubButtons();
+      const progressContainer = document.getElementById('githubProgressContainer');
+      if (progressContainer) progressContainer.style.display = 'none';
+      showGitHubAlert(`Investigation failed: ${job.error || 'Check aborted or unreachable'}`);
+      return;
+    }
+
+    if (job.status === 'cancelled') {
+      currentGitHubJobId = null;
+      resetGitHubButtons();
+      const progressContainer = document.getElementById('githubProgressContainer');
+      if (progressContainer) progressContainer.style.display = 'none';
+      showGitHubAlert('Investigation was cancelled.', 'warn');
+      return;
+    }
+
+    // Schedule next poll tick (fast 250ms for snappy demo experience)
+    githubPollTimer = setTimeout(() => pollGitHubJob(jobId), 250);
+  } catch (err) {
+    currentGitHubJobId = null;
+    resetGitHubButtons();
+    showGitHubAlert(`Polling error: ${err.message}`);
+  }
+}
+
+function renderGitHubReport(report) {
+  const container = document.getElementById('githubResultsContainer');
+  if (!container) return;
+
+  const repo = report.repository;
+  const meta = report.metadata;
+  const conc = report.finalConclusion;
+  const statusStr = (conc?.overallStatus || 'HEALTHY').toUpperCase();
+
+  let verdictClass = 'verdict-healthy';
+  if (statusStr.includes('SIGNIFICANT') || statusStr.includes('FAIL')) {
+    verdictClass = 'verdict-issues';
+  } else if (statusStr.includes('NEEDS')) {
+    verdictClass = 'verdict-attention';
+  } else if (statusStr.includes('INCOMPLETE')) {
+    verdictClass = 'verdict-incomplete';
+  }
+
+  const createdDateStr = new Date(meta.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  const firstCommitStr = meta.firstCommitDate || report.developmentTimeline[0]?.date || createdDateStr;
+  const latestCommitStr = report.commitsSample[0]?.sha?.slice(0, 8) || 'HEAD';
+
+  container.innerHTML = `
+    <!-- Top Hero Card -->
+    <div class="github-repo-hero">
+      <div class="hero-top-row">
+        <div class="hero-title-group">
+          <div class="repo-avatar">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
+              <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/>
+            </svg>
+          </div>
+          <div>
+            <a href="${meta.htmlUrl}" target="_blank" class="repo-full-name">${escapeHtml(meta.fullName)} ↗</a>
+            <div style="font-size:11.5px; color:var(--text-muted); margin-top:2px;">Report ID: <code>${report.id}</code></div>
+          </div>
+        </div>
+        <div class="hero-badges">
+          <span class="verdict-pill ${verdictClass}">${escapeHtml(statusStr)}</span>
+          ${report.isMock ? '<span class="simulation-disclaimer">⚠️ MOCK SIMULATION DATA</span>' : '<span class="badge badge-accent">LIVE REPO</span>'}
+        </div>
+      </div>
+
+      <p class="hero-desc">${escapeHtml(meta.description || 'No description provided by repository maintainers.')}</p>
+
+      <div class="hero-meta-grid">
+        <div class="meta-item">
+          <span class="meta-label">Primary Stack</span>
+          <span class="meta-value">${escapeHtml(meta.primaryLanguage || 'TypeScript')}</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">Default Branch</span>
+          <span class="meta-value">${escapeHtml(meta.defaultBranch || 'main')}</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">Community Stars</span>
+          <span class="meta-value">⭐ ${meta.starsCount.toLocaleString()}</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">Forks</span>
+          <span class="meta-value">🍴 ${meta.forksCount.toLocaleString()}</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">Open Issues</span>
+          <span class="meta-value">⚠️ ${meta.openIssuesCount.toLocaleString()}</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">Repo Created</span>
+          <span class="meta-value">${createdDateStr}</span>
+        </div>
+        <div class="meta-item" title="First commit date is measured from historical git commits, distinct from GitHub repo creation date">
+          <span class="meta-label">First Commit</span>
+          <span class="meta-value">${firstCommitStr}</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">Latest Commit</span>
+          <span class="meta-value"><code>${latestCommitStr}</code></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Navigation Pills -->
+    <div class="github-subnav">
+      <button class="github-subnav-btn active" data-subtab="overview">Overview &amp; 10 Core Answers</button>
+      <button class="github-subnav-btn" data-subtab="contributors">Contributors &amp; Commits (${report.contributors.length})</button>
+      <button class="github-subnav-btn" data-subtab="codebase">Codebase &amp; Architecture</button>
+      <button class="github-subnav-btn" data-subtab="security">Security &amp; Findings (${report.securityFindings.length})</button>
+      <button class="github-subnav-btn" data-subtab="tests">Test Health &amp; Checks</button>
+      <button class="github-subnav-btn" data-subtab="exports">Export &amp; History</button>
+    </div>
+
+    <!-- SUB-PANE 1: Overview & 10 Core Answers -->
+    <div id="ghSubpane-overview" class="github-tab-pane active">
+      <div class="github-card">
+        <div class="card-title-row">
+          <span class="card-title">Executive Summary</span>
+          <span class="badge">${(report.durationMs / 1000).toFixed(1)}s Investigation</span>
+        </div>
+        <p style="color:var(--text-secondary); line-height:1.6; margin:0; font-size:13px;">
+          ${escapeHtml(report.executiveSummary)}
+        </p>
+      </div>
+
+      <div class="github-card">
+        <div class="card-title-row">
+          <span class="card-title">10 Evidence-Based Core Answers</span>
+          <span class="badge badge-accent">Ground Truth Synthesis</span>
+        </div>
+        <div class="answers-grid">
+          ${renderAnswersCards(conc.answers)}
+        </div>
+      </div>
+
+      <div class="github-card">
+        <div class="card-title-row">
+          <span class="card-title">Prioritized Remediation Plan</span>
+          <span class="badge">${conc.prioritizedRemediation.length} Action Items</span>
+        </div>
+        <div class="remediation-list">
+          ${renderRemediationList(conc.prioritizedRemediation)}
+        </div>
+      </div>
+    </div>
+
+    <!-- SUB-PANE 2: Contributors & History -->
+    <div id="ghSubpane-contributors" class="github-tab-pane">
+      <div class="github-card">
+        <div class="card-title-row">
+          <span class="card-title">Identified Contributors &amp; Authorship Profiles</span>
+          <span class="badge">${report.contributors.length} Identifiable Contributors</span>
+        </div>
+        <div class="contributors-grid">
+          ${renderContributorsGrid(report.contributors)}
+        </div>
+      </div>
+
+      <div class="github-card">
+        <div class="card-title-row">
+          <span class="card-title">Chronological Development Milestones</span>
+          <span class="badge">${report.developmentTimeline.length} Milestones</span>
+        </div>
+        <div class="timeline-milestones">
+          ${renderMilestonesList(report.developmentTimeline)}
+        </div>
+      </div>
+
+      <div class="github-card">
+        <div class="card-title-row">
+          <span class="card-title">Analyzed Commits Sample</span>
+          <span class="badge">${report.commitsAnalyzedCount} Commits Ingested</span>
+        </div>
+        <div style="overflow-x:auto;">
+          <table class="diff-table" style="width:100%; font-size:12px; border-collapse:collapse;">
+            <thead>
+              <tr style="text-align:left; border-bottom:1px solid var(--border-hairline); color:var(--text-muted);">
+                <th style="padding:8px;">SHA</th>
+                <th style="padding:8px;">Message</th>
+                <th style="padding:8px;">Author / Committer</th>
+                <th style="padding:8px;">Date</th>
+                <th style="padding:8px;">Diff Stats</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${renderCommitsTableRows(report.commitsSample)}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- SUB-PANE 3: Codebase & Architecture -->
+    <div id="ghSubpane-codebase" class="github-tab-pane">
+      <div class="github-card">
+        <div class="card-title-row">
+          <span class="card-title">Architecture Overview</span>
+          <span class="badge">${escapeHtml(report.architectureOverview.primaryStack)}</span>
+        </div>
+        <p style="color:var(--text-secondary); line-height:1.6; margin:0; font-size:13px;">
+          ${escapeHtml(report.architectureOverview.summary)}
+        </p>
+        <div style="margin-top:8px;">
+          <strong style="font-size:12px; color:var(--text-primary);">Application Entry Points:</strong>
+          <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:6px;">
+            ${report.architectureOverview.entryPoints.map(ep => `<span class="badge badge-accent"><code>${escapeHtml(ep)}</code></span>`).join('')}
+          </div>
+        </div>
+      </div>
+
+      <div class="github-card">
+        <div class="card-title-row">
+          <span class="card-title">Directory Topology</span>
+          <span class="badge">${report.architectureOverview.directories.length} Subsystems</span>
+        </div>
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:10px;">
+          ${report.architectureOverview.directories.map(d => `
+            <div style="background:var(--bg-editor); border:1px solid var(--border-hairline); padding:10px 12px; border-radius:6px;">
+              <code style="color:var(--accent-orange); font-size:12px;">${escapeHtml(d.path)}</code>
+              <div style="font-size:12px; color:var(--text-secondary); margin-top:4px;">${escapeHtml(d.purpose)}</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+
+      <div class="github-card">
+        <div class="card-title-row">
+          <span class="card-title">Dependency Manifests</span>
+          <span class="badge">${report.dependencyManifests.length} Manifest(s)</span>
+        </div>
+        ${report.dependencyManifests.map(m => `
+          <div style="background:var(--bg-editor); border:1px solid var(--border-hairline); padding:12px; border-radius:6px; display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <strong style="color:var(--text-primary); font-size:13px;">${escapeHtml(m.path)}</strong>
+              <div style="color:var(--text-muted); font-size:11.5px; margin-top:2px;">Manager: <code>${escapeHtml(m.manager)}</code> | Lockfile Present: ${m.hasLockfile ? '✅ Yes' : '❌ Missing'}</div>
+            </div>
+            <div style="text-align:right;">
+              <div style="color:var(--text-primary); font-weight:600; font-size:13px;">${m.directDependenciesCount} direct / ${m.devDependenciesCount} dev</div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+
+    <!-- SUB-PANE 4: Security & Quality Findings -->
+    <div id="ghSubpane-security" class="github-tab-pane">
+      <div class="github-card">
+        <div class="card-title-row">
+          <span class="card-title">Evidence-Based Security &amp; Quality Audit</span>
+          <span class="badge">${report.securityFindings.length} Observation(s)</span>
+        </div>
+        <div class="findings-list">
+          ${renderFindingsList(report.securityFindings)}
+        </div>
+      </div>
+    </div>
+
+    <!-- SUB-PANE 5: Test Results & Project Health -->
+    <div id="ghSubpane-tests" class="github-tab-pane">
+      <div class="github-card">
+        <div class="card-title-row">
+          <span class="card-title">Automated Verification &amp; Test Suite</span>
+          <span class="badge ${report.testExecution.status === 'ALL_PASSED' ? 'badge-accent' : 'badge-danger'}">${escapeHtml(report.testExecution.status)}</span>
+        </div>
+        <div class="hero-meta-grid">
+          <div class="meta-item">
+            <span class="meta-label">Test Runner</span>
+            <span class="meta-value">${escapeHtml(report.testExecution.framework)}</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">Passed</span>
+            <span class="meta-value" style="color:var(--status-pass);">✅ ${report.testExecution.passed}</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">Failed</span>
+            <span class="meta-value" style="${report.testExecution.failed > 0 ? 'color:var(--status-fail);' : ''}">${report.testExecution.failed > 0 ? `❌ ${report.testExecution.failed}` : '0'}</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">Skipped</span>
+            <span class="meta-value">${report.testExecution.skipped}</span>
+          </div>
+        </div>
+        <p style="color:var(--text-secondary); font-size:12.5px; margin:4px 0 0 0;">
+          ${escapeHtml(report.testExecution.notes)}
+        </p>
+      </div>
+
+      <div class="github-card">
+        <div class="card-title-row">
+          <span class="card-title">Repository Health &amp; Maintenance Indicators</span>
+          <span class="badge">Governance</span>
+        </div>
+        <div class="hero-meta-grid">
+          <div class="meta-item">
+            <span class="meta-label">Commit Velocity</span>
+            <span class="meta-value" style="text-transform:uppercase;">${report.maintenanceIndicators.commitFrequency}</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">Bus Factor Risk</span>
+            <span class="meta-value" style="text-transform:uppercase; color:${report.maintenanceIndicators.busFactorRisk === 'low' ? 'var(--status-pass)' : '#F59E0B'}">${report.maintenanceIndicators.busFactorRisk}</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">CI Configured</span>
+            <span class="meta-value">${report.maintenanceIndicators.hasContinuousIntegration ? '✅ Yes' : '⚠️ Missing'}</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">Documentation</span>
+            <span class="meta-value">${report.maintenanceIndicators.hasDocumentation ? '✅ Verified' : '⚠️ Partial'}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SUB-PANE 6: Exports & Local History -->
+    <div id="ghSubpane-exports" class="github-tab-pane">
+      <div class="github-card">
+        <div class="card-title-row">
+          <span class="card-title">Export Investigation Artifacts</span>
+          <span class="badge">Permanent Record</span>
+        </div>
+        <div class="export-actions-row">
+          <a href="/api/github/reports/${report.id}/export?format=markdown" download class="btn btn-primary">
+            <svg class="anvexo-icon btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            <span>Download Markdown (.md)</span>
+          </a>
+
+          <a href="/api/github/reports/${report.id}/export?format=json" download class="btn btn-sm">
+            <svg class="anvexo-icon btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            <span>Download JSON (.json)</span>
+          </a>
+
+          <a href="/api/github/reports/${report.id}/export?format=html" download class="btn btn-sm">
+            <svg class="anvexo-icon btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            <span>Download Standalone HTML (.html)</span>
+          </a>
+
+          <button id="ghDeleteReportBtn" class="btn btn-danger btn-sm" onclick="deleteInvestigationReport('${report.id}')">
+            <span>Remove from Local History</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="github-card">
+        <div class="card-title-row">
+          <span class="card-title">Previous Local Investigations</span>
+          <span class="badge" id="ghHistoryCountBadge">Saved Reports</span>
+        </div>
+        <div id="ghHistoryListContainer" style="overflow-x:auto;">
+          <div style="color:var(--text-muted); font-size:12px; padding:10px 0;">Loading local history...</div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // Attach Subnav Switchers
+  const subnavButtons = container.querySelectorAll('.github-subnav-btn');
+  subnavButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const targetSubtab = btn.getAttribute('data-subtab');
+      subnavButtons.forEach(b => b.classList.toggle('active', b.getAttribute('data-subtab') === targetSubtab));
+      container.querySelectorAll('.github-tab-pane').forEach(p => {
+        p.classList.toggle('active', p.id === `ghSubpane-${targetSubtab}`);
+      });
+      if (targetSubtab === 'exports') {
+        fetchGitHubHistory();
+      }
+    });
+  });
+}
+
+function renderAnswersCards(answers) {
+  if (!answers || Object.keys(answers).length === 0) {
+    return '<div style="color:var(--text-muted);">No structured answers synthesized.</div>';
+  }
+
+  const questionKeys = [
+    { key: 'whatProjectDoes', title: '1. What does the project do?' },
+    { key: 'howStructured', title: '2. How is it structured?' },
+    { key: 'visibleHistory', title: '3. What development history is visible?' },
+    { key: 'contributorsChangedParts', title: '4. Which contributors changed which parts?' },
+    { key: 'whatIsWorking', title: '5. What is working?' },
+    { key: 'whatIsFailing', title: '6. What is failing?' },
+    { key: 'verifiedIssues', title: '7. Which issues have been verified?' },
+    { key: 'needsInvestigation', title: '8. What needs further investigation?' },
+    { key: 'isReadyForUse', title: '9. Is the project ready for its stated use?' },
+    { key: 'whatToFixFirst', title: '10. What should be fixed first?' },
+  ];
+
+  return questionKeys.map(q => {
+    const ans = answers[q.key] || 'Not explicitly determined from evidence.';
+    return `
+      <div class="answer-card">
+        <div class="answer-q">${escapeHtml(q.title)}</div>
+        <div class="answer-a">${escapeHtml(ans)}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderRemediationList(items) {
+  if (!items || items.length === 0) {
+    return '<div style="color:var(--text-muted); font-size:12px;">No urgent remediation actions required.</div>';
+  }
+
+  return items.map(item => `
+    <div class="remediation-item">
+      <span class="priority-pill ${item.priority.toLowerCase()}">${escapeHtml(item.priority)}</span>
+      <div style="flex:1;">
+        <strong style="color:var(--text-primary); font-size:12.5px;">${escapeHtml(item.recommendation)}</strong>
+        ${item.targetFile ? `<div style="font-size:11.5px; color:var(--text-muted); margin-top:2px;">Target: <code>${escapeHtml(item.targetFile)}</code></div>` : ''}
+        <div style="font-size:11.5px; color:var(--text-secondary); margin-top:4px;">${escapeHtml(item.rationale)}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderContributorsGrid(contributors) {
+  return contributors.map(c => `
+    <div class="contributor-card">
+      <div class="contributor-header">
+        <div>
+          <div class="contrib-name">${escapeHtml(c.name)}</div>
+          <div class="contrib-username">@${escapeHtml(c.username)}</div>
+        </div>
+        <span class="contrib-commits">${c.commitsCount} commits</span>
+      </div>
+      <div class="contrib-areas">
+        <strong>Technical Focus:</strong> ${c.technicalAreas.map(a => `<span class="badge" style="font-size:10px; margin:2px;">${escapeHtml(a)}</span>`).join('')}
+      </div>
+      <div style="font-size:11.5px; color:var(--text-muted);">
+        <strong>Top Files:</strong> ${c.filesModified.map(f => `<code>${escapeHtml(f)}</code>`).join(', ')}
+      </div>
+      <div class="contrib-note">
+        ${escapeHtml(c.attributionNote)}
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderMilestonesList(milestones) {
+  return milestones.map(m => `
+    <div class="milestone-item">
+      <div class="milestone-date">${escapeHtml(m.date)}</div>
+      <div class="milestone-details">
+        <div class="milestone-title">
+          ${escapeHtml(m.title)}
+          <span class="badge badge-accent" style="font-size:10px; margin-left:6px;">${escapeHtml(m.type)}</span>
+        </div>
+        <div class="milestone-desc">${escapeHtml(m.description)}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderCommitsTableRows(commits) {
+  return commits.map(c => `
+    <tr style="border-bottom:1px solid var(--border-hairline);">
+      <td style="padding:8px; font-family:var(--font-mono); color:var(--accent-orange);"><code>${c.sha.slice(0, 8)}</code></td>
+      <td style="padding:8px; color:var(--text-primary); max-width:280px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(c.message)}</td>
+      <td style="padding:8px; color:var(--text-secondary);">${escapeHtml(c.authorName)} ${c.authorName !== c.committerName ? `<span style="color:var(--text-muted); font-size:10.5px;">(committer: ${escapeHtml(c.committerName)})</span>` : ''}</td>
+      <td style="padding:8px; font-family:var(--font-mono); color:var(--text-muted); font-size:11px;">${escapeHtml(c.timestamp.slice(0, 10))}</td>
+      <td style="padding:8px; font-family:var(--font-mono); font-size:11px;">
+        <span style="color:var(--status-pass);">+${c.stats?.additions || 0}</span> / 
+        <span style="color:var(--status-fail);">-${c.stats?.deletions || 0}</span>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function renderFindingsList(findings) {
+  if (!findings || findings.length === 0) {
+    return '<div style="color:var(--status-pass); font-size:12.5px;">✅ Zero security vulnerabilities or risky patterns detected.</div>';
+  }
+
+  return findings.map(f => {
+    const sev = f.severity.toLowerCase();
+    return `
+      <div class="finding-card sev-${sev}">
+        <div class="finding-top">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span class="priority-pill ${sev === 'high' ? 'p1' : sev === 'medium' ? 'p2' : 'p3'}">${escapeHtml(f.severity)}</span>
+            <span class="finding-title">${escapeHtml(f.title)}</span>
+          </div>
+          <span class="finding-id">${escapeHtml(f.id)}</span>
+        </div>
+        <div class="finding-desc">${escapeHtml(f.description)}</div>
+        <div style="font-size:11.5px; color:var(--text-muted);">
+          <strong>Affected File:</strong> <code>${escapeHtml(f.affectedFile)}</code>
+          <span style="margin-left:12px;"><strong>Verification:</strong> ${escapeHtml(f.verificationStatus)}</span>
+        </div>
+        ${f.evidenceCode ? `
+          <div class="finding-code">${escapeHtml(f.evidenceCode)}</div>
+        ` : ''}
+        <div style="font-size:12px; color:var(--accent-orange);">
+          <strong>Remediation:</strong> ${escapeHtml(f.remediation)}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+async function fetchGitHubHistory() {
+  const container = document.getElementById('ghHistoryListContainer');
+  if (!container) return;
+
+  try {
+    const res = await fetch('/api/github/history');
+    if (!res.ok) return;
+    const list = await res.json();
+
+    const countBadge = document.getElementById('ghHistoryCountBadge');
+    if (countBadge) countBadge.textContent = `${list.length} Saved`;
+
+    if (list.length === 0) {
+      container.innerHTML = '<div style="color:var(--text-muted); font-size:12px; padding:8px 0;">No previous investigations saved yet.</div>';
+      return;
+    }
+
+    container.innerHTML = `
+      <table style="width:100%; font-size:12px; border-collapse:collapse;">
+        <thead>
+          <tr style="text-align:left; border-bottom:1px solid var(--border-hairline); color:var(--text-muted);">
+            <th style="padding:6px 8px;">Repository</th>
+            <th style="padding:6px 8px;">Status</th>
+            <th style="padding:6px 8px;">Date</th>
+            <th style="padding:6px 8px; text-align:right;">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${list.map(item => `
+            <tr style="border-bottom:1px solid var(--border-hairline);">
+              <td style="padding:6px 8px; font-weight:600; color:var(--text-primary);">${escapeHtml(item.owner)}/${escapeHtml(item.repo)}</td>
+              <td style="padding:6px 8px;"><span class="badge ${item.overallStatus?.includes('Healthy') ? 'badge-accent' : 'badge-danger'}">${escapeHtml(item.overallStatus || item.status)}</span></td>
+              <td style="padding:6px 8px; color:var(--text-muted); font-family:var(--font-mono); font-size:11px;">${new Date(item.startedAt).toLocaleString()}</td>
+              <td style="padding:6px 8px; text-align:right;">
+                <button class="btn btn-sm" onclick="loadPreviousInvestigation('${item.id}')" style="margin-right:6px;">Open</button>
+                <button class="btn btn-danger btn-sm" onclick="deleteInvestigationReport('${item.id}')">&times;</button>
+              </td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+  } catch {}
+}
+
+async function loadPreviousInvestigation(id) {
+  try {
+    const res = await fetch(`/api/github/history/${id}`);
+    if (!res.ok) {
+      alert('Could not load previous report');
+      return;
+    }
+    const report = await res.json();
+    lastGitHubReport = report;
+    renderGitHubReport(report);
+  } catch (err) {
+    alert(`Failed to load report: ${err.message}`);
+  }
+}
+window.loadPreviousInvestigation = loadPreviousInvestigation;
+
+async function deleteInvestigationReport(id) {
+  if (!confirm('Remove this investigation report from local history?')) return;
+  try {
+    const res = await fetch(`/api/github/history/${id}`, { method: 'DELETE' });
+    if (res.ok) {
+      fetchGitHubHistory();
+      // If active report deleted, reset view
+      if (lastGitHubReport && lastGitHubReport.id === id) {
+        lastGitHubReport = null;
+        const container = document.getElementById('githubResultsContainer');
+        if (container) {
+          container.innerHTML = `
+            <div class="github-welcome-card">
+              <h2>Report Removed</h2>
+              <p>The investigation record was removed from local history.</p>
+              <button class="btn btn-primary" onclick="startGitHubInvestigation('mock://dr5t/ANVEXO-demo')">Launch Sample Investigation</button>
+            </div>
+          `;
+        }
+      }
+    }
+  } catch (err) {
+    alert(`Failed to delete report: ${err.message}`);
+  }
+}
+window.deleteInvestigationReport = deleteInvestigationReport;

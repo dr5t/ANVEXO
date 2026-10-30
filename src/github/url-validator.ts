@@ -38,6 +38,11 @@ export function parseAndValidateGitHubUrl(input: string, forceMock: boolean = fa
     }
   }
 
+  // Block path traversal attempts
+  if (trimmed.includes('/../') || trimmed.endsWith('/..') || trimmed.includes('/..') || trimmed.includes('\\..')) {
+    throw new Error('Invalid characters in repository path: path traversal detected.');
+  }
+
   let owner = '';
   let repo = '';
   let host = 'github.com';
