@@ -633,5 +633,49 @@ describe('GemmaProvider', () => {
       expect(provider).toBeInstanceOf(GemmaProvider);
       expect(provider.id).toBe('gemma');
     });
+
+    it('respects request.model override and stopSequences on gemini-api route', async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          candidates: [{ content: { parts: [{ text: 'model test ok' }] }, finishReason: 'STOP' }],
+        }),
+      });
+      globalThis.fetch = mockFetch as unknown as typeof fetch;
+
+      const provider = new GemmaProvider({ apiKey: 'test-key', route: 'gemini-api', defaultModel: 'gemma-4-31b-it' });
+      await provider.complete({
+        messages: [{ role: 'user', content: 'test request' }],
+        model: 'gemma-2-27b-it',
+        stopSequences: ['END', 'STOP'],
+      });
+
+      expect(mockFetch).toHaveBeenCalledTimes(1);
+      const [url, options] = mockFetch.mock.calls[0];
+      expect(String(url)).toContain('/v1beta/models/gemma-2-27b-it:generateContent');
+      const body = JSON.parse(options.body as string);
+      expect(body.generationConfig.stopSequences).toEqual(['END', 'STOP']);
+    });
+
+    it('respects request.model override and stopSequences on local route', async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ response: 'local model ok' }),
+      });
+      globalThis.fetch = mockFetch as unknown as typeof fetch;
+
+      const provider = new GemmaProvider({ route: 'local', defaultModel: 'gemma4:latest' });
+      await provider.complete({
+        messages: [{ role: 'user', content: 'test local' }],
+        model: 'gemma2:9b',
+        stopSequences: ['HALT'],
+      });
+
+      expect(mockFetch).toHaveBeenCalledTimes(1);
+      const [, options] = mockFetch.mock.calls[0];
+      const body = JSON.parse(options.body as string);
+      expect(body.model).toBe('gemma2:9b');
+      expect(body.options.stop).toEqual(['HALT']);
+    });
   });
 });

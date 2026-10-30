@@ -1,6 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import { GemmaProvider } from '../../src/providers/gemma.js';
 
+if (typeof process.loadEnvFile === 'function') {
+  try {
+    process.loadEnvFile();
+  } catch {}
+}
+
 const apiKey = process.env.GEMMA_API_KEY?.trim();
 
 if (!apiKey) {
