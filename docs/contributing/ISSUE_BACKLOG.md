@@ -6,7 +6,7 @@ The IDs in this document are internal planning labels, not GitHub issue numbers.
 
 ### Current status at `pr-for-hacktoberrfest` commit `84030f3`
 
-GitHub contains no open issues or pull requests. The current default test run passed 29 test files and 292 tests; see [`docs/mlh-submission/VERIFICATION.md`](../mlh-submission/VERIFICATION.md) for all commands, results, and live-test limitations.
+The audit found no open GitHub issues; pull-request state is tracked on GitHub and is not represented by these internal planning labels. The current default test run passed 29 test files and 292 tests; see [`docs/mlh-submission/VERIFICATION.md`](../mlh-submission/VERIFICATION.md) for all commands, results, and live-test limitations.
 
 | Internal ID | Current audit status |
 | :--- | :--- |
