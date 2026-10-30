@@ -241,7 +241,7 @@ cp .env.example .env
 Configure your Google AI credentials and model preferences:
 
 - `GEMINI_API_KEY`: Required for Google-hosted Gemini API inference. Obtain your key from Google AI Studio.
-- `GEMINI_MODEL`: Model identifier (defaults to `gemini-2.5-flash`; verified models: `gemini-2.5-flash`, `gemini-2.5-pro`, `gemini-1.5-flash`, `gemini-1.5-pro`).
+- `GEMINI_MODEL`: Model identifier (defaults to `gemini-3.8-flash`; provider catalog: `gemini-3.8-flash`, `gemini-2.5-flash`, `gemini-2.5-pro`, `gemini-1.5-flash`, `gemini-1.5-pro`).
 - `GEMINI_BASE_URL`: Optional custom API endpoint (defaults to `https://generativelanguage.googleapis.com`).
 - `OLLAMA_BASE_URL`: Optional local endpoint for offline Gemma inference (`http://localhost:11434`).
 
@@ -253,11 +253,11 @@ export GEMINI_API_KEY="your-google-ai-api-key"
 
 Restart ANVEXO (or your terminal session) after changing environment variables for changes to take effect. No cloud deployment or DigitalOcean droplet is required for local development or testing.
 
-#### Verified Gemini API Specifications & Limitations:
+#### Gemini API Request Configuration:
 - **Base Endpoint**: `https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent`
-- **Supported Models**: `gemini-2.5-flash`, `gemini-2.5-pro`, `gemini-1.5-flash`, `gemini-1.5-pro`
+- **Provider Model Catalog**: `gemini-3.8-flash`, `gemini-2.5-flash`, `gemini-2.5-pro`, `gemini-1.5-flash`, `gemini-1.5-pro`
 - **Multimodal Payloads**: Inline image data with maximum payload size of 20MB
-- **Supported Image Formats**: `image/png`, `image/jpeg`, `image/webp`, `image/heic`, `image/heif`
+- **Accepted Image MIME Types**: `image/png`, `image/jpeg`, `image/webp`, `image/gif`, `image/heic`, `image/heif`
 - **Authentication**: Sent via `x-goog-api-key` header and query parameter `?key=`
 
 ### <img src="docs/assets/icons/test.svg" width="18" height="18" alt="" valign="middle" /> Running Test Verification
