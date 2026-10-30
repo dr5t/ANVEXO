@@ -28,7 +28,7 @@ describe('GeminiProvider', () => {
       expect(provider.name).toBe('Google Gemini');
       expect(provider.getApiKey()).toBe('env-secret-key');
       expect(provider.getBaseUrl()).toBe('https://generativelanguage.googleapis.com');
-      expect(provider.getDefaultModel()).toBe('gemini-2.5-flash');
+      expect(provider.getDefaultModel()).toBe('gemini-3.8-flash');
     });
 
     it('prefers explicit constructor key over environment variable', () => {
@@ -74,7 +74,10 @@ describe('GeminiProvider', () => {
       const provider = new GeminiProvider();
       const models = await provider.listModels();
 
-      expect(models.length).toBe(4);
+      expect(models.length).toBe(5);
+
+      const flash38 = models.find(m => m.id === 'gemini-3.8-flash');
+      expect(flash38).toBeDefined();
 
       const flash25 = models.find(m => m.id === 'gemini-2.5-flash');
       expect(flash25).toBeDefined();
@@ -150,7 +153,7 @@ describe('GeminiProvider', () => {
 
       expect(mockFetch).toHaveBeenCalledTimes(1);
       const [url, options] = mockFetch.mock.calls[0];
-      expect(String(url)).toContain('/v1beta/models/gemini-2.5-flash:generateContent');
+      expect(String(url)).toContain('/v1beta/models/gemini-3.8-flash:generateContent');
       expect(new URL(String(url)).searchParams.get('key')).toBe('test-api-key');
 
       expect(options.headers).toEqual({
@@ -306,7 +309,7 @@ describe('GeminiProvider', () => {
       globalThis.fetch = mockFetch as unknown as typeof fetch;
 
       const provider = new GeminiProvider(secret);
-      const err = await provider.complete({ messages: [{ role: 'user', content: 'test' }] }).catch((e: Error) => e);
+      const err = await provider.complete({ messages: [{ role: 'user', content: 'test' }] }).catch((e: Error) => e) as Error;
 
       expect(err.message).toContain('Gemini API authentication failed (HTTP 401)');
       expect(err.message).toContain('Check GEMINI_API_KEY');
@@ -322,7 +325,7 @@ describe('GeminiProvider', () => {
       globalThis.fetch = mockFetch as unknown as typeof fetch;
 
       const provider = new GeminiProvider('test-key');
-      const err = await provider.complete({ messages: [{ role: 'user', content: 'test' }] }).catch((e: Error) => e);
+      const err = await provider.complete({ messages: [{ role: 'user', content: 'test' }] }).catch((e: Error) => e) as Error;
 
       expect(err.message).toContain('Gemini API rate limit exceeded (HTTP 429)');
     });
@@ -336,7 +339,7 @@ describe('GeminiProvider', () => {
       globalThis.fetch = mockFetch as unknown as typeof fetch;
 
       const provider = new GeminiProvider('test-key');
-      const err = await provider.complete({ messages: [{ role: 'user', content: 'test' }] }).catch((e: Error) => e);
+      const err = await provider.complete({ messages: [{ role: 'user', content: 'test' }] }).catch((e: Error) => e) as Error;
 
       expect(err.message).toContain('Gemini API rejected the model or request configuration (HTTP 404)');
     });
@@ -350,7 +353,7 @@ describe('GeminiProvider', () => {
       globalThis.fetch = mockFetch as unknown as typeof fetch;
 
       const provider = new GeminiProvider('test-key');
-      const err = await provider.complete({ messages: [{ role: 'user', content: 'test' }] }).catch((e: Error) => e);
+      const err = await provider.complete({ messages: [{ role: 'user', content: 'test' }] }).catch((e: Error) => e) as Error;
 
       expect(err.message).toContain('Gemini API server error (HTTP 500)');
     });
@@ -361,7 +364,7 @@ describe('GeminiProvider', () => {
       globalThis.fetch = mockFetch as unknown as typeof fetch;
 
       const provider = new GeminiProvider(secret);
-      const err = await provider.complete({ messages: [{ role: 'user', content: 'test' }] }).catch((e: Error) => e);
+      const err = await provider.complete({ messages: [{ role: 'user', content: 'test' }] }).catch((e: Error) => e) as Error;
 
       expect(err.message).toContain('Gemini API network request failed');
       expect(err.message.includes(secret)).toBe(false);
@@ -382,7 +385,7 @@ describe('GeminiProvider', () => {
       const promise = provider.complete({ messages: [{ role: 'user', content: 'test' }] });
 
       vi.advanceTimersByTime(100);
-      const err = await promise.catch((e: Error) => e);
+      const err = await promise.catch((e: Error) => e) as Error;
 
       expect(err.message).toContain('Gemini API request timed out after 50ms');
       vi.useRealTimers();

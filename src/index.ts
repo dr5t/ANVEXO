@@ -41,3 +41,19 @@ export * from './reproduction/index.js';
 export * from './autonomy/index.js';
 export * from './memory/index.js';
 export * from './core/index.js';
+
+import { fileURLToPath } from 'node:url';
+import { resolve } from 'node:path';
+
+if (process.argv[1] && resolve(process.argv[1]) === resolve(fileURLToPath(import.meta.url))) {
+  const { AnvexoServer } = await import('./server/index.js');
+  const server = new AnvexoServer();
+  const { url } = await server.start();
+  process.stdout.write(`ANVEXO Workbench server running at ${url}\n`);
+  const shutdown = async () => {
+    await server.stop();
+    process.exit(0);
+  };
+  process.on('SIGINT', shutdown);
+  process.on('SIGTERM', shutdown);
+}

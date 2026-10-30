@@ -1,6 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import { GeminiProvider } from '../../src/providers/gemini.js';
 
+if (typeof process.loadEnvFile === 'function') {
+  try {
+    process.loadEnvFile();
+  } catch {}
+}
+
 const apiKey = process.env.GEMINI_API_KEY?.trim();
 
 if (!apiKey) {
@@ -14,13 +20,13 @@ describe('Gemini API live integration smoke test', () => {
     const provider = new GeminiProvider({
       apiKey,
       baseUrl: process.env.GEMINI_BASE_URL?.trim() || undefined,
-      defaultModel: process.env.GEMINI_MODEL?.trim() || 'gemini-2.5-flash',
+      defaultModel: process.env.GEMINI_MODEL?.trim() || 'gemini-3.8-flash',
       timeoutMs: 45_000,
     });
 
     const completion = await provider.complete({
       messages: [{ role: 'user', content: 'Reply with a short confirmation that the Gemini API smoke test succeeded.' }],
-      maxTokens: 64,
+      maxTokens: 256,
     });
 
     expect(completion).toEqual(expect.objectContaining({
