@@ -8,10 +8,13 @@ describe('GemmaProvider', () => {
 
   beforeEach(() => {
     vi.restoreAllMocks();
+    vi.stubEnv('GEMMA_API_KEY', '');
+    vi.stubEnv('GEMINI_API_KEY', '');
   });
 
   afterEach(() => {
     globalThis.fetch = originalFetch;
+    vi.unstubAllEnvs();
   });
 
   describe('Configuration and Routing', () => {
@@ -106,10 +109,13 @@ describe('GemmaProvider', () => {
 
   describe('Completion via Gemini API Endpoint', () => {
     it('throws when apiKey is missing for gemini-api route', async () => {
+      const mockFetch = vi.fn();
+      globalThis.fetch = mockFetch as unknown as typeof fetch;
       const provider = new GemmaProvider({ route: 'gemini-api', apiKey: '' });
       await expect(
         provider.complete({ messages: [{ role: 'user', content: 'hello' }] })
       ).rejects.toThrow(/Gemma API key is not configured/);
+      expect(mockFetch).not.toHaveBeenCalled();
     });
 
     it('constructs correct payload and parses text response and token usage', async () => {
@@ -144,7 +150,7 @@ describe('GemmaProvider', () => {
       expect(mockFetch).toHaveBeenCalledTimes(1);
       const [url, options] = mockFetch.mock.calls[0];
       expect(url).toContain('https://generativelanguage.googleapis.com/v1beta/models/gemma-4-31b-it:generateContent');
-      expect(url).toContain('key=test-secret-key');
+      expect(new URL(String(url)).searchParams.has('key')).toBe(true);
 
       const parsedBody = JSON.parse(options.body as string);
       expect(parsedBody.contents[0].parts[0].text).toBe('Inspect issue');
@@ -183,38 +189,135 @@ describe('GemmaProvider', () => {
       expect(res.toolCalls?.[0].arguments).toEqual({ path: 'src/index.ts' });
     });
 
-    it('redacts apiKey in error messages when Google API returns HTTP error', async () => {
+    it('does not expose API response details for authentication failures', async () => {
       const secretKey = 'super-secret-key-12345';
+      const backendDetails = `Permission denied for key ${secretKey}`;
       const mockFetch = vi.fn().mockResolvedValue({
         ok: false,
         status: 403,
-        text: async () => `Permission denied for key ${secretKey}`,
+        text: async () => backendDetails,
       });
       globalThis.fetch = mockFetch as unknown as typeof fetch;
 
       const provider = new GemmaProvider({ apiKey: secretKey, route: 'gemini-api' });
-      await expect(
-        provider.complete({ messages: [{ role: 'user', content: 'test' }] })
-      ).rejects.toThrow(/\[REDACTED_API_KEY\]/);
-
-      await expect(
-        provider.complete({ messages: [{ role: 'user', content: 'test' }] })
-      ).rejects.not.toThrow(secretKey);
+      const error = await provider.complete({ messages: [{ role: 'user', content: 'test' }] }).catch((reason: Error) => reason);
+      expect(error.message).toMatch(/Gemma API authentication failed/);
+      expect(error.message.includes(secretKey)).toBe(false);
+      expect(error.message.includes(backendDetails)).toBe(false);
     });
 
-    it('redacts apiKey in error messages when fetch throws a network exception', async () => {
+    it('returns a safe network error when fetch throws an exception', async () => {
       const secretKey = 'secret-network-key-99999';
       const mockFetch = vi.fn().mockRejectedValue(new Error(`Fetch failed for URL with key ${secretKey}`));
       globalThis.fetch = mockFetch as unknown as typeof fetch;
 
       const provider = new GemmaProvider({ apiKey: secretKey, route: 'gemini-api' });
-      await expect(
-        provider.complete({ messages: [{ role: 'user', content: 'test' }] })
-      ).rejects.toThrow(/\[REDACTED_API_KEY\]/);
+      const error = await provider.complete({ messages: [{ role: 'user', content: 'test' }] }).catch((reason: Error) => reason);
+      expect(error.message).toMatch(/Gemma API network request failed/);
+      expect(error.message.includes(secretKey)).toBe(false);
+    });
+
+    it('reports invalid model configuration without making a request', async () => {
+      const mockFetch = vi.fn();
+      globalThis.fetch = mockFetch as unknown as typeof fetch;
+      const provider = new GemmaProvider({
+        apiKey: 'test-key',
+        route: 'gemini-api',
+        defaultModel: 'models/gemma-4?key=hidden',
+      });
 
       await expect(
         provider.complete({ messages: [{ role: 'user', content: 'test' }] })
-      ).rejects.not.toThrow(secretKey);
+      ).rejects.toThrow(/Invalid Gemma model configuration/);
+      expect(mockFetch).not.toHaveBeenCalled();
+    });
+
+    it('rejects API endpoints containing credentials without exposing them', async () => {
+      const mockFetch = vi.fn();
+      globalThis.fetch = mockFetch as unknown as typeof fetch;
+      const provider = new GemmaProvider({
+        apiKey: 'test-key',
+        route: 'gemini-api',
+        baseUrl: 'https://user:password@example.com',
+      });
+
+      const error = await provider.complete({ messages: [{ role: 'user', content: 'test' }] }).catch((reason: Error) => reason);
+      expect(error.message).toMatch(/Invalid Gemma API endpoint configuration/);
+      expect(error.message.includes('user:password')).toBe(false);
+      expect(mockFetch).not.toHaveBeenCalled();
+    });
+
+    it('reports rejected models without exposing response details', async () => {
+      const privateDetails = 'Unknown model; internal credential: backend-secret';
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 404,
+        text: async () => privateDetails,
+      });
+      globalThis.fetch = mockFetch as unknown as typeof fetch;
+      const provider = new GemmaProvider({ apiKey: 'test-key', route: 'gemini-api' });
+
+      const error = await provider.complete({ messages: [{ role: 'user', content: 'test' }] }).catch((reason: Error) => reason);
+      expect(error).toBeInstanceOf(Error);
+      expect(error.message).toMatch(/rejected the model or request configuration/);
+      expect(error.message.includes(privateDetails)).toBe(false);
+    });
+
+    it('times out a stalled API request without leaking request details', async () => {
+      const mockFetch = vi.fn().mockImplementation((_url, options) => new Promise((_resolve, reject) => {
+        options.signal.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')), { once: true });
+      }));
+      globalThis.fetch = mockFetch as unknown as typeof fetch;
+      const provider = new GemmaProvider({ apiKey: 'test-key', route: 'gemini-api', timeoutMs: 5 });
+
+      await expect(
+        provider.complete({ messages: [{ role: 'user', content: 'test' }] })
+      ).rejects.toThrow(/timed out after 5ms/);
+    });
+
+    it('times out while reading a stalled API response body', async () => {
+      const mockFetch = vi.fn().mockImplementation((_url, options) => Promise.resolve({
+        ok: true,
+        json: () => new Promise((_resolve, reject) => {
+          options.signal.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')), { once: true });
+        }),
+      }));
+      globalThis.fetch = mockFetch as unknown as typeof fetch;
+      const provider = new GemmaProvider({ apiKey: 'test-key', route: 'gemini-api', timeoutMs: 5 });
+
+      await expect(
+        provider.complete({ messages: [{ role: 'user', content: 'test' }] })
+      ).rejects.toThrow(/timed out after 5ms/);
+    });
+
+    it('rejects invalid JSON and malformed or empty API responses', async () => {
+      const provider = new GemmaProvider({ apiKey: 'test-key', route: 'gemini-api' });
+      const invalidJsonFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => { throw new SyntaxError('sensitive response content'); },
+      });
+      globalThis.fetch = invalidJsonFetch as unknown as typeof fetch;
+      await expect(
+        provider.complete({ messages: [{ role: 'user', content: 'test' }] })
+      ).rejects.toThrow('Gemma API returned malformed JSON.');
+
+      const malformedFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ candidates: [] }),
+      });
+      globalThis.fetch = malformedFetch as unknown as typeof fetch;
+      await expect(
+        provider.complete({ messages: [{ role: 'user', content: 'test' }] })
+      ).rejects.toThrow('Gemma API returned a malformed response.');
+
+      const emptyFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ candidates: [{ content: { parts: [] } }] }),
+      });
+      globalThis.fetch = emptyFetch as unknown as typeof fetch;
+      await expect(
+        provider.complete({ messages: [{ role: 'user', content: 'test' }] })
+      ).rejects.toThrow('Gemma API returned an empty response.');
     });
   });
 

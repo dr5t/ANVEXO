@@ -89,24 +89,39 @@ Gemma produces JSON conforming to `GemmaInvestigationResult`:
 
 ## 5. Verification & Testing Instructions
 
-### 5.1 Offline Unit Tests (24 Mocked Tests)
+### 5.1 Offline Unit Tests (30 Mocked Tests)
 Verifies route switching, payload formatting, model listing, image validation, error API key scrubbing, and JSON markdown fallback:
 ```bash
 npx vitest run tests/unit/gemma.test.ts
 ```
 
-### 5.2 Live Integration Tests (Non-Blocking)
-Verifies connectivity with live Google AI Studio API or local Ollama daemon:
+### 5.2 Live API Smoke Test (Opt-In)
+This test makes a real Google Gemma API request using `GEMMA_API_KEY`. It is excluded from `npm test` and does not fall back to local Ollama. Without the key, the dedicated command skips with an actionable message.
+
+On macOS or Linux, enter the key without echoing it, run the test, then clear it:
 ```bash
-# With API key
-GEMMA_API_KEY="AIzaSy..." npm run test:gemma
+read -s GEMMA_API_KEY
+export GEMMA_API_KEY
+npm run test:gemma
+unset GEMMA_API_KEY
+```
 
-# Or with local Ollama
-GEMMA_BASE_URL="http://127.0.0.1:11434" npm run test:gemma
+On Windows PowerShell:
+```powershell
+$secureKey = Read-Host -AsSecureString 'Gemma API key'
+$env:GEMMA_API_KEY = [System.Net.NetworkCredential]::new('', $secureKey).Password
+npm run test:gemma
+Remove-Item Env:GEMMA_API_KEY
+```
 
-# Offline / Headless CI (skips cleanly with diagnostic notice)
+The optional `GEMMA_MODEL` (default `gemma-4-31b-it`) and `GEMMA_BASE_URL` (default Google Generative Language API endpoint) configure the request. Store keys in a secret manager or CI secret store; never commit them or print them in logs. The test validates the provider response and reports authentication, model, connectivity, timeout, and malformed-response errors without printing API response bodies or credentials.
+
+Without a key, this command safely skips and makes no network request:
+```bash
 npm run test:gemma
 ```
+
+`npm test` remains an offline suite and never requires a Gemma key or internet access.
 
 ### 5.3 Full Verification Suite
 ```bash
