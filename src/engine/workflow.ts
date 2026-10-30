@@ -36,6 +36,7 @@ export interface UnifiedEngineeringReport {
   completedAt: Date;
   investigation: InvestigationReport;
   impactReport?: ChangeImpactReport;
+  stageFailures: Array<{ stage: string; message: string }>;
   reproductionSession?: BugReproductionSession;
   proofReport: ProofReport;
   decisionMemories: DecisionMemoryRecord[];
@@ -86,11 +87,16 @@ export class EngineeringWorkflowRunner {
     }
 
     let impactReport: ChangeImpactReport | undefined;
+    const stageFailures: UnifiedEngineeringReport['stageFailures'] = [];
     try {
       const simulator = new ChangeImpactSimulator(repoPath);
       impactReport = await simulator.simulate(targetFile);
-    } catch {
+    } catch (error) {
       impactReport = undefined;
+      stageFailures.push({
+        stage: 'impact_analysis',
+        message: error instanceof Error ? error.message : String(error),
+      });
     }
 
     const memoryManager = new DecisionMemoryManager(repoPath);
@@ -195,6 +201,7 @@ export class EngineeringWorkflowRunner {
       completedAt,
       investigation,
       impactReport,
+      stageFailures,
       reproductionSession,
       proofReport,
       decisionMemories: relevantMemories,
@@ -220,6 +227,14 @@ export class EngineeringWorkflowRunner {
     lines.push(`Completed:       ${report.completedAt.toISOString()}`);
     lines.push(`Autonomy Policy: [${report.autonomyPolicy.mode.toUpperCase()}]`);
     lines.push('--------------------------------------------------------------------------------');
+
+    if (report.stageFailures.length > 0) {
+      lines.push('RECOVERED WORKFLOW STAGE FAILURES:');
+      for (const failure of report.stageFailures) {
+        lines.push(`  ! ${failure.stage}: ${failure.message}`);
+      }
+      lines.push('--------------------------------------------------------------------------------');
+    }
 
     if (report.reproductionSession) {
       lines.push('BUG REPRODUCTION:');
