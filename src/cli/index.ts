@@ -1,5 +1,11 @@
 #!/usr/bin/env node
 
+if (typeof process.loadEnvFile === 'function') {
+  try {
+    process.loadEnvFile();
+  } catch {}
+}
+
 import { createInterface } from 'node:readline';
 import { existsSync, mkdirSync, writeFileSync, readFileSync } from 'node:fs';
 import { join, resolve, basename, extname } from 'node:path';
