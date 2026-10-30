@@ -48,17 +48,17 @@ describe('Security Baseline and Defensive Controls', () => {
     });
 
     it('rejects symlink escape pointing outside canonical root', () => {
-      const outsideFile = path.join(os.tmpdir(), `anvexo-out-${Date.now()}.txt`);
-      fs.writeFileSync(outsideFile, 'secret outside content');
+      const outsideDir = fs.mkdtempSync(path.join(os.tmpdir(), 'anvexo-outside-'));
+      fs.writeFileSync(path.join(outsideDir, 'secret.txt'), 'secret outside content');
       const symlinkPath = path.join(tmpDir, 'symlink-escape');
-      fs.symlinkSync(outsideFile, symlinkPath);
+      fs.symlinkSync(outsideDir, symlinkPath, 'junction');
 
-      expect(() => {
-        validatePathWithinRoot('symlink-escape', tmpDir);
-      }).toThrow(SecurityError);
-
-      if (fs.existsSync(outsideFile)) {
-        fs.unlinkSync(outsideFile);
+      try {
+        expect(() => {
+          validatePathWithinRoot(path.join('symlink-escape', 'secret.txt'), tmpDir);
+        }).toThrow(/Symlink escape detected/);
+      } finally {
+        fs.rmSync(outsideDir, { recursive: true, force: true });
       }
     });
 
@@ -70,52 +70,58 @@ describe('Security Baseline and Defensive Controls', () => {
     });
 
     it('blocks file_read from following symlinks escaping rootPath', async () => {
-      const outsideFile = path.join(os.tmpdir(), `anvexo-read-out-${Date.now()}.txt`);
-      fs.writeFileSync(outsideFile, 'secret-content');
+      const outsideDir = fs.mkdtempSync(path.join(os.tmpdir(), 'anvexo-read-outside-'));
+      fs.writeFileSync(path.join(outsideDir, 'secret.txt'), 'secret-content');
       const symlinkPath = path.join(tmpDir, 'symlink-read');
-      fs.symlinkSync(outsideFile, symlinkPath);
+      fs.symlinkSync(outsideDir, symlinkPath, 'junction');
 
-      const tool = createFileReadTool();
-      const res = await tool.execute({ path: 'symlink-read', rootPath: tmpDir });
-      expect(res.success).toBe(false);
-      expect(res.error).toContain('Symlink escape detected');
-
-      if (fs.existsSync(outsideFile)) {
-        fs.unlinkSync(outsideFile);
+      try {
+        const tool = createFileReadTool();
+        const res = await tool.execute({ path: path.join('symlink-read', 'secret.txt'), rootPath: tmpDir });
+        expect(res.success).toBe(false);
+        expect(res.error).toContain('Symlink escape detected');
+      } finally {
+        fs.rmSync(outsideDir, { recursive: true, force: true });
       }
     });
 
     it('blocks file_write from following symlinks escaping rootPath', async () => {
-      const outsideFile = path.join(os.tmpdir(), `anvexo-write-out-${Date.now()}.txt`);
+      const outsideDir = fs.mkdtempSync(path.join(os.tmpdir(), 'anvexo-write-outside-'));
+      const outsideFile = path.join(outsideDir, 'target.txt');
       fs.writeFileSync(outsideFile, 'initial-content');
       const symlinkPath = path.join(tmpDir, 'symlink-write');
-      fs.symlinkSync(outsideFile, symlinkPath);
+      fs.symlinkSync(outsideDir, symlinkPath, 'junction');
 
-      const tool = createFileWriteTool();
-      const res = await tool.execute({ path: 'symlink-write', content: 'overwritten', rootPath: tmpDir });
-      expect(res.success).toBe(false);
-      expect(res.error).toContain('Symlink escape detected');
-      expect(fs.readFileSync(outsideFile, 'utf-8')).toBe('initial-content');
-
-      if (fs.existsSync(outsideFile)) {
-        fs.unlinkSync(outsideFile);
+      try {
+        const tool = createFileWriteTool();
+        const res = await tool.execute({
+          path: path.join('symlink-write', 'target.txt'),
+          content: 'overwritten',
+          rootPath: tmpDir,
+        });
+        expect(res.success).toBe(false);
+        expect(res.error).toContain('Symlink escape detected');
+        expect(fs.readFileSync(outsideFile, 'utf-8')).toBe('initial-content');
+      } finally {
+        fs.rmSync(outsideDir, { recursive: true, force: true });
       }
     });
 
     it('blocks file_delete from unlinking targets outside rootPath via symlinks', async () => {
-      const outsideFile = path.join(os.tmpdir(), `anvexo-del-out-${Date.now()}.txt`);
+      const outsideDir = fs.mkdtempSync(path.join(os.tmpdir(), 'anvexo-del-outside-'));
+      const outsideFile = path.join(outsideDir, 'target.txt');
       fs.writeFileSync(outsideFile, 'do-not-delete');
       const symlinkPath = path.join(tmpDir, 'symlink-del');
-      fs.symlinkSync(outsideFile, symlinkPath);
+      fs.symlinkSync(outsideDir, symlinkPath, 'junction');
 
-      const tool = createFileDeleteTool();
-      const res = await tool.execute({ path: 'symlink-del', rootPath: tmpDir });
-      expect(res.success).toBe(false);
-      expect(res.error).toContain('Symlink escape detected');
-      expect(fs.existsSync(outsideFile)).toBe(true);
-
-      if (fs.existsSync(outsideFile)) {
-        fs.unlinkSync(outsideFile);
+      try {
+        const tool = createFileDeleteTool();
+        const res = await tool.execute({ path: path.join('symlink-del', 'target.txt'), rootPath: tmpDir });
+        expect(res.success).toBe(false);
+        expect(res.error).toContain('Symlink escape detected');
+        expect(fs.existsSync(outsideFile)).toBe(true);
+      } finally {
+        fs.rmSync(outsideDir, { recursive: true, force: true });
       }
     });
   });
@@ -232,6 +238,16 @@ describe('Security Baseline and Defensive Controls', () => {
       const result = await tool.execute({ path: '/etc/passwd' });
       expect(result.success).toBe(false);
       expect(result.error).toContain('forbidden');
+    });
+
+    it('blocks sensitive POSIX system paths consistently across file tools', async () => {
+      const readResult = await createFileReadTool().execute({ path: '\\etc\\passwd' });
+      const writeResult = await createFileWriteTool().execute({ path: '/etc/shadow', content: 'modified' });
+      const deleteResult = await createFileDeleteTool().execute({ path: '/etc/sudoers' });
+
+      expect(readResult.error).toContain('forbidden');
+      expect(writeResult.error).toContain('forbidden');
+      expect(deleteResult.error).toContain('forbidden');
     });
   });
 
