@@ -30,6 +30,7 @@
 - [Developer Workbench (Split IDE Canvas)](#developer-workbench-split-ide-canvas)
 - [Default-Deny Permission &amp; Safety Model](#default-deny-permission--safety-model)
 - [Getting Started](#getting-started)
+- [Contributing](#contributing)
 - [CLI Reference](#cli-reference)
 - [HTTP API &amp; Server Endpoints](#http-api--server-endpoints)
 - [Security Audits &amp; Defensive Controls](#security-audits--defensive-controls)
@@ -248,6 +249,25 @@ Generate test coverage report:
 ```bash
 npm run test:coverage
 ```
+
+---
+
+<a id="contributing"></a>
+## Contributing
+
+The default branch is `main`. Contributions for the Hacktoberfest workstream must use an independent feature branch based on the latest `origin/pr-for-hacktoberrfest` and open a pull request targeting `pr-for-hacktoberrfest`. Do not push directly to either shared branch, reuse another contributor's branch, combine unrelated tasks, or merge a pull request. Shaurya Tiwari makes the final merge decision.
+
+```bash
+git status --short --branch
+git fetch origin
+git switch --create feat/<contributor>-<task> origin/pr-for-hacktoberrfest
+npm ci
+npm test
+npm run lint
+npm run build
+```
+
+Before creating a PR, verify the commits and complete diff against the target branch, push only your feature branch, and report actual test results in the PR description. See the [contribution workflow](docs/contributing/PR_WORKFLOW.md) for branch examples, the full PR checklist, review instructions, and administrator protection recommendations.
 
 ---
 
