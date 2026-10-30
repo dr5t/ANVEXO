@@ -1,157 +1,135 @@
 # ANVEXO Pull Request & Team Collaboration Workflow
 
-This document outlines the GitHub contribution rules, code review expectations, PR boundary definitions, and daily coordination rhythms for the five-person ANVEXO engineering team.
+## 1. Core Workflow Principles
+
+This document sets the collaboration standards, branching models, review protocols, and quality gates for the five-person ANVEXO engineering team:
+- **Shaurya**: Project Lead & Architecture Governance
+- **Bhumika**: Gemma 4 Provider & Error Handling
+- **Alok**: Investigation Evidence Validation & Reports
+- **Somi**: TypeScript Impact Analysis & ECHO Context
+- **Akhil**: Security Regression Tests & CI
 
 ---
 
-## 1. Core Workflow Rules
+## 2. Branching & Contribution Rules
 
-1. **One Issue, One Branch, One PR**: Every pull request corresponds to exactly one issue from [ISSUE_BACKLOG.md](./ISSUE_BACKLOG.md). No sprawling multi-feature PRs.
-2. **Branch Naming Standard**:
-   - Features: `feat/<member-name>-<short-description>` (e.g., `feat/member2-gemma-unit-tests`)
-   - Fixes: `fix/<member-name>-<short-description>` (e.g., `fix/member4-dep-resolution`)
-   - Tests & CI: `test/<member-name>-<short-description>` or `ci/<member-name>-github-actions`
-3. **No Direct Commits to `main`**: All changes must arrive via pull request with passing CI checks.
-4. **Clean Conventional Commits**:
-   - `feat(...)`: New user-facing or subsystem capability
-   - `fix(...)`: Bug fix or error resolution
-   - `test(...)`: Unit, integration, or regression tests
-   - `docs(...)`: Documentation additions or revisions
-   - `ci(...)`: GitHub Actions or automation updates
-5. **No Code Comments Rule**: Preserve ANVEXO codebase standards—do not add code comments (`//`, `/* */`), and keep code self-documenting with descriptive symbol names and strong typing.
+1. **One Issue, One Branch, One PR**: Every PR maps to exactly one approved issue from [ISSUE_BACKLOG.md](./ISSUE_BACKLOG.md).
+2. **Standardized Branch Naming**:
+   - Features: `feat/<member-name>-<short-topic>` (e.g., `feat/bhumika-gemma-unit-tests`, `feat/alok-evidence-recovery`)
+   - Tests: `test/<member-name>-<short-topic>` (e.g., `test/akhil-security-hardening`)
+   - CI & Automation: `ci/<member-name>-<short-topic>` (e.g., `ci/akhil-github-actions`)
+   - Docs & Audits: `docs/<member-name>-<short-topic>` (e.g., `docs/akhil-license-audit`)
+3. **No Direct Commits to `main`**: All changes enter `main` exclusively through peer-reviewed pull requests.
+4. **Code Comment Policy**: Self-documenting code with strong TypeScript typing and descriptive naming. Do not add code comments (`//`, `/* */`).
+5. **Gated License Checkpoint**: Any licensing modification (e.g., changing `package.json` license or creating `LICENSE`) is strictly gated. The third-party attribution audit in `docs/legal/LICENSE_AUDIT.md` must be reviewed and approved by Shaurya before code edits occur.
 
 ---
 
-## 2. Pull Request Boundaries & Ownership Matrix
-
-To prevent merge conflicts and race conditions, each team member is assigned exclusive write access to specific files for their active issues:
+## 3. Pull Request Boundaries & Ownership Matrix
 
 ```
-+---------------------------------------------------------------------------------------+
-|                                    SHARED CORE TYPES                                  |
-|               (src/core/types.ts - Frozen: Changes require Lead Approval)             |
-+---------------------------------------------------------------------------------------+
-      |                           |                        |                    |
-      v                           v                        v                    v
-[Member 2 Zone]           [Member 3 Zone]          [Member 4 Zone]      [Member 5 Zone]
-src/providers/gemma.ts    src/engine/index.ts      src/context/         src/proof/
-tests/unit/gemma.test.ts  src/reporting/           src/impact/          .github/workflows/
-tests/integration/gemma   src/engine/hypotheses.ts tests/unit/impact    LICENSE, package.json
++---------------------------------------------------------------------------------------------------+
+|                                      FROZEN SHARED INTERFACES                                     |
+|             (src/core/types.ts - Immutable without unanimous consent & Shaurya approval)          |
++---------------------------------------------------------------------------------------------------+
+       |                            |                           |                       |
+       v                            v                           v                       v
+[BHUMIKA ZONE]               [ALOK ZONE]                 [SOMI ZONE]             [AKHIL ZONE]
+src/providers/gemma.ts       src/evidence/index.ts       src/context/            tests/unit/security.
+tests/unit/gemma.test.ts     src/engine/index.ts         src/impact/             tests/unit/autonomy.
+tests/integration/gemma      src/reporting/              tests/unit/context.     .github/workflows/
+                             tests/unit/reporting.       tests/unit/impact.      docs/legal/
 ```
 
-### Boundary Table by Issue
+### Boundary Compliance Table
 
-| Issue ID | Primary Files Member May Modify | Files Member Must NOT Touch | Validation Command Required |
-| :--- | :--- | :--- | :--- |
-| **ISSUE-01** (Member 2) | `tests/unit/gemma.test.ts`, `src/providers/gemma.ts` | `src/engine/*`, `src/server/*`, `src/cli/*` | `npx vitest run tests/unit/gemma.test.ts` |
-| **ISSUE-02** (Member 2) | `tests/integration/gemma.test.ts`, `package.json` | `src/context/*`, `src/proof/*` | `npm run test:gemma` |
-| **ISSUE-03** (Member 2) | `src/cli/index.ts` (Gemma subcommand block only) | `src/engine/workflow.ts`, `src/server/*` | `npx vitest run tests/unit/commands.test.ts` |
-| **ISSUE-04** (Member 3) | `src/reporting/index.ts`, `src/reporting/markdown.ts`, `src/engine/index.ts` | `src/providers/*`, `src/impact/*` | `npx vitest run tests/unit/reporting.test.ts` |
-| **ISSUE-05** (Member 3) | `src/engine/hypotheses.ts`, `src/engine/index.ts` | `src/context/*`, `src/proof/*` | `npm test` |
-| **ISSUE-06** (Member 4) | `src/context/dependencies.ts`, `src/context/manager.ts`, `src/impact/simulator.ts` | `src/providers/*`, `src/reporting/*` | `npx vitest run tests/unit/context.test.ts tests/unit/impact.test.ts` |
-| **ISSUE-07** (Member 4) | `src/impact/graph.ts`, `src/impact/types.ts`, `src/cli/index.ts` (impact flags) | `src/engine/*`, `src/server/*` | `npx vitest run tests/unit/impact.test.ts` |
-| **ISSUE-08** (Member 5) | `.github/workflows/ci.yml`, `.github/PULL_REQUEST_TEMPLATE.md` | `src/*` | Local YAML validation & CI run |
-| **ISSUE-09** (Member 5) | `LICENSE`, `package.json` (license string), `README.md` | `src/*` | `npm run build` |
-| **ISSUE-10** (Member 5) | `tests/integration/proof.test.ts`, `src/proof/verifier.ts` | `src/context/*`, `src/providers/*` | `npm test` |
-| **ISSUE-11** (Project Lead)| `src/engine/workflow.ts`, `src/server/router.ts`, `src/cli/index.ts` | Submodule internals owned by members | `npx vitest run tests/integration/workflow.test.ts` |
+| Issue ID | Assignee | Permitted Write Files | Strictly Restricted Files | Required Test Validation |
+| :--- | :--- | :--- | :--- | :--- |
+| **ISSUE-01** | Bhumika | `tests/unit/gemma.test.ts`, `src/providers/gemma.ts` | `src/engine/*`, `src/server/*`, `src/cli/*` | `npx vitest run tests/unit/gemma.test.ts` |
+| **ISSUE-02** | Bhumika | `tests/integration/gemma.test.ts`, `package.json` (script only) | `src/context/*`, `src/proof/*`, `src/autonomy/*` | `npm run test:gemma` |
+| **ISSUE-03** | Alok | `src/engine/index.ts`, `tests/unit/engine.test.ts` | `src/providers/*`, `src/impact/*` | `npx vitest run tests/unit/engine.test.ts` |
+| **ISSUE-04** | Alok | `src/reporting/index.ts`, `src/reporting/markdown.ts`, `tests/unit/reporting.test.ts` | `src/providers/*`, `src/autonomy/*` | `npx vitest run tests/unit/reporting.test.ts` |
+| **ISSUE-05** | Somi | `src/context/dependencies.ts`, `src/context/manager.ts`, `src/impact/simulator.ts` | `src/providers/*`, `src/reporting/*` | `npx vitest run tests/unit/context.test.ts tests/unit/impact.test.ts` |
+| **ISSUE-06** | Somi | `src/impact/simulator.ts`, `src/impact/types.ts`, `tests/unit/impact.test.ts` | `src/engine/*`, `src/server/*` | `npx vitest run tests/unit/impact.test.ts` |
+| **ISSUE-07** | Akhil | `tests/unit/security.test.ts`, `tests/unit/autonomy.test.ts`, `src/autonomy/engine.ts` | `src/providers/*`, `src/reporting/*` | `npx vitest run tests/unit/autonomy.test.ts tests/unit/security.test.ts` |
+| **ISSUE-08** | Akhil | `.github/workflows/ci.yml`, `.github/PULL_REQUEST_TEMPLATE.md`, `CONTRIBUTING.md` | `src/*` | GitHub Actions YAML validation & local build |
+| **ISSUE-09** | Akhil & Shaurya | `docs/legal/LICENSE_AUDIT.md`, `LICENSE` (pending gate), `package.json` (pending gate) | `src/*` | `npm run build` & explicit owner sign-off |
+| **ISSUE-10** | Shaurya | `tests/integration/demo.test.ts`, `src/engine/workflow.ts`, `package.json` | Submodule internals owned by members | `npm run test:demo && npm test` |
 
 ---
 
-## 3. Pull Request Submission Template
+## 4. Pull Request Submission Template
 
-Every PR must use the following standard description format (to be formalized in `.github/PULL_REQUEST_TEMPLATE.md` by Member 5):
+Every pull request description must conform to the following template:
 
 ```markdown
 ## Summary
-Brief 2-3 sentence overview of the technical change.
+Concise 2-3 sentence technical description of the changes.
 
-## Related Issue
+## Issue Reference
 Closes #<issue_number>
 
-## Workstream & Component
-- Assignee: Member X
-- Subsystem: [Gemma 4 | ANVESHAN | ECHO | Proof Mode | CI]
+## Contributor & Workstream
+- Assignee: [Shaurya | Bhumika | Alok | Somi | Akhil]
+- Subsystem: [Gemma 4 | ANVESHAN | ECHO & Impact | Security & CI]
+- Branch: `feat/<name>-<topic>`
 
-## PR Boundary Compliance
-- [ ] Modified only files within designated ownership matrix
-- [ ] No changes to frozen shared interfaces without Lead approval
-- [ ] Zero comments added in code (adhering to project code style)
+## Boundary & Style Compliance
+- [ ] Changes strictly confined to assigned file ownership
+- [ ] No modifications to frozen interfaces in src/core/types.ts without approval
+- [ ] Zero comments added in code (preserving repository standards)
+- [ ] Passes all 26 existing test suites without regressions
 
-## Verification Evidence
-- Commands executed:
+## Empirical Test Verification
+- Command executed:
   \`\`\`bash
   npm run build
-  npx vitest run <test_file>
+  npx vitest run <target_test_file>
   \`\`\`
-- Output:
+- Output summary:
   \`\`\`text
-  <paste test runner summary>
+  <paste test runner results>
   \`\`\`
 
-## Proof Mode Status
-- Status: [VERIFIED | PARTIAL | UNVERIFIED]
+## Proof Mode Assessment
+- Verification Status: [VERIFIED | PARTIAL | UNVERIFIED]
 - Dynamic executions: <count>
 - Static inspections: <count>
 ```
 
 ---
 
-## 4. Peer Review Matrix
+## 5. Peer Review Pairing Matrix
 
-To maintain high code quality and spread codebase knowledge, every PR requires:
-1. **One Peer Review** from a designated peer reviewer.
-2. **Final Architecture Approval** from the Project Lead.
+To maintain rigorous code quality and shared context, every PR requires one designated peer review plus final approval from Shaurya (Project Lead):
 
-| Author | Primary Peer Reviewer | Secondary Peer Reviewer | Final Architecture Sign-off |
+| Contributor | Subsystem | Designated Peer Reviewer | Final Architecture Approval |
 | :--- | :--- | :--- | :--- |
-| **Member 2** (Gemma 4) | Member 3 (ANVESHAN) | Member 5 (Proof/CI) | Project Lead |
-| **Member 3** (ANVESHAN) | Member 2 (Gemma 4) | Member 4 (ECHO) | Project Lead |
-| **Member 4** (ECHO/Impact) | Member 5 (Proof/CI) | Member 3 (ANVESHAN) | Project Lead |
-| **Member 5** (Proof/CI) | Member 4 (ECHO/Impact) | Member 2 (Gemma 4) | Project Lead |
-| **Project Lead** | Member 2 | Member 3 | Peer Consensus |
+| **Bhumika** | Gemma 4 Provider & Tests | Alok (Investigation Engine) | Shaurya (Lead) |
+| **Alok** | ANVESHAN Evidence & Reports | Bhumika (Gemma 4 Provider) | Shaurya (Lead) |
+| **Somi** | ECHO & TypeScript Impact | Akhil (Security & CI) | Shaurya (Lead) |
+| **Akhil** | Security Sandbox & CI | Somi (ECHO & TypeScript Impact) | Shaurya (Lead) |
+| **Shaurya** | Workflow & E2E Verification Demo | Bhumika & Alok | Peer Consensus |
 
 ---
 
-## 5. Parallel Execution Sequence & Dependency Graph
+## 6. Staged Implementation Sequence
 
-```mermaid
-graph TD
-    subgraph Sprint Foundation [Day 1: Setup & Groundwork]
-        I08[ISSUE-08: GitHub Actions CI - M5]
-        I09[ISSUE-09: Apache-2.0 License - M5]
-        I01[ISSUE-01: Gemma 4 Mock Tests - M2]
-        I04[ISSUE-04: Report Exporters - M3]
-        I06[ISSUE-06: Unify ECHO & Impact Graph - M4]
-    end
-
-    subgraph Core Features [Day 2: Deep Capabilities]
-        I08 --> I02[ISSUE-02: Live Gemma Integration Test - M2]
-        I01 --> I03[ISSUE-03: Gemma CLI Subcommand - M2]
-        I04 --> I05[ISSUE-05: Dynamic Hypotheses Engine - M3]
-        I06 --> I07[ISSUE-07: Impact Graph Exporter - M4]
-        I09 --> I10[ISSUE-10: Proof Mode E2E Regression - M5]
-    end
-
-    subgraph Integration & Release [Day 3: Convergence & Submission]
-        I02 & I03 & I05 & I07 & I10 --> I11[ISSUE-11: Streaming Workflow Events - Lead]
-        I11 --> MLH_SUBMIT[MLH Verification & Final Demo Freeze]
-    end
 ```
+Sprint Day 1 (Foundation):
+  - Akhil: ISSUE-08 (GitHub Actions CI & Contributor Setup)
+  - Bhumika: ISSUE-01 (Gemma 4 Unit & Mock Tests)
+  - Alok: ISSUE-03 (Investigation Evidence Validation)
+  - Somi: ISSUE-05 (ECHO Context & Impact Simulator Integration)
 
----
+Sprint Day 2 (Deepening & Hardening):
+  - Bhumika: ISSUE-02 (Gemma 4 Live Tests & Environment Diagnostics)
+  - Alok: ISSUE-04 (Structured Report Exporters & Disk Persistence)
+  - Somi: ISSUE-06 (TypeScript Impact Analysis & Barrel Export Resolution)
+  - Akhil: ISSUE-07 (Security Regression Test Suite Hardening)
+  - Akhil & Shaurya: ISSUE-09 (License Audit Inspection & Approval Gate)
 
-## 6. Daily Coordination Rhythm
-
-To ensure momentum without meeting fatigue, the team follows a 3-point asynchronous daily check-in:
-
-### Daily Standup Format (Slack / Discord / GitHub Discussions)
-1. **Yesterday**: What PR or tests did I complete?
-2. **Today**: Which backlog issue branch am I implementing?
-3. **Blockers / Dependencies**: Do I need a review or an interface sign-off from another member?
-
-### Pre-Merge Checklist
-- [ ] `npm run lint` passes without TypeScript errors (`tsc --noEmit`).
-- [ ] `npm run build` generates clean artifacts in `dist/`.
-- [ ] `npm test` runs all 26 test files with 100% pass rate.
-- [ ] Peer review approved by assigned partner.
-- [ ] Lead approved and merged via GitHub PR.
+Sprint Day 3 (Integration & Verification):
+  - Shaurya: ISSUE-10 (End-to-End Gemma 4 Verification & MLH Demo Harness)
+  - Full Team: Complete regression verification (`npm test` across all 5 contributors' changes)
+```
