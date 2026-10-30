@@ -518,7 +518,7 @@ describe('GemmaProvider', () => {
       expect(result.evidenceRecords[0].verificationStatus).toBe(VerificationStatus.UNVERIFIED);
     });
 
-    it('attaches verified visual evidence record when screenshot is supplied', async () => {
+    it('keeps model-generated visual observations unverified when a screenshot is supplied', async () => {
       const mockFetch = vi.fn().mockResolvedValue({
         ok: true,
         json: async () => ({
@@ -557,7 +557,7 @@ describe('GemmaProvider', () => {
       expect(result.evidenceRecords).toHaveLength(2);
       const visualRecord = result.evidenceRecords.find(e => e.toolName === 'gemma_vision_parser');
       expect(visualRecord).toBeDefined();
-      expect(visualRecord?.verificationStatus).toBe(VerificationStatus.VERIFIED);
+      expect(visualRecord?.verificationStatus).toBe(VerificationStatus.UNVERIFIED);
       expect(visualRecord?.metadata?.mimeType).toBe('image/png');
     });
   });

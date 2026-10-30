@@ -609,7 +609,7 @@ export class GemmaProvider implements ModelProvider {
         content: visualEvidence,
         timestamp: new Date(),
         toolName: 'gemma_vision_parser',
-        verificationStatus: VerificationStatus.VERIFIED,
+        verificationStatus: VerificationStatus.UNVERIFIED,
         linkedHypothesisIds: [],
         metadata: {
           mimeType: context.screenshot?.mimeType,
