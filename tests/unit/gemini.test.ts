@@ -309,7 +309,7 @@ describe('GeminiProvider', () => {
       globalThis.fetch = mockFetch as unknown as typeof fetch;
 
       const provider = new GeminiProvider(secret);
-      const err = await provider.complete({ messages: [{ role: 'user', content: 'test' }] }).catch((e: Error) => e);
+      const err = await provider.complete({ messages: [{ role: 'user', content: 'test' }] }).catch((e: Error) => e) as Error;
 
       expect(err.message).toContain('Gemini API authentication failed (HTTP 401)');
       expect(err.message).toContain('Check GEMINI_API_KEY');
@@ -325,7 +325,7 @@ describe('GeminiProvider', () => {
       globalThis.fetch = mockFetch as unknown as typeof fetch;
 
       const provider = new GeminiProvider('test-key');
-      const err = await provider.complete({ messages: [{ role: 'user', content: 'test' }] }).catch((e: Error) => e);
+      const err = await provider.complete({ messages: [{ role: 'user', content: 'test' }] }).catch((e: Error) => e) as Error;
 
       expect(err.message).toContain('Gemini API rate limit exceeded (HTTP 429)');
     });
@@ -339,7 +339,7 @@ describe('GeminiProvider', () => {
       globalThis.fetch = mockFetch as unknown as typeof fetch;
 
       const provider = new GeminiProvider('test-key');
-      const err = await provider.complete({ messages: [{ role: 'user', content: 'test' }] }).catch((e: Error) => e);
+      const err = await provider.complete({ messages: [{ role: 'user', content: 'test' }] }).catch((e: Error) => e) as Error;
 
       expect(err.message).toContain('Gemini API rejected the model or request configuration (HTTP 404)');
     });
@@ -353,7 +353,7 @@ describe('GeminiProvider', () => {
       globalThis.fetch = mockFetch as unknown as typeof fetch;
 
       const provider = new GeminiProvider('test-key');
-      const err = await provider.complete({ messages: [{ role: 'user', content: 'test' }] }).catch((e: Error) => e);
+      const err = await provider.complete({ messages: [{ role: 'user', content: 'test' }] }).catch((e: Error) => e) as Error;
 
       expect(err.message).toContain('Gemini API server error (HTTP 500)');
     });
@@ -364,7 +364,7 @@ describe('GeminiProvider', () => {
       globalThis.fetch = mockFetch as unknown as typeof fetch;
 
       const provider = new GeminiProvider(secret);
-      const err = await provider.complete({ messages: [{ role: 'user', content: 'test' }] }).catch((e: Error) => e);
+      const err = await provider.complete({ messages: [{ role: 'user', content: 'test' }] }).catch((e: Error) => e) as Error;
 
       expect(err.message).toContain('Gemini API network request failed');
       expect(err.message.includes(secret)).toBe(false);
@@ -385,7 +385,7 @@ describe('GeminiProvider', () => {
       const promise = provider.complete({ messages: [{ role: 'user', content: 'test' }] });
 
       vi.advanceTimersByTime(100);
-      const err = await promise.catch((e: Error) => e);
+      const err = await promise.catch((e: Error) => e) as Error;
 
       expect(err.message).toContain('Gemini API request timed out after 50ms');
       vi.useRealTimers();

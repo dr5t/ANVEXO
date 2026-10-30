@@ -128,6 +128,39 @@ describe('Server & Security Infrastructure', () => {
       expect(validateHostHeader(fakeReq('[::1]:4173'), '127.0.0.1')).toBe(true);
       expect(validateHostHeader(fakeReq('evil.com:4173'), '127.0.0.1')).toBe(false);
       expect(validateHostHeader(fakeReq('attacker-rebound.net'), '127.0.0.1')).toBe(false);
+      expect(validateHostHeader(fakeReq('anvexo.onrender.com'), '0.0.0.0')).toBe(true);
+      expect(validateHostHeader(fakeReq('my-service.onrender.com:443'), '0.0.0.0')).toBe(true);
+    });
+
+    it('honors ALLOWED_HOSTS environment variable for custom domains', () => {
+      const fakeReq = (host: string) => ({ headers: { host } } as any);
+      const prev = process.env.ALLOWED_HOSTS;
+      try {
+        process.env.ALLOWED_HOSTS = 'internal.corp, workbench.example.com';
+        expect(validateHostHeader(fakeReq('internal.corp'), '127.0.0.1')).toBe(true);
+        expect(validateHostHeader(fakeReq('workbench.example.com:443'), '127.0.0.1')).toBe(true);
+        expect(validateHostHeader(fakeReq('unauthorized.corp'), '127.0.0.1')).toBe(false);
+      } finally {
+        if (prev !== undefined) process.env.ALLOWED_HOSTS = prev;
+        else delete process.env.ALLOWED_HOSTS;
+      }
+    });
+
+    it('resolves PORT and HOST from environment in AnvexoServer constructor', () => {
+      const prevPort = process.env.PORT;
+      const prevHost = process.env.HOST;
+      try {
+        process.env.PORT = '9876';
+        process.env.HOST = '0.0.0.0';
+        const s = new AnvexoServer();
+        expect((s as any).port).toBe(9876);
+        expect((s as any).host).toBe('0.0.0.0');
+      } finally {
+        if (prevPort !== undefined) process.env.PORT = prevPort;
+        else delete process.env.PORT;
+        if (prevHost !== undefined) process.env.HOST = prevHost;
+        else delete process.env.HOST;
+      }
     });
   });
 

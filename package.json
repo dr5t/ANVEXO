@@ -9,6 +9,7 @@
     "anvexo": "dist/cli/index.js"
   },
   "scripts": {
+    "start": "node dist/cli/index.js serve",
     "build": "tsc && node -e \"const fs=require('fs'); fs.mkdirSync('dist/server/ui', {recursive:true}); fs.cpSync('src/server/ui', 'dist/server/ui', {recursive:true}); fs.mkdirSync('dist/skills/builtin', {recursive:true}); fs.cpSync('src/skills/builtin', 'dist/skills/builtin', {recursive:true});\"",
     "dev": "tsc --watch",
     "test": "vitest run",

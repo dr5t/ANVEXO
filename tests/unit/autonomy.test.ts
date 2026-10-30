@@ -84,6 +84,39 @@ describe('SafeAutonomyEngine', () => {
     }
   });
 
+  it('applies Observe restrictions to test execution and chained commands', () => {
+    engine.setMode('observe');
+
+    const chainedTest = engine.validateAction({
+      scope: PermissionScope.TEST_RUN,
+      resource: '*',
+      command: 'npm test && node -e "process.exit(0)"',
+    });
+    expect(chainedTest.allowed).toBe(false);
+    expect(chainedTest.requiresApproval).toBe(false);
+
+    const safeTest = engine.validateAction({
+      scope: PermissionScope.TEST_RUN,
+      resource: '*',
+      command: 'npm test',
+    });
+    expect(safeTest.allowed).toBe(true);
+  });
+
+  it('enforces the command budget for test execution', () => {
+    engine.setMode('controlled_autonomous', { maxCommandExecutions: 1 });
+    engine.recordToolExecution(PermissionScope.TEST_RUN);
+
+    const check = engine.validateAction({
+      scope: PermissionScope.TEST_RUN,
+      resource: '*',
+      command: 'npm test',
+    });
+
+    expect(check.allowed).toBe(false);
+    expect(check.reason).toContain('Maximum command execution limit');
+  });
+
   it('blocks access to protected files and sensitive directories', () => {
     const protectedPaths = [
       '.git/config',

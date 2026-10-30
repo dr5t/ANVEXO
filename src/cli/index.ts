@@ -695,8 +695,8 @@ contextCmd
 program
   .command('serve')
   .description('Start the local ANVEXO API server and workbench')
-  .option('-p, --port <port>', 'Port number to listen on', '4173')
-  .option('-h, --host <host>', 'Host address to bind', '127.0.0.1')
+  .option('-p, --port <port>', 'Port number to listen on', process.env.PORT || '4173')
+  .option('-h, --host <host>', 'Host address to bind', process.env.HOST || (process.env.PORT ? '0.0.0.0' : '127.0.0.1'))
   .action(async (opts: { port: string; host: string }) => {
     const { AnvexoServer } = await import('../server/index.js');
     const server = new AnvexoServer({

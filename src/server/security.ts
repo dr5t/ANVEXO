@@ -77,6 +77,10 @@ export function validateHostHeader(req: IncomingMessage, allowedHost: string = '
     ? (rawHost.split(']')[0] + ']').toLowerCase()
     : rawHost.split(':')[0].toLowerCase();
 
+  if (allowedHost === '0.0.0.0' || allowedHost === '*') {
+    return true;
+  }
+
   const allowed = [
     '127.0.0.1',
     'localhost',
@@ -84,6 +88,11 @@ export function validateHostHeader(req: IncomingMessage, allowedHost: string = '
     '[::1]',
     allowedHost.toLowerCase(),
   ];
+
+  if (process.env.ALLOWED_HOSTS) {
+    const custom = process.env.ALLOWED_HOSTS.split(',').map(h => h.trim().toLowerCase()).filter(Boolean);
+    allowed.push(...custom);
+  }
 
   return allowed.includes(hostname);
 }
@@ -116,12 +125,24 @@ export function applyCorsHeaders(
     return true;
   }
 
-  let isAllowed = allowedOrigins.includes(origin);
+  const origins = [...allowedOrigins];
+  if (process.env.ALLOWED_ORIGINS) {
+    origins.push(...process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim()).filter(Boolean));
+  }
+
+  let isAllowed = origins.includes(origin);
   if (!isAllowed) {
     try {
       const parsed = new URL(origin);
       const host = parsed.hostname.toLowerCase();
-      if (host === 'localhost' || host === '127.0.0.1' || host === '::1' || host === '[::1]') {
+      const reqHost = req.headers.host ? req.headers.host.split(':')[0].toLowerCase() : '';
+      if (
+        host === 'localhost' ||
+        host === '127.0.0.1' ||
+        host === '::1' ||
+        host === '[::1]' ||
+        (reqHost && host === reqHost)
+      ) {
         isAllowed = true;
       }
     } catch {
