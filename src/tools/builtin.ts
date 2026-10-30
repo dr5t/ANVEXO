@@ -5,6 +5,13 @@ import type { ToolDefinition, ToolResult } from '../core/index.js';
 import { PermissionScope, redactSecrets } from '../core/index.js';
 import { validatePathWithinRoot } from '../server/security.js';
 
+const sensitiveSystemPaths = new Set(['/etc/passwd', '/etc/shadow', '/etc/sudoers']);
+
+function isSensitiveSystemPath(filePath: string): boolean {
+  const portablePath = filePath.replace(/\\/g, '/');
+  return sensitiveSystemPaths.has(path.posix.resolve(portablePath));
+}
+
 export function getCleanSubprocessEnv(): Record<string, string> {
   return {
     PATH: process.env.PATH || '',
@@ -38,12 +45,11 @@ export function createFileReadTool(): ToolDefinition {
         return { success: false, output: '', error: 'Null byte detected in path', duration: 0, metadata: {} };
       }
 
-      let resolved = path.resolve(filePath);
-      const blockedFiles = ['/etc/passwd', '/etc/shadow', '/etc/sudoers'];
-      if (blockedFiles.includes(resolved)) {
+      if (isSensitiveSystemPath(filePath)) {
         return { success: false, output: '', error: 'Access to system sensitive files is forbidden', duration: 0, metadata: {} };
       }
 
+      let resolved = path.resolve(filePath);
       if (args.rootPath && typeof args.rootPath === 'string') {
         try {
           resolved = validatePathWithinRoot(filePath, args.rootPath);
@@ -126,7 +132,7 @@ export function createFileListTool(): ToolDefinition {
 export function createFileSearchTool(): ToolDefinition {
   return {
     name: 'file_search',
-    description: 'Search for a pattern in files using grep',
+    description: 'Search for a pattern in files',
     requiredPermission: PermissionScope.FILE_READ,
     risk: 'low',
     async execute(args): Promise<ToolResult> {
@@ -139,60 +145,58 @@ export function createFileSearchTool(): ToolDefinition {
       }
 
       try {
-        const argsList = [
-          '-rn',
-          '--exclude-dir=node_modules',
-          '--exclude-dir=dist',
-          '--exclude-dir=.git',
-          '--exclude-dir=coverage',
-          '--exclude-dir=build',
-          '--exclude-dir=vendor',
-          '--include=*.ts',
-          '--include=*.js',
-          '--include=*.py',
-          '--include=*.java',
-          '--include=*.json',
-          '--include=*.yaml',
-          '--include=*.yml',
-          '--include=*.toml',
-          '--include=*.md',
-          '--include=*.go',
-          '--include=*.rs',
-          '--include=*.c',
-          '--include=*.cpp',
-          '--include=*.h',
-          '--include=*.jsx',
-          '--include=*.tsx',
-          '--include=*.vue',
-          '--include=*.svelte',
-          '--include=*.rb',
-          '--include=*.php',
-          '--include=*.swift',
-          '--include=*.kt',
-          '-m',
-          String(maxResults),
-          '--',
-          pattern,
-          searchPath,
-        ];
-        const res = spawnSync('grep', argsList, {
-          encoding: 'utf-8',
-          maxBuffer: 5_000_000,
-          timeout: 10000,
-          env: getCleanSubprocessEnv(),
-          shell: false,
-        });
-
-        if (res.error) {
-          return { success: false, output: '', error: res.error.message, duration: 0, metadata: {} };
+        const searchRoot = path.resolve(searchPath);
+        if (!fs.existsSync(searchRoot) || !fs.statSync(searchRoot).isDirectory()) {
+          return { success: false, output: '', error: `Search directory not found: ${searchPath}`, duration: 0, metadata: {} };
         }
 
-        const stdout = res.stdout || '';
-        const redacted = redactSecrets(stdout.trim());
-        const lines = redacted.split('\n').filter(Boolean);
-        return { success: true, output: redacted, duration: 0, metadata: { matchCount: lines.length } };
-      } catch {
-        return { success: false, output: '', error: 'Search failed or timed out', duration: 0, metadata: {} };
+        let matcher: RegExp;
+        try {
+          matcher = new RegExp(pattern);
+        } catch {
+          return { success: false, output: '', error: 'Search pattern is not a valid regular expression', duration: 0, metadata: {} };
+        }
+
+        const allowedExtensions = new Set([
+          '.ts', '.js', '.py', '.java', '.json', '.yaml', '.yml', '.toml', '.md',
+          '.go', '.rs', '.c', '.cpp', '.h', '.jsx', '.tsx', '.vue', '.svelte',
+          '.rb', '.php', '.swift', '.kt',
+        ]);
+        const excludedDirectories = new Set(['node_modules', 'dist', '.git', '.anvexo', 'coverage', 'build', 'vendor']);
+        const matches: string[] = [];
+
+        function searchDirectory(directory: string): void {
+          for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
+            if (entry.isSymbolicLink() || (entry.isDirectory() && excludedDirectories.has(entry.name))) {
+              continue;
+            }
+
+            const entryPath = path.join(directory, entry.name);
+            if (entry.isDirectory()) {
+              searchDirectory(entryPath);
+              continue;
+            }
+            if (!entry.isFile() || !allowedExtensions.has(path.extname(entry.name).toLowerCase())) {
+              continue;
+            }
+
+            const contents = fs.readFileSync(entryPath, 'utf-8').split(/\r?\n/);
+            let fileMatchCount = 0;
+            for (let index = 0; index < contents.length && fileMatchCount < maxResults; index++) {
+              if (matcher.test(contents[index])) {
+                matches.push(`${entryPath}:${index + 1}:${contents[index]}`);
+                fileMatchCount++;
+              }
+            }
+          }
+        }
+
+        searchDirectory(searchRoot);
+        const output = redactSecrets(matches.join('\n'));
+        return { success: true, output, duration: 0, metadata: { matchCount: matches.length } };
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        return { success: false, output: '', error: `Search failed: ${message}`, duration: 0, metadata: {} };
       }
     },
   };
@@ -398,12 +402,11 @@ export function createFileWriteTool(): ToolDefinition {
         return { success: false, output: '', error: 'Null byte detected in path', duration: 0, metadata: {} };
       }
 
-      let resolved = path.resolve(filePath);
-      const blockedFiles = ['/etc/passwd', '/etc/shadow', '/etc/sudoers'];
-      if (blockedFiles.includes(resolved)) {
+      if (isSensitiveSystemPath(filePath)) {
         return { success: false, output: '', error: 'Access to system sensitive files is forbidden', duration: 0, metadata: {} };
       }
 
+      let resolved = path.resolve(filePath);
       if (args.rootPath && typeof args.rootPath === 'string') {
         try {
           resolved = validatePathWithinRoot(filePath, args.rootPath);
@@ -449,12 +452,11 @@ export function createFileDeleteTool(): ToolDefinition {
         return { success: false, output: '', error: 'Null byte detected in path', duration: 0, metadata: {} };
       }
 
-      let resolved = path.resolve(filePath);
-      const blockedFiles = ['/etc/passwd', '/etc/shadow', '/etc/sudoers'];
-      if (blockedFiles.includes(resolved)) {
+      if (isSensitiveSystemPath(filePath)) {
         return { success: false, output: '', error: 'Access to system sensitive files is forbidden', duration: 0, metadata: {} };
       }
 
+      let resolved = path.resolve(filePath);
       if (args.rootPath && typeof args.rootPath === 'string') {
         try {
           resolved = validatePathWithinRoot(filePath, args.rootPath);
@@ -558,4 +560,3 @@ export function registerWorkspaceTools(registry: { register: (tool: ToolDefiniti
   registry.register(createFileDeleteTool());
   registry.register(createTestRunTool());
 }
-
