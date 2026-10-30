@@ -3,7 +3,7 @@ import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
 import { ToolRegistry } from '../../src/tools/registry.js';
-import { registerBuiltinTools } from '../../src/tools/builtin.js';
+import { createRunCommandTool, createTestRunTool, registerBuiltinTools } from '../../src/tools/builtin.js';
 import { PermissionManager } from '../../src/permissions/manager.js';
 import { PermissionScope, PermissionDecision, PermissionDeniedError } from '../../src/core/types.js';
 
@@ -87,10 +87,60 @@ describe('ToolRegistry', () => {
     pm.grant(PermissionScope.COMMAND_EXECUTE, '*', PermissionDecision.ALWAYS_ALLOW);
     const result = await registry.execute('run_command', {
       path: process.cwd(),
-      command: 'echo hello',
+      command: `"${process.execPath}" -e "process.stdout.write('hello')"`,
     });
     expect(result.success).toBe(true);
     expect(result.output).toContain('hello');
+  });
+
+  it('does not execute shell operators through command tools', async () => {
+    const temporaryDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'anvexo-command-boundary-'));
+    const markerPath = path.join(temporaryDirectory, 'marker');
+    const markerCommand = `"${process.execPath}" -e "require('node:fs').writeFileSync(process.argv[1], 'executed')" "${markerPath}"`;
+    const command = `"${process.execPath}" -e "process.exit(0)"`;
+    const operatorCommands = [
+      `${command} && ${markerCommand}`,
+      `${command} | ${markerCommand}`,
+      `${command} > "${markerPath}"`,
+      `${command} ; ${markerCommand}`,
+    ];
+
+    try {
+      for (const operatorCommand of operatorCommands) {
+        const result = await createRunCommandTool().execute({ path: temporaryDirectory, command: operatorCommand });
+        expect(result.success).toBe(false);
+        expect(fs.existsSync(markerPath)).toBe(false);
+      }
+
+      const testResult = await createTestRunTool().execute({
+        path: temporaryDirectory,
+        command: `${command} && ${markerCommand}`,
+      });
+      expect(testResult.success).toBe(false);
+      expect(fs.existsSync(markerPath)).toBe(false);
+    } finally {
+      fs.rmSync(temporaryDirectory, { recursive: true, force: true });
+    }
+  });
+
+  it('enforces Observe mode again at the command tool boundary', async () => {
+    const temporaryDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'anvexo-observe-boundary-'));
+    const markerPath = path.join(temporaryDirectory, 'marker');
+    const command = `"${process.execPath}" -e "require('node:fs').writeFileSync(process.argv[1], 'executed')" "${markerPath}"`;
+
+    try {
+      const result = await createRunCommandTool().execute({
+        path: temporaryDirectory,
+        command,
+        autonomyMode: 'observe',
+      });
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('Observe mode');
+      expect(fs.existsSync(markerPath)).toBe(false);
+    } finally {
+      fs.rmSync(temporaryDirectory, { recursive: true, force: true });
+    }
   });
 
   it('file_search safely treats shell metacharacters and backticks as literal text', async () => {

@@ -1,6 +1,7 @@
 import * as path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { PermissionScope, logger } from '../core/index.js';
+import { isSafeDiagnosticCommand as checkSafeDiagnosticCommand, parseCommandLine } from '../terminal/command.js';
 import type {
   AutonomyExecutionState,
   AutonomyMode,
@@ -104,10 +105,12 @@ export class SafeAutonomyEngine {
     }
 
     if (params.command && this.isDangerousCommand(params.command)) {
-      const reason = `Command contains dangerous execution pattern blocked by defensive controls: ${params.command}`;
-      this.recordViolation(params.scope, params.command, reason, 'dangerous_command');
+      const reason = 'Command contains a dangerous execution pattern blocked by defensive controls.';
+      this.recordViolation(params.scope, params.resource, reason, 'dangerous_command');
       return { allowed: false, requiresApproval: false, reason };
     }
+
+    const isCommand = params.scope === PermissionScope.COMMAND_EXECUTE || params.scope === PermissionScope.TEST_RUN;
 
     switch (this.mode) {
       case 'observe': {
@@ -116,7 +119,7 @@ export class SafeAutonomyEngine {
           this.recordViolation(params.scope, params.resource, reason, 'observe_mutation_blocked');
           return { allowed: false, requiresApproval: false, reason };
         }
-        if (params.scope === PermissionScope.COMMAND_EXECUTE && !this.isSafeDiagnosticCommand(params.command)) {
+        if (isCommand && !this.isSafeDiagnosticCommand(params.command, params.resource)) {
           const reason = 'Observe mode restricts arbitrary command execution. Only read-only diagnostics allowed.';
           this.recordViolation(params.scope, params.resource, reason, 'observe_command_blocked');
           return { allowed: false, requiresApproval: false, reason };
@@ -132,7 +135,7 @@ export class SafeAutonomyEngine {
             reason: 'Suggest mode requires explicit operator approval before modifying files on disk.',
           };
         }
-        if (params.scope === PermissionScope.COMMAND_EXECUTE && !this.isSafeDiagnosticCommand(params.command)) {
+        if (isCommand && !this.isSafeDiagnosticCommand(params.command, params.resource)) {
           return {
             allowed: false,
             requiresApproval: true,
@@ -170,7 +173,7 @@ export class SafeAutonomyEngine {
             return { allowed: false, requiresApproval: true, reason: this.state.exceededReason };
           }
         }
-        if (params.scope === PermissionScope.COMMAND_EXECUTE) {
+        if (isCommand) {
           if (this.state.commandExecutionsCount >= this.policy.budget.maxCommandExecutions) {
             this.state.isBudgetExceeded = true;
             this.state.exceededReason = `Maximum command execution limit (${this.policy.budget.maxCommandExecutions}) reached.`;
@@ -221,11 +224,9 @@ export class SafeAutonomyEngine {
     return false;
   }
 
-  private isSafeDiagnosticCommand(command?: string): boolean {
-    if (!command) return true;
-    const trimmed = command.trim().toLowerCase();
-    const safeStarts = ['git status', 'git log', 'git diff', 'git branch', 'npm test', 'vitest run', 'npx vitest', 'cat ', 'ls '];
-    return safeStarts.some(s => trimmed.startsWith(s));
+  private isSafeDiagnosticCommand(command: string | undefined, rootPath: string): boolean {
+    if (command && !parseCommandLine(command)) return false;
+    return checkSafeDiagnosticCommand(command, rootPath);
   }
 
   private checkTimeBudget(): void {

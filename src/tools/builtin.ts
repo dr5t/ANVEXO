@@ -4,6 +4,13 @@ import { spawnSync } from 'node:child_process';
 import type { ToolDefinition, ToolResult } from '../core/index.js';
 import { PermissionScope, redactSecrets } from '../core/index.js';
 import { validatePathWithinRoot } from '../server/security.js';
+import {
+  isSafeDiagnosticCommand,
+  isShellExecutable,
+  isTestCommand,
+  parseCommandLine,
+  resolveShellFreeCommand,
+} from '../terminal/command.js';
 
 const sensitiveSystemPaths = new Set(['/etc/passwd', '/etc/shadow', '/etc/sudoers']);
 
@@ -25,6 +32,76 @@ export function getCleanSubprocessEnv(): Record<string, string> {
     GIT_TERMINAL_PROMPT: '0',
     GIT_OPTIONAL_LOCKS: '0',
   };
+}
+
+function executeCommandTool(args: Record<string, unknown>, command: string, timeout: number, testOnly: boolean): ToolResult {
+  const parsed = parseCommandLine(command);
+  if (!parsed) {
+    return { success: false, output: '', error: 'Command rejected: shell syntax is not allowed.', duration: 0, metadata: {} };
+  }
+  if (isShellExecutable(parsed.executable)) {
+    return { success: false, output: '', error: 'Command rejected: shell executables are not allowed.', duration: 0, metadata: {} };
+  }
+  const requestedCwd = typeof args.path === 'string' ? args.path : process.cwd();
+  let cwd = path.resolve(requestedCwd);
+  const rootPath = typeof args.rootPath === 'string' ? args.rootPath : undefined;
+  if (rootPath) {
+    try {
+      cwd = validatePathWithinRoot(requestedCwd, rootPath);
+    } catch {
+      return { success: false, output: '', error: 'Command rejected: working directory must remain inside the workspace.', duration: 0, metadata: {} };
+    }
+  }
+
+  if (testOnly && !isTestCommand(parsed, rootPath || cwd)) {
+    return { success: false, output: '', error: 'Command rejected: executable or test path is not approved.', duration: 0, metadata: {} };
+  }
+
+  if (args.autonomyMode === 'observe' && !isSafeDiagnosticCommand(command, rootPath || cwd)) {
+    return { success: false, output: '', error: 'Command rejected by Observe mode: only approved read-only diagnostics are allowed.', duration: 0, metadata: {} };
+  }
+
+  const invocation = resolveShellFreeCommand(parsed, cwd);
+  const invocationArgs = [...invocation.args];
+  if (args.autonomyMode === 'observe' && path.win32.basename(invocation.executable).toLowerCase() === 'git') {
+    const subcommandIndex = invocationArgs.findIndex(argument => ['status', 'log', 'diff', 'branch'].includes(argument));
+    if (subcommandIndex >= 0) {
+      invocationArgs.splice(subcommandIndex, 0, '--no-pager', '-c', 'core.fsmonitor=false');
+      if (invocationArgs[subcommandIndex + 3] === 'diff') {
+        invocationArgs.splice(subcommandIndex + 4, 0, '--no-ext-diff', '--no-textconv');
+      }
+    }
+  }
+
+  const metadata = { command: redactSecrets(command) };
+  try {
+    const result = spawnSync(invocation.executable, invocationArgs, {
+      cwd,
+      encoding: 'utf-8',
+      timeout,
+      maxBuffer: 5_000_000,
+      env: getCleanSubprocessEnv(),
+      shell: false,
+    });
+    const stdout = redactSecrets((result.stdout || '').trim());
+    const stderr = redactSecrets((result.stderr || '').trim());
+
+    if (result.error) {
+      return { success: false, output: stdout, error: redactSecrets(result.error.message), duration: 0, metadata: { ...metadata, exitCode: result.status ?? -1 } };
+    }
+
+    const success = result.status === 0;
+    return {
+      success,
+      output: testOnly && !stdout ? stderr : stdout,
+      error: success ? undefined : (stderr || `${testOnly ? 'Tests' : 'Command'} failed with exit code ${result.status}`),
+      duration: 0,
+      metadata: { ...metadata, exitCode: result.status ?? -1 },
+    };
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Command failed';
+    return { success: false, output: '', error: redactSecrets(message), duration: 0, metadata };
+  }
 }
 
 export function createFileReadTool(): ToolDefinition {
@@ -324,60 +401,13 @@ export function createRunCommandTool(): ToolDefinition {
     requiredPermission: PermissionScope.COMMAND_EXECUTE,
     risk: 'medium',
     async execute(args): Promise<ToolResult> {
-      const cwd = args.path as string;
-      const command = args.command as string;
+      const command = args.command;
       const timeout = (args.timeout as number) || 30000;
 
-      if (!command) {
+      if (typeof command !== 'string' || !command.trim()) {
         return { success: false, output: '', error: 'Command is required', duration: 0, metadata: {} };
       }
-
-      const cleanEnv = getCleanSubprocessEnv();
-
-      try {
-        const res = spawnSync(command, {
-          cwd,
-          encoding: 'utf-8',
-          timeout,
-          maxBuffer: 5_000_000,
-          env: cleanEnv,
-          shell: true,
-        });
-
-        const stdout = redactSecrets((res.stdout || '').trim());
-        const stderr = redactSecrets((res.stderr || '').trim());
-
-        if (res.error) {
-          return {
-            success: false,
-            output: stdout,
-            error: res.error.message,
-            duration: 0,
-            metadata: { command, exitCode: res.status ?? -1 },
-          };
-        }
-
-        if (res.status !== 0) {
-          return {
-            success: false,
-            output: stdout,
-            error: stderr || `Command exited with code ${res.status}`,
-            duration: 0,
-            metadata: { command, exitCode: res.status ?? -1 },
-          };
-        }
-
-        return { success: true, output: stdout, duration: 0, metadata: { command } };
-      } catch (err: unknown) {
-        const execErr = err as { stdout?: string; stderr?: string; status?: number; message?: string };
-        return {
-          success: false,
-          output: redactSecrets(execErr.stdout || ''),
-          error: redactSecrets(execErr.stderr || execErr.message || 'Command failed'),
-          duration: 0,
-          metadata: { command, exitCode: execErr.status },
-        };
-      }
+      return executeCommandTool(args, command, timeout, false);
     },
   };
 }
@@ -493,53 +523,9 @@ export function createTestRunTool(): ToolDefinition {
     requiredPermission: PermissionScope.TEST_RUN,
     risk: 'medium',
     async execute(args): Promise<ToolResult> {
-      const cwd = (args.path as string) || process.cwd();
-      const command = (args.command as string) || 'npm test';
+      const command = typeof args.command === 'string' && args.command.trim() ? args.command : 'npm test';
       const timeout = (args.timeout as number) || 60000;
-
-      const cleanEnv = getCleanSubprocessEnv();
-
-      try {
-        const res = spawnSync(command, {
-          cwd,
-          encoding: 'utf-8',
-          timeout,
-          maxBuffer: 5_000_000,
-          env: cleanEnv,
-          shell: true,
-        });
-
-        const stdout = redactSecrets((res.stdout || '').trim());
-        const stderr = redactSecrets((res.stderr || '').trim());
-
-        if (res.error) {
-          return {
-            success: false,
-            output: stdout,
-            error: res.error.message,
-            duration: 0,
-            metadata: { command, exitCode: res.status ?? -1 },
-          };
-        }
-
-        const success = res.status === 0;
-        return {
-          success,
-          output: stdout || stderr,
-          error: success ? undefined : (stderr || `Tests failed with code ${res.status}`),
-          duration: 0,
-          metadata: { command, exitCode: res.status ?? -1 },
-        };
-      } catch (err: unknown) {
-        const execErr = err as { stdout?: string; stderr?: string; status?: number; message?: string };
-        return {
-          success: false,
-          output: redactSecrets(execErr.stdout || ''),
-          error: redactSecrets(execErr.stderr || execErr.message || 'Test execution failed'),
-          duration: 0,
-          metadata: { command, exitCode: execErr.status },
-        };
-      }
+      return executeCommandTool(args, command, timeout, true);
     },
   };
 }
