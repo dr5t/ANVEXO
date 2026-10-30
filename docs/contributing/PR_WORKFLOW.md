@@ -13,15 +13,73 @@ This document sets the collaboration standards, branching models, review protoco
 
 ## 2. Branching & Contribution Rules
 
-1. **One Issue, One Branch, One PR**: Every PR maps to exactly one approved issue from [ISSUE_BACKLOG.md](./ISSUE_BACKLOG.md).
-2. **Standardized Branch Naming**:
-   - Features: `feat/<member-name>-<short-topic>` (e.g., `feat/bhumika-gemma-unit-tests`, `feat/alok-evidence-recovery`)
-   - Tests: `test/<member-name>-<short-topic>` (e.g., `test/akhil-security-hardening`)
-   - CI & Automation: `ci/<member-name>-<short-topic>` (e.g., `ci/akhil-github-actions`)
-   - Docs & Audits: `docs/<member-name>-<short-topic>` (e.g., `docs/akhil-license-audit`)
-3. **No Direct Commits to `main`**: All changes enter `main` exclusively through peer-reviewed pull requests.
-4. **Code Comment Policy**: Self-documenting code with strong TypeScript typing and descriptive naming. Do not add code comments (`//`, `/* */`).
-5. **Gated License Checkpoint**: Any licensing modification (e.g., changing `package.json` license or creating `LICENSE`) is strictly gated. The third-party attribution audit in `docs/legal/LICENSE_AUDIT.md` must be reviewed and approved by Shaurya before code edits occur.
+`main` is the stable default branch. The existing Hacktoberfest integration branch is **`pr-for-hacktoberrfest`**. Every contribution must use its own feature branch created from the latest `origin/pr-for-hacktoberrfest`, then open one PR from that feature branch into `pr-for-hacktoberrfest`.
+
+1. **One approved task, one unique branch, one independent PR.** Do not combine unrelated issues or tasks.
+2. **Never commit or push task changes directly to `main` or `pr-for-hacktoberrfest`.** Do not share or reuse another contributor's feature branch, push to another PR's head, or force-push.
+3. **Stop if the branch is not cleanly scoped.** If the branch contains unrelated commits or another contributor's changes, do not open the PR; report the issue and ask the project lead how to proceed. Do not rewrite merged PR history.
+4. **Branch naming:** use `feat/<contributor>-<task>` for features, `test/<contributor>-<task>` for test-only work, `ci/<contributor>-<task>` for CI, or `docs/<contributor>-<task>` for documentation. The branch name must be unique for the task.
+5. **Code comment policy:** use descriptive names and types. Do not add code comments, TODOs, FIXMEs, or commented-out code.
+6. **Gated license checkpoint:** any licensing modification requires Shaurya's explicit approval before editing. See the licensing audit documentation.
+
+### Contributor branch examples
+
+| Contributor | Example task branch |
+| :--- | :--- |
+| Shaurya | `feat/shaurya-e2e-demo` |
+| Bhumika | `feat/bhumika-gemma-tests` |
+| Alok | `feat/alok-evidence-validation` |
+| Somi | `feat/somi-context-retrieval` |
+| Akhil | `feat/akhil-security-tests` |
+
+These are examples, not shared branches. Use a new branch name for each assigned task, even when the same contributor is working on multiple tasks.
+
+### Start a task
+
+Confirm the branch name is unused locally and remotely. Do not check out an existing contributor branch:
+
+```bash
+git status --short --branch
+git fetch origin
+git branch -a --list "*<unique-branch-name>*"
+git switch --create <unique-branch-name> origin/pr-for-hacktoberrfest
+```
+
+Replace `<unique-branch-name>` with a branch such as `feat/alok-evidence-validation`. If a matching local or remote branch exists, choose another unique name. Keep commits focused on the assigned task and do not stage unrelated work.
+
+### Validate and submit
+
+Run the relevant tests plus the repository's available checks before submission:
+
+```bash
+npm ci
+npm test
+npm run lint
+npm run build
+```
+
+Record the commands actually run and their actual results. If a check is unavailable or fails, disclose that in the PR rather than claiming success.
+
+Before creating the PR, inspect the complete comparison against the integration branch:
+
+```bash
+git status --short --branch
+git log --oneline origin/pr-for-hacktoberrfest..HEAD
+git diff --name-status origin/pr-for-hacktoberrfest...HEAD
+git diff --check origin/pr-for-hacktoberrfest...HEAD
+git diff origin/pr-for-hacktoberrfest...HEAD
+```
+
+Verify that the commit list, changed files, and full diff contain only the assigned task. Push only your feature branch:
+
+```bash
+git push --set-upstream origin <unique-branch-name>
+gh pr create --repo dr5t/ANVEXO --base pr-for-hacktoberrfest --head <unique-branch-name>
+```
+
+The PR head must be your dedicated feature branch and its base must be exactly `pr-for-hacktoberrfest`. Do not target `main` unless Shaurya explicitly approves a separate PR. Include the approved issue reference (when one exists), a concise problem/solution summary, changed behavior, tests with actual results, limitations, and relevant evidence. Do not invent an issue number.
+
+Respond to review feedback on your own feature branch and update that same PR. Do not modify another contributor's branch or PR. Leave all merge decisions to Shaurya; contributors and AI agents must not merge PRs, including their own.
 
 ---
 
@@ -63,45 +121,38 @@ tests/integration/gemma      src/reporting/              tests/unit/context.    
 Every pull request description must conform to the following template:
 
 ```markdown
-## Summary
-Concise 2-3 sentence technical description of the changes.
+## Problem
+What verified problem does this task address?
 
-## Issue Reference
-Closes #<issue_number>
+## Solution
+Summarize the focused implementation and any relevant limitations.
 
-## Contributor & Workstream
-- Assignee: [Shaurya | Bhumika | Alok | Somi | Akhil]
-- Subsystem: [Gemma 4 | ANVESHAN | ECHO & Impact | Security & CI]
-- Branch: `feat/<name>-<topic>`
+## Issue or Task
+Approved issue: #<issue_number>
+If no approved issue exists, describe the assigned task without inventing an issue number.
 
-## Boundary & Style Compliance
-- [ ] Changes strictly confined to assigned file ownership
-- [ ] No modifications to frozen interfaces in src/core/types.ts without approval
-- [ ] Zero comments added in code (preserving repository standards)
-- [ ] Passes all 26 existing test suites without regressions
+## Branch and Scope
+- Head: `<unique-feature-branch>`
+- Base: `pr-for-hacktoberrfest`
+- [ ] One independently reviewable task; no unrelated commits or files
+- [ ] Complete commit list, changed-file list, and diff reviewed against the base
+- [ ] No secrets or accidental generated files
+- [ ] No code comments, TODOs, FIXMEs, or commented-out code added
 
-## Empirical Test Verification
-- Command executed:
-  \`\`\`bash
-  npm run build
-  npx vitest run <target_test_file>
-  \`\`\`
-- Output summary:
-  \`\`\`text
-  <paste test runner results>
-  \`\`\`
+## Verification
+- Commands run:
+- Actual test/build/lint/type-check results:
+- Checks not run or failures and reason:
 
-## Proof Mode Assessment
-- Verification Status: [VERIFIED | PARTIAL | UNVERIFIED]
-- Dynamic executions: <count>
-- Static inspections: <count>
+## Review
+- [ ] I will address feedback on this branch and leave merging to Shaurya.
 ```
 
 ---
 
 ## 5. Peer Review Pairing Matrix
 
-To maintain rigorous code quality and shared context, every PR requires one designated peer review plus final approval from Shaurya (Project Lead):
+Peer review pairings help route reviews. Shaurya Tiwari is the final reviewer and the only person authorized by project workflow to merge contribution PRs. The repository currently has no GitHub branch protection enforcing this policy; see the administrator checklist below.
 
 | Contributor | Subsystem | Designated Peer Reviewer | Final Architecture Approval |
 | :--- | :--- | :--- | :--- |
@@ -113,7 +164,20 @@ To maintain rigorous code quality and shared context, every PR requires one desi
 
 ---
 
-## 6. Staged Implementation Sequence
+## 6. Repository Administrator Checklist
+
+The GitHub repository currently reports `main` and `pr-for-hacktoberrfest` as unprotected and has no repository rulesets. Configure protections for both branches in repository settings, without changing branch names:
+
+- Require changes to enter through pull requests; block direct pushes and deletion.
+- Require the available CI status checks once a CI workflow exists, and require those checks to pass before merge.
+- Require at least one approving review and resolved review conversations; dismiss stale approvals after new commits.
+- Apply rules to administrators and prevent bypasses except for an explicitly reviewed emergency policy.
+- Restrict who may update or bypass protected branches so Shaurya alone can merge contribution PRs. Contributors should only push their own feature branches; if the plan cannot enforce this restriction, limit contributor write access and rely on manual lead-only merges.
+- Disable force pushes.
+
+No `.github/workflows/` directory or CI workflow is present in the inspected checkout, so there are currently no CI check names to require. GitHub enforcement options and required-review settings depend on repository permissions and the plan. This account can push but has neither admin nor maintain permission; protection settings could not be changed or fully administered here. Shaurya or a repository administrator must configure and verify the rules in GitHub.
+
+## 7. Staged Implementation Sequence
 
 ```
 Sprint Day 1 (Foundation):
