@@ -97,6 +97,7 @@
 
   <div class="command-preset-bar">
     <span class="preset-label">QUICK COMMANDS:</span>
+    <button class="cmd-preset-btn" data-cmd="github" title="Investigate GitHub Repository">$ github</button>
     <button class="cmd-preset-btn" data-cmd="scan" title="Discover project topography and detect stack">$ scan</button>
     <button class="cmd-preset-btn" data-cmd="status" title="Check working tree and git status">$ status</button>
     <button class="cmd-preset-btn" data-cmd="diff" title="Inspect unstaged repository diffs">$ diff</button>
@@ -235,7 +236,14 @@
 
       <section id="paneRight" class="pane-right" aria-label="Inspection Workspace">
         <nav class="tabs" aria-label="Workspace tabs">
-          <button class="tab-btn active" data-tab="report" aria-label="Report and Findings tab">
+          <button class="tab-btn active" data-tab="github" aria-label="GitHub Repository Intelligence tab">
+            <svg class="anvexo-icon btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/>
+            </svg>
+            <span>GitHub Intelligence</span>
+            <span class="badge badge-accent" style="font-size:9.5px; padding:1px 5px; margin-left:3px;">PLATFORM</span>
+          </button>
+          <button class="tab-btn" data-tab="report" aria-label="Report and Findings tab">
             <svg class="anvexo-icon btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" aria-hidden="true">
               <path d="M5 4.5 C5 3.7 5.7 3 6.5 3 H14 L19 8 V19.5 C19 20.3 18.3 21 17.5 21 H6.5 C5.7 21 5 20.3 5 19.5 Z"/>
               <polyline points="14,3 14,8 19,8"/>
@@ -308,7 +316,94 @@
           </button>
         </nav>
 
-        <div id="tab-report" class="tab-content active report-view" role="tabpanel">
+        <div id="tab-github" class="tab-content active github-view" role="tabpanel">
+          <!-- Top Input Section -->
+          <div class="github-search-section">
+            <div class="github-input-row">
+              <div class="github-url-box">
+                <span class="github-prefix" title="GitHub Repository Target">
+                  <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true">
+                    <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/>
+                  </svg>
+                  <span>github://</span>
+                </span>
+                <input type="text" id="githubUrlInput" class="github-url-input" value="https://github.com/dr5t/ANVEXO" placeholder="Enter GitHub repository URL (e.g. https://github.com/owner/repo or mock://dr5t/ANVEXO-demo)..." aria-label="GitHub Repository URL" spellcheck="false">
+                <button id="githubClearUrlBtn" class="github-clear-btn" title="Clear input">&times;</button>
+              </div>
+
+              <div class="github-sample-picker">
+                <label for="githubSampleSelect" class="github-sample-label">Sample Repos:</label>
+                <select id="githubSampleSelect" class="github-sample-select" aria-label="Pick sample repository">
+                  <option value="">-- Choose Sample Demo --</option>
+                  <option value="dr5t/ANVEXO-demo" selected>dr5t/ANVEXO-demo [⭐ 342 - Healthy GA]</option>
+                  <option value="sample/payment-gateway">sample/payment-gateway [⚠️ Security CVEs &amp; Failing Tests]</option>
+                  <option value="legacy/express-api">legacy/express-api [⚠️ Dormant &amp; High Bus Factor]</option>
+                  <option value="timeout/incomplete-job">timeout/incomplete-job [⏳ Incomplete Check Scenarios]</option>
+                </select>
+              </div>
+
+              <div class="github-mock-badge" id="githubMockBadge" title="Mock mode provides deterministic simulation without calling paid APIs or running untrusted shell scripts">
+                <span class="mock-dot"></span>
+                <span>MOCK MODE: ON</span>
+              </div>
+
+              <button id="githubAnalyzeBtn" class="btn btn-primary github-analyze-btn" aria-label="Analyze GitHub repository">
+                <svg class="anvexo-icon btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+                <span>Analyze Repository</span>
+              </button>
+
+              <button id="githubCancelBtn" class="btn btn-danger" style="display:none;" aria-label="Cancel investigation">
+                <svg class="anvexo-icon btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+                <span>Cancel</span>
+              </button>
+            </div>
+
+            <!-- Validation/Notice Alert -->
+            <div id="githubAlertBanner" class="github-alert-banner" style="display:none;"></div>
+
+            <!-- Live Progress Stepper (Visible during investigation) -->
+            <div id="githubProgressContainer" class="github-progress-container" style="display:none;">
+              <div class="github-progress-header">
+                <div class="progress-title-wrap">
+                  <span class="github-spinner"></span>
+                  <span id="githubProgressStageTitle" class="progress-stage-title">Initializing Investigation...</span>
+                </div>
+                <div class="progress-meta">
+                  <span id="githubProgressCounter" class="progress-counter">Stage 1 of 14</span>
+                  <span id="githubProgressPercent" class="progress-percent">0%</span>
+                </div>
+              </div>
+              <div class="github-progress-track">
+                <div id="githubProgressBar" class="github-progress-fill" style="width: 0%;"></div>
+              </div>
+              <div id="githubProgressMessage" class="github-progress-msg">Validating repository identity and URL...</div>
+            </div>
+          </div>
+
+          <!-- Main Results Dashboard Container -->
+          <div id="githubResultsContainer" class="github-results-container">
+            <div class="github-welcome-card">
+              <div class="welcome-icon-wrap">
+                <svg viewBox="0 0 24 24" width="36" height="36" fill="currentColor">
+                  <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/>
+                </svg>
+              </div>
+              <h2>ANVEXO GitHub Repository Intelligence Platform</h2>
+              <p>Autonomous multi-stage deep investigation of public and authorized GitHub repositories. Evaluates development history, contributor activities, codebase topology, security posture, and test suites.</p>
+              <div class="welcome-actions">
+                <button id="quickAnalyzeBtn" class="btn btn-primary btn-lg">Launch Sample Investigation (dr5t/ANVEXO-demo)</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="tab-report" class="tab-content report-view" role="tabpanel">
           <div class="tab-toolbar">
             <div class="toolbar-left">
               <span class="toolbar-title">SYNTHESIZED INVESTIGATION REPORT</span>

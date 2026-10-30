@@ -39,7 +39,7 @@ const STORAGE_KEY = 'anvexo_ide_settings_v1';
 let currentSettings = { ...DEFAULT_SETTINGS };
 let currentJobId = null;
 let pollTimer = null;
-let activeTab = 'report';
+let activeTab = 'github';
 let activeDrawerTab = 'telemetry';
 let activeActivityView = 'explorer';
 
@@ -221,6 +221,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initCommandPresets();
   initEvents();
   initSettingsModal();
+  initGitHubPlatform();
   loadInitialProject();
 });
 
@@ -367,6 +368,11 @@ async function executeCommandPreset(cmd) {
   const currentPath = pathInput.value.trim() || '.';
 
   appendTelemetryLog(`[COMMAND] Executing preset: $ ${cmd}`);
+
+  if (cmd === 'github') {
+    switchTab('github');
+    return;
+  }
 
   if (cmd === 'scan') {
     await loadProjectInfo(currentPath);
