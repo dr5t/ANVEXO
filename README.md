@@ -7,12 +7,16 @@
 </p>
 
 <p align="center">
+  <a href="https://anvexo.onrender.com/"><strong>🌐 Live Deployment: https://anvexo.onrender.com/</strong></a>
+</p>
+
+<p align="center">
+  <a href="https://anvexo.onrender.com/"><img src="https://img.shields.io/badge/Render-Live%20Deployment-46E3B7?style=flat-square&logo=render&logoColor=white" alt="Live on Render"></a>
   <img src="https://img.shields.io/badge/version-0.1.0-E54D2E?style=flat-square&labelColor=141618" alt="Version 0.1.0">
   <img src="https://img.shields.io/badge/node-%3E%3D20.0.0-EDEDED?style=flat-square&labelColor=141618" alt="Node.js 20+">
   <img src="https://img.shields.io/badge/typescript-5.4+-3178C6?style=flat-square&labelColor=141618" alt="TypeScript 5.4+">
-  <img src="https://img.shields.io/badge/tests-164%20passed%20(100%25)-3FB950?style=flat-square&labelColor=141618" alt="164 Tests Passing">
+  <img src="https://img.shields.io/badge/tests-300%20passed%20(100%25)-3FB950?style=flat-square&labelColor=141618" alt="300 Tests Passing">
   <img src="https://img.shields.io/badge/security-shell%3A%20false-3FB950?style=flat-square&labelColor=141618" alt="Subprocess Isolation">
-  <img src="https://img.shields.io/badge/sandbox-127.0.0.1%3A4173-58A6FF?style=flat-square&labelColor=141618" alt="Localhost Boundary">
   <img src="https://img.shields.io/badge/license-UNLICENSED-E54D2E?style=flat-square&labelColor=141618" alt="Commercial License">
 </p>
 
@@ -54,7 +58,7 @@ Unlike statistical coding assistants that hallucinate fixes based on token proba
 4. Redacts secrets and stamps observations into an immutable evidence ledger.
 5. Employs cross-run contradiction detection to prevent reintroducing known regressions.
 
-Repository analysis and stored project data run locally by default. Hosted model providers and configured integrations may send request data to external services. The local HTTP workbench binds to `127.0.0.1:4173` by default.
+Repository analysis and stored project data run locally by default. Hosted model providers and configured integrations may send request data to external services. The local HTTP workbench binds to `127.0.0.1:4173` by default, and a live cloud deployment is hosted at [https://anvexo.onrender.com/](https://anvexo.onrender.com/).
 
 ---
 
@@ -179,11 +183,13 @@ The local browser workbench (`http://127.0.0.1:4173/`) provides a real-time comm
 - **Bottom Telemetry Drawer**: Live streaming logs, sliding window rate-limit monitor, and Immutable Permission Audit Ledger.
 - **Settings Modal (`Cmd+,`)**: Visual configuration for Appearance (6 themes), Typography (font family, size, line height), Layout (collapsible panels, default dimensions), General shortcuts, and Memory &amp; Privacy controls.
 
-To launch the workbench:
+To access the workbench:
 
-```bash
-npx anvexo serve --port 4173 --host 127.0.0.1
-```
+- **Live Cloud Deployment**: [https://anvexo.onrender.com/](https://anvexo.onrender.com/)
+- **Local Server**:
+  ```bash
+  npx anvexo serve --port 4173 --host 127.0.0.1
+  ```
 
 ---
 
@@ -387,12 +393,14 @@ The local HTTP server listens on `127.0.0.1:4173` by default. All endpoints enfo
 
 ### Cloud Deployment (Render, Docker, PaaS)
 
-ANVEXO deploys as a web service on Render, Docker, and other cloud providers:
+ANVEXO is deployed live on Render as a cloud web service and interactive workbench:
 
+- **Live URL**: [https://anvexo.onrender.com/](https://anvexo.onrender.com/)
+- **Documentation Platform**: [https://anvexo.onrender.com/docs](https://anvexo.onrender.com/docs)
+- **Health Check Endpoint**: [https://anvexo.onrender.com/api/health](https://anvexo.onrender.com/api/health)
 - **Build Command**: `npm install && npm run build`
 - **Start Command**: `npm start` (or `node dist/index.js`)
 - **Port & Host**: Automatically binds to `process.env.PORT` (defaults to `4173`) and `process.env.HOST` (defaults to `0.0.0.0` in cloud environments, `127.0.0.1` locally).
-- **Health Check Endpoint**: `/api/health`
 - **Environment Variables**: `GEMINI_API_KEY`, `GEMINI_MODEL`, `GEMMA_API_KEY`, `HOST`, `PORT`, `ALLOWED_HOSTS`, `ALLOWED_ORIGINS`.
 
 ---
