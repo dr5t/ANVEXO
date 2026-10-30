@@ -2,15 +2,19 @@
 
 ## 1. Overview
 
-ANVEXO integrates Google Gemma open models via [`GemmaProvider`](../../src/providers/gemma.ts) for automated multimodal software investigation, root cause analysis, and regression test recommendation.
+ANVEXO integrates Gemma models via [`GemmaProvider`](../../src/providers/gemma.ts) for multimodal software investigation and regression test recommendations.
 
-The provider features dual-route execution:
-1. **Google AI Studio (Gemini API Protocol)**: Hosted Gemma inference via Google's REST API endpoint.
-2. **Local Inference Daemon (Ollama / vLLM)**: Fully offline, private local model execution via REST API.
+The provider supports two request formats:
+1. **Google Gemini API**: Hosted inference through Google's `generateContent` REST API.
+2. **Local Ollama-compatible API**: Inference through `/api/generate`; the default endpoint is `http://127.0.0.1:11434`.
+
+The local route does not itself guarantee an air-gapped environment. It sends requests to the configured endpoint.
 
 ---
 
-## 2. Supported Models & Topography
+## 2. Provider Model Registry
+
+The provider contains a static registry for hosted models and local fallback identifiers. Registry entries describe configured defaults; they do not prove that a model is currently available or that an account can access it.
 
 ### 2.1 Google AI Studio Route (`gemini-api`)
 | Model Identifier | Architecture | Context Window | Max Output | Multimodal Vision | Function Calling |
@@ -21,11 +25,13 @@ The provider features dual-route execution:
 | `gemma-2-9b-it` | 9B Dense Instruct | 8,192 tokens | 4,096 tokens | No | No |
 
 ### 2.2 Local Inference Route (`local`)
-| Model Tag | Description | Context Window | Endpoint |
-| :--- | :--- | :--- | :--- |
-| `gemma4:latest` (Default) | Gemma 4 local container | 65,536 tokens | `http://127.0.0.1:11434/api/generate` |
-| `gemma2:9b` | Gemma 2 9B local | 8,192 tokens | `http://127.0.0.1:11434/api/generate` |
-| Dynamic (`/api/tags`) | Auto-discovered Gemma models | 32,768 tokens | `http://127.0.0.1:11434/api/generate` |
+| Model Tag | Description | Endpoint |
+| :--- | :--- | :--- |
+| `gemma4:latest` (default fallback) | Default local model identifier | `http://127.0.0.1:11434/api/generate` |
+| `gemma2:9b` (default fallback) | Additional local model identifier | `http://127.0.0.1:11434/api/generate` |
+| Dynamic (`/api/tags`) | Gemma names returned by the local daemon | `http://127.0.0.1:11434/api/generate` |
+
+Hosted model names and metadata are a static provider registry; their availability and capabilities are not checked until a request reaches the configured service.
 
 ---
 
@@ -44,13 +50,13 @@ Endpoint URL constructed:
 https://generativelanguage.googleapis.com/v1beta/models/{modelName}:generateContent?key={API_KEY}
 ```
 
-*Security Invariant*: API keys are automatically redacted in terminal error messages and caught exceptions as `[REDACTED_API_KEY]`.
+The provider uses generic errors for hosted HTTP failures and does not include the API response body in those errors. Do not send private repository content to a hosted provider unless permitted by your data-handling policy.
 
 ### 3.2 Local Daemon Configuration
-For air-gapped local execution without API keys:
+The local route defaults to `http://127.0.0.1:11434`. Set these variables to select a different local endpoint or model:
 ```bash
-# Default connects to http://127.0.0.1:11434
-export GEMMA_BASE_URL="http://127.0.0.1:11434"
+export GEMMA_BASE_URL="http://127.0.0.1:11435"
+export GEMMA_MODEL="gemma4:latest"
 ```
 
 To run with Ollama:
@@ -58,6 +64,8 @@ To run with Ollama:
 ollama serve
 ollama pull gemma4:latest
 ```
+
+`GEMMA_MODEL` and `GEMMA_BASE_URL` are read by `GemmaProvider`. Constructor options `defaultModel` and `baseUrl` take precedence over environment values.
 
 ---
 
@@ -77,13 +85,12 @@ ollama pull gemma4:latest
 - Local Ollama: Base64 image payloads are extracted and forwarded via the Ollama `images: []` request body.
 
 ### Structured Diagnostic Output
-Gemma produces JSON conforming to `GemmaInvestigationResult`:
+The investigation prompt requests JSON with the following fields. The provider extracts a JSON object when possible and supplies fallback values when parsing fails, so a response does not prove that every field came from valid model JSON:
 - `summary`: High-level synopsis of the failure.
 - `suspectedRootCause`: Pinpointed defect explanation.
 - `codeEvidence`: File paths, line numbers, and snippets.
 - `proposedFix`: Code remediation patch.
 - `suggestedRegressionTests`: Test commands to prevent regressions.
-- `evidenceRecords`: Transformed into `EvidenceRecord`s with `VerificationStatus.UNVERIFIED` for code claims and `VERIFIED` for attached visual screenshots.
 
 ### 4.4 CLI Command Usage
 Run direct Gemma 4 multimodal investigations from your terminal:
@@ -102,14 +109,14 @@ npx anvexo gemma "Memory leak check" --json
 
 ## 5. Verification & Testing Instructions
 
-### 5.1 Offline Unit Tests (30 Mocked Tests)
+### 5.1 Offline Mocked Unit Tests
 Verifies route switching, payload formatting, model listing, image validation, error API key scrubbing, and JSON markdown fallback:
 ```bash
 npx vitest run tests/unit/gemma.test.ts
 ```
 
 ### 5.2 Live API Smoke Test (Opt-In)
-This test makes a real Google Gemma API request using `GEMMA_API_KEY`. It is excluded from `npm test` and does not fall back to local Ollama. Without the key, the dedicated command skips with an actionable message.
+This test makes one real completion request through the Gemini `generateContent` API. It is excluded from `npm test` and does not fall back to the local route. It is not a multimodal investigation test. Without `GEMMA_API_KEY`, the dedicated command skips without a network request.
 
 On macOS or Linux, enter the key without echoing it, run the test, then clear it:
 ```bash
@@ -127,14 +134,14 @@ npm run test:gemma
 Remove-Item Env:GEMMA_API_KEY
 ```
 
-The optional `GEMMA_MODEL` (default `gemma-4-31b-it`) and `GEMMA_BASE_URL` (default Google Generative Language API endpoint) configure the request. Store keys in a secret manager or CI secret store; never commit them or print them in logs. The test validates the provider response and reports authentication, model, connectivity, timeout, and malformed-response errors without printing API response bodies or credentials.
+The smoke test defaults to `gemma-4-31b-it`; `GEMMA_MODEL` selects another model and `GEMMA_BASE_URL` may point to a Gemini-API-compatible endpoint. The test only checks the basic response shape and non-empty content. Store keys in a secret manager or CI secret store; never commit or print them.
 
 Without a key, this command safely skips and makes no network request:
 ```bash
 npm run test:gemma
 ```
 
-`npm test` remains an offline suite and never requires a Gemma key or internet access.
+`npm test` excludes the live smoke test and does not require a Gemma key or live model service. The test suite also includes local integration tests and may execute local subprocesses.
 
 ### 5.3 Full Verification Suite
 ```bash
