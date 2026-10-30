@@ -284,6 +284,8 @@ npm run test:gemini
 > - `npm test` runs the default unit and local integration suite, including `tests/unit/gemini.test.ts`, and excludes live Gemma and Gemini provider tests. It requires no provider API key or external model request; local tests may use the filesystem and subprocesses.
 > - `npm run test:gemini` runs `tests/integration/gemini.test.ts`. If `GEMINI_API_KEY` is unset, the test skips cleanly with a diagnostic notice and is marked as skipped. When a valid key is set, it performs a real inference request against Google's Gemini API.
 
+GitHub Actions runs the install, type check, build, and default test suite for pull requests targeting `main` or `pr-for-hacktoberrfest`, and for pushes to those branches, on Node.js 20 and 22. Live provider smoke tests are excluded because they require credentials.
+
 Generate test coverage report:
 
 ```bash
