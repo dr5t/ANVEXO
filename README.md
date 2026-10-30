@@ -18,7 +18,8 @@
 
 ---
 
-## Table of Contents
+<a id="table-of-contents"></a>
+## <img src="docs/assets/icons/toc.svg" width="20" height="20" alt="" valign="middle" /> Table of Contents
 
 - [Overview](#overview)
 - [The Problem](#the-problem)
@@ -39,7 +40,8 @@
 
 ---
 
-## Overview
+<a id="overview"></a>
+## <img src="docs/assets/icons/overview.svg" width="20" height="20" alt="" valign="middle" /> Overview
 
 **ANVEXO** is an autonomous software investigation and codebase intelligence platform engineered for professional software development teams. It unites empirical root-cause debugging and hypothesis verification (**ANVESHAN**) with persistent repository topology, dependency graphs, and historical defect memory (**ECHO**).
 
@@ -55,7 +57,8 @@ All processing occurs strictly on your machine (`127.0.0.1:4173`) with zero cove
 
 ---
 
-## The Problem
+<a id="the-problem"></a>
+## <img src="docs/assets/icons/problem.svg" width="20" height="20" alt="" valign="middle" /> The Problem
 
 Modern software troubleshooting in complex codebases is fragmented, slow, and error-prone:
 
@@ -69,21 +72,22 @@ Modern software troubleshooting in complex codebases is fragmented, slow, and er
 
 ---
 
-## Core Capabilities
+<a id="core-capabilities"></a>
+## <img src="docs/assets/icons/capabilities.svg" width="20" height="20" alt="" valign="middle" /> Core Capabilities
 
-### 1. ANVESHAN: Autonomous Investigation Engine
+### <img src="docs/assets/icons/anveshan.svg" width="18" height="18" alt="" valign="middle" /> 1. ANVESHAN: Autonomous Investigation Engine
 - **Heuristic Diagnostic Planning**: Assembles 10–15 step diagnostic plans tailored to operator objectives, combining file listings, git status checks, commit log reviews, unstaged diff inspections, configuration reads, and targeted test runs.
 - **Evidence Verification States**: Categorizes observations into five rigorous states: `observed`, `inferred`, `hypothesized`, `verified`, and `contradicted`.
 - **Automated Secret Scrubbing**: Redacts sensitive API keys (`sk-...`, `ghp_...`, `xoxb-...`), cloud credentials, and PEM certificates prior to ledger persistence.
 - **Honest Limitation Disclosures**: Discloses unresolved uncertainties, skipped steps, and confidence bounds directly in synthesized reports.
 
-### 2. ECHO: Persistent Codebase Intelligence
+### <img src="docs/assets/icons/echo.svg" width="18" height="18" alt="" valign="middle" /> 2. ECHO: Persistent Codebase Intelligence
 - **4-Tier Memory Matrix**: Choose between ephemeral process memory, local project context (`.anvexo/`), workstation intelligence (`~/.anvexo/`), or user-controlled cloud buckets.
 - **Dependency Topology Graphing**: Maps package manifests and module relations to trace failures to dependency boundaries.
 - **Git Commit Drift Warning**: Detects when repository commits advance past indexed context nodes, alerting operators to stale context.
 - **Historical Bug Registry &amp; Contradiction Detection**: Alerts operators if a newly proposed hypothesis contradicts previously verified findings.
 
-### 3. Developer Workbench (Split IDE Canvas)
+### <img src="docs/assets/icons/workbench.svg" width="18" height="18" alt="" valign="middle" /> 3. Developer Workbench (Split IDE Canvas)
 - **Engineered Aesthetic**: Obsidian Slate IDE interface with 6 selectable themes, monospace typography controls, and custom ANVEXO SVG icons (zero Lucide/generic icon libraries).
 - **Interactive DAG Step Tracker**: Visualizes live execution progress, duration timers, and step statuses.
 - **Multi-Pane Inspection**: Side-by-side view for Synthesized Reports, Evidence Streams, Code Inspector, Unified Diffs, and Tool Telemetry Console.
@@ -91,7 +95,8 @@ Modern software troubleshooting in complex codebases is fragmented, slow, and er
 
 ---
 
-## System Architecture
+<a id="system-architecture"></a>
+## <img src="docs/assets/icons/architecture.svg" width="20" height="20" alt="" valign="middle" /> System Architecture
 
 <p align="center">
   <img src="docs/assets/anvexo-architecture.svg" alt="ANVEXO Multi-Tier System Architecture" width="100%">
@@ -107,7 +112,8 @@ The platform is partitioned into five isolated architectural tiers:
 
 ---
 
-## Investigation Pipeline
+<a id="investigation-pipeline"></a>
+## <img src="docs/assets/icons/pipeline.svg" width="20" height="20" alt="" valign="middle" /> Investigation Pipeline
 
 <p align="center">
   <img src="docs/assets/anvexo-workflow.svg" alt="ANVESHAN 7-Stage Investigation Pipeline" width="100%">
@@ -127,7 +133,8 @@ Every autonomous investigation executes through a deterministic seven-stage pipe
 
 ---
 
-## ECHO Context &amp; Memory Engine
+<a id="echo-context--memory-engine"></a>
+## <img src="docs/assets/icons/memory.svg" width="20" height="20" alt="" valign="middle" /> ECHO Context &amp; Memory Engine
 
 <p align="center">
   <img src="docs/assets/anvexo-context-engine.svg" alt="ECHO Codebase Intelligence &amp; Memory Persistence Matrix" width="100%">
@@ -135,21 +142,22 @@ Every autonomous investigation executes through a deterministic seven-stage pipe
 
 ANVEXO provides four distinct memory models to accommodate different operational and confidentiality requirements:
 
-### 1. Memory Persistence Modes
+### <img src="docs/assets/icons/storage.svg" width="18" height="18" alt="" valign="middle" /> 1. Memory Persistence Modes
 
 - **Mode A: Ephemeral (Zero-Persistent)**: All state resides exclusively in transient process memory (Node.js heap). Zero disk writes. State evaporates upon process exit. Recommended for air-gapped CI/CD runners and confidential third-party code reviews.
 - **Mode B: Local Repository Context**: Stores dependency graphs, bug catalogs, and investigation summaries in `.anvexo/context.json` within the repository root. Can be version-controlled or `.gitignore`d.
 - **Mode C: Persistent Machine Intelligence (Recommended)**: Stores cross-repository engineering knowledge in `~/.anvexo/storage/`. Correlates recurring bug patterns and architectural signatures across all local workspaces on the developer workstation.
 - **Mode D: User-Controlled Cloud Storage**: Direct, encrypted storage adapter targeting user-configured Amazon S3 or Google Cloud Storage buckets. Synchronizes encrypted team memory with zero intermediary relay servers.
 
-### 2. Contradiction Detection &amp; Drift Tracking
+### <img src="docs/assets/icons/drift.svg" width="18" height="18" alt="" valign="middle" /> 2. Contradiction Detection &amp; Drift Tracking
 
 - **Git Commit Drift Warning**: Compares `lastIndexedCommit` against the active repository `HEAD`. If the codebase has advanced since the last indexing run, ANVEXO alerts the operator that historical context may be stale.
 - **Contradiction Detection Engine**: Compares findings from the active investigation against historical bug signatures. If a proposed finding contradicts a verified historical fix, ANVEXO flags the contradiction to prevent regression re-introduction.
 
 ---
 
-## Developer Workbench (Split IDE Canvas)
+<a id="developer-workbench-split-ide-canvas"></a>
+## <img src="docs/assets/icons/workbench.svg" width="20" height="20" alt="" valign="middle" /> Developer Workbench (Split IDE Canvas)
 
 <p align="center">
   <img src="docs/assets/anvexo-workbench.svg" alt="ANVEXO Developer Workbench Interface" width="100%">
@@ -177,11 +185,12 @@ npx anvexo serve --port 4173 --host 127.0.0.1
 
 ---
 
-## Default-Deny Permission &amp; Safety Model
+<a id="default-deny-permission--safety-model"></a>
+## <img src="docs/assets/icons/permissions.svg" width="20" height="20" alt="" valign="middle" /> Default-Deny Permission &amp; Safety Model
 
 ANVEXO enforces a **Default-Deny** security posture. No tool can inspect files, write changes, execute git commands, or run binaries without explicit authorization.
 
-### Permission Scopes
+### <img src="docs/assets/icons/shield-scope.svg" width="18" height="18" alt="" valign="middle" /> Permission Scopes
 
 | Scope | Operations Controlled | Example Resources |
 | :--- | :--- | :--- |
@@ -191,7 +200,7 @@ ANVEXO enforces a **Default-Deny** security posture. No tool can inspect files, 
 | `test:run` | Executing test suites | `vitest run`, `npm test`, `pytest` |
 | `command:execute` | Running general terminal commands | Linters, build tools, diagnostics |
 
-### Grant Decisions
+### <img src="docs/assets/icons/gate-decisions.svg" width="18" height="18" alt="" valign="middle" /> Grant Decisions
 
 - `ALWAYS_ALLOW`: Authorizes matching scope and resource pattern for the entire duration of the session.
 - `ALLOW_ONCE`: Authorizes a single execution. The grant is immediately consumed and deleted upon first check.
@@ -199,15 +208,16 @@ ANVEXO enforces a **Default-Deny** security posture. No tool can inspect files, 
 
 ---
 
-## Getting Started
+<a id="getting-started"></a>
+## <img src="docs/assets/icons/getting-started.svg" width="20" height="20" alt="" valign="middle" /> Getting Started
 
-### Prerequisites
+### <img src="docs/assets/icons/checklist.svg" width="18" height="18" alt="" valign="middle" /> Prerequisites
 
 - **Node.js**: `>= 20.0.0` (LTS recommended)
 - **Git**: `>= 2.0.0`
 - **npm**: `>= 9.0.0`
 
-### Installation &amp; Build
+### <img src="docs/assets/icons/package.svg" width="18" height="18" alt="" valign="middle" /> Installation &amp; Build
 
 Clone the repository and build the distribution binaries:
 
@@ -218,7 +228,7 @@ npm install
 npm run build
 ```
 
-### Running Test Verification
+### <img src="docs/assets/icons/test.svg" width="18" height="18" alt="" valign="middle" /> Running Test Verification
 
 Verify all 164 unit and integration tests across 20 test suites:
 
@@ -240,7 +250,8 @@ npm run test:coverage
 
 ---
 
-## CLI Reference
+<a id="cli-reference"></a>
+## <img src="docs/assets/icons/cli.svg" width="20" height="20" alt="" valign="middle" /> CLI Reference
 
 The `anvexo` binary provides a unified command suite:
 
@@ -285,7 +296,8 @@ npx anvexo config set model.default_provider anthropic
 
 ---
 
-## HTTP API &amp; Server Endpoints
+<a id="http-api--server-endpoints"></a>
+## <img src="docs/assets/icons/api.svg" width="20" height="20" alt="" valign="middle" /> HTTP API &amp; Server Endpoints
 
 The local HTTP server listens on `127.0.0.1:4173` by default. All endpoints enforce host header validation, origin checks, and rate limits:
 
@@ -309,7 +321,8 @@ The local HTTP server listens on `127.0.0.1:4173` by default. All endpoints enfo
 
 ---
 
-## Security Audits &amp; Defensive Controls
+<a id="security-audits--defensive-controls"></a>
+## <img src="docs/assets/icons/security.svg" width="20" height="20" alt="" valign="middle" /> Security Audits &amp; Defensive Controls
 
 ANVEXO is built to operate safely inside hostile environments and untrusted codebases:
 
@@ -323,12 +336,14 @@ ANVEXO is built to operate safely inside hostile environments and untrusted code
 
 ---
 
-## Repository Structure
+<a id="repository-structure"></a>
+## <img src="docs/assets/icons/repository.svg" width="20" height="20" alt="" valign="middle" /> Repository Structure
 
 ```
 ANVEXO/
 ├── docs/
 │   ├── assets/
+│   │   ├── icons/                    # 27 custom precision SVG topic and capability icons
 │   │   ├── anvexo-hero.svg           # High-resolution hero banner
 │   │   ├── anvexo-architecture.svg   # 5-tier system architecture diagram
 │   │   ├── anvexo-workflow.svg       # 7-stage investigation pipeline diagram
@@ -368,7 +383,8 @@ ANVEXO/
 
 ---
 
-## Roadmap &amp; Implementation Status
+<a id="roadmap--implementation-status"></a>
+## <img src="docs/assets/icons/roadmap.svg" width="20" height="20" alt="" valign="middle" /> Roadmap &amp; Implementation Status
 
 | Capability / Subsystem | Status | Description |
 | :--- | :---: | :--- |
@@ -390,13 +406,14 @@ ANVEXO/
 
 ---
 
-## Licensing &amp; Commercial Terms
+<a id="licensing--commercial-terms"></a>
+## <img src="docs/assets/icons/license.svg" width="20" height="20" alt="" valign="middle" /> Licensing &amp; Commercial Terms
 
 ANVEXO is proprietary software. All rights reserved.
 
 Commercial distribution, cloud-hosted SaaS deployment, and unauthorized redistribution are strictly prohibited without an executed commercial license agreement.
 
-### License Tiers
+### <img src="docs/assets/icons/tiers.svg" width="18" height="18" alt="" valign="middle" /> License Tiers
 
 1. **Community / Evaluation License**: Permitted for individual developer evaluation, open-source security research, and non-production testing on local workstations.
 2. **Professional Developer Seat License**: Licensed per named software engineer for proprietary commercial software investigation with persistent memory modes.
@@ -411,7 +428,8 @@ For comprehensive legal terms, refer to:
 
 ---
 
-## Creator &amp; Attribution
+<a id="creator--attribution"></a>
+## <img src="docs/assets/icons/attribution.svg" width="20" height="20" alt="" valign="middle" /> Creator &amp; Attribution
 
 ANVEXO is architected and maintained by:
 
