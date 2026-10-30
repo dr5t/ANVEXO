@@ -1,0 +1,156 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 380" width="100%" height="auto" fill="none">
+  <defs>
+    <linearGradient id="cardGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#181B1E"/>
+      <stop offset="100%" stop-color="#111315"/>
+    </linearGradient>
+    <linearGradient id="flowLine" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#E54D2E"/>
+      <stop offset="50%" stop-color="#FF7A38"/>
+      <stop offset="100%" stop-color="#3FB950"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Deep canvas background -->
+  <rect width="1200" height="380" rx="8" fill="#0C0D0E"/>
+  <rect width="1200" height="380" rx="8" stroke="#24272A" stroke-width="1"/>
+
+  <!-- Diagram Title Header -->
+  <g transform="translate(40, 36)">
+    <rect x="0" y="0" width="8" height="22" rx="2" fill="#E54D2E"/>
+    <text x="18" y="17" fill="#EDEDED" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif" font-size="16" font-weight="700" letter-spacing="0.5">ANVESHAN INVESTIGATION PIPELINE</text>
+    <text x="390" y="16" fill="#8A9096" font-family="monospace" font-size="11">7-STAGE DETERMINISTIC GROUND-TRUTH HYPOTHESIS TESTING</text>
+  </g>
+
+  <!-- Main Workflow Flow Line -->
+  <path d="M 115 140 L 1085 140" stroke="#24272A" stroke-width="2"/>
+  <path d="M 115 140 L 1085 140" stroke="url(#flowLine)" stroke-width="2" stroke-dasharray="8 6" opacity="0.8"/>
+
+  <!-- Stage Cards -->
+  <!-- Stage 1 -->
+  <g transform="translate(40, 95)">
+    <rect width="150" height="210" rx="6" fill="url(#cardGrad)" stroke="#2E3236" stroke-width="1"/>
+    <rect x="0" y="0" width="150" height="5" rx="2" fill="#E54D2E"/>
+    <circle cx="75" cy="45" r="16" fill="#1F2328" stroke="#E54D2E" stroke-width="1.5"/>
+    <text x="75" y="49" fill="#E54D2E" font-family="monospace" font-size="11" font-weight="700" text-anchor="middle">01</text>
+    <text x="75" y="85" fill="#EDEDED" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif" font-size="11.5" font-weight="700" text-anchor="middle">OBJECTIVE</text>
+    <text x="75" y="100" fill="#EDEDED" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif" font-size="11.5" font-weight="700" text-anchor="middle">INGESTION</text>
+    <path d="M 20 115 L 130 115" stroke="#24272A" stroke-width="1"/>
+    <text x="75" y="135" fill="#8A9096" font-family="monospace" font-size="9" text-anchor="middle">Operator bug symptom</text>
+    <text x="75" y="150" fill="#8A9096" font-family="monospace" font-size="9" text-anchor="middle">Target test failure</text>
+    <text x="75" y="165" fill="#8A9096" font-family="monospace" font-size="9" text-anchor="middle">Hypothesis goal</text>
+    <rect x="25" y="180" width="100" height="18" rx="3" fill="#1F2328"/>
+    <text x="75" y="192" fill="#8A9096" font-family="monospace" font-size="8.5" text-anchor="middle">CLI / Workbench</text>
+  </g>
+
+  <!-- Stage 2 -->
+  <g transform="translate(200, 95)">
+    <rect width="150" height="210" rx="6" fill="url(#cardGrad)" stroke="#2E3236" stroke-width="1"/>
+    <rect x="0" y="0" width="150" height="5" rx="2" fill="#FF7A38"/>
+    <circle cx="75" cy="45" r="16" fill="#1F2328" stroke="#FF7A38" stroke-width="1.5"/>
+    <text x="75" y="49" fill="#FF7A38" font-family="monospace" font-size="11" font-weight="700" text-anchor="middle">02</text>
+    <text x="75" y="85" fill="#EDEDED" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif" font-size="11.5" font-weight="700" text-anchor="middle">TOPOGRAPHY</text>
+    <text x="75" y="100" fill="#EDEDED" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif" font-size="11.5" font-weight="700" text-anchor="middle">DISCOVERY</text>
+    <path d="M 20 115 L 130 115" stroke="#24272A" stroke-width="1"/>
+    <text x="75" y="135" fill="#8A9096" font-family="monospace" font-size="9" text-anchor="middle">40+ language scan</text>
+    <text x="75" y="150" fill="#8A9096" font-family="monospace" font-size="9" text-anchor="middle">Package managers</text>
+    <text x="75" y="165" fill="#8A9096" font-family="monospace" font-size="9" text-anchor="middle">Test runners found</text>
+    <rect x="25" y="180" width="100" height="18" rx="3" fill="#1F2328"/>
+    <text x="75" y="192" fill="#58A6FF" font-family="monospace" font-size="8.5" text-anchor="middle">Zero Code Execution</text>
+  </g>
+
+  <!-- Stage 3 -->
+  <g transform="translate(360, 95)">
+    <rect width="150" height="210" rx="6" fill="url(#cardGrad)" stroke="#2E3236" stroke-width="1"/>
+    <rect x="0" y="0" width="150" height="5" rx="2" fill="#58A6FF"/>
+    <circle cx="75" cy="45" r="16" fill="#1F2328" stroke="#58A6FF" stroke-width="1.5"/>
+    <text x="75" y="49" fill="#58A6FF" font-family="monospace" font-size="11" font-weight="700" text-anchor="middle">03</text>
+    <text x="75" y="85" fill="#EDEDED" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif" font-size="11.5" font-weight="700" text-anchor="middle">ECHO CONTEXT</text>
+    <text x="75" y="100" fill="#EDEDED" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif" font-size="11.5" font-weight="700" text-anchor="middle">ALIGNMENT</text>
+    <path d="M 20 115 L 130 115" stroke="#24272A" stroke-width="1"/>
+    <text x="75" y="135" fill="#8A9096" font-family="monospace" font-size="9" text-anchor="middle">Dependency graphs</text>
+    <text x="75" y="150" fill="#8A9096" font-family="monospace" font-size="9" text-anchor="middle">Commit drift check</text>
+    <text x="75" y="165" fill="#8A9096" font-family="monospace" font-size="9" text-anchor="middle">Known bug catalog</text>
+    <rect x="25" y="180" width="100" height="18" rx="3" fill="#1F2328"/>
+    <text x="75" y="192" fill="#58A6FF" font-family="monospace" font-size="8.5" text-anchor="middle">Memory Mode A-D</text>
+  </g>
+
+  <!-- Stage 4 -->
+  <g transform="translate(520, 95)">
+    <rect width="150" height="210" rx="6" fill="url(#cardGrad)" stroke="#2E3236" stroke-width="1"/>
+    <rect x="0" y="0" width="150" height="5" rx="2" fill="#E54D2E"/>
+    <circle cx="75" cy="45" r="16" fill="#1F2328" stroke="#E54D2E" stroke-width="1.5"/>
+    <text x="75" y="49" fill="#E54D2E" font-family="monospace" font-size="11" font-weight="700" text-anchor="middle">04</text>
+    <text x="75" y="85" fill="#EDEDED" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif" font-size="11.5" font-weight="700" text-anchor="middle">DAG STEP</text>
+    <text x="75" y="100" fill="#EDEDED" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif" font-size="11.5" font-weight="700" text-anchor="middle">PLANNING</text>
+    <path d="M 20 115 L 130 115" stroke="#24272A" stroke-width="1"/>
+    <text x="75" y="135" fill="#8A9096" font-family="monospace" font-size="9" text-anchor="middle">Ordered diagnostic DAG</text>
+    <text x="75" y="150" fill="#8A9096" font-family="monospace" font-size="9" text-anchor="middle">10-15 focused steps</text>
+    <text x="75" y="165" fill="#8A9096" font-family="monospace" font-size="9" text-anchor="middle">Scope requirements</text>
+    <rect x="25" y="180" width="100" height="18" rx="3" fill="#1F2328"/>
+    <text x="75" y="192" fill="#E54D2E" font-family="monospace" font-size="8.5" text-anchor="middle">Deterministic</text>
+  </g>
+
+  <!-- Stage 5 -->
+  <g transform="translate(680, 95)">
+    <rect width="150" height="210" rx="6" fill="url(#cardGrad)" stroke="#2E3236" stroke-width="1"/>
+    <rect x="0" y="0" width="150" height="5" rx="2" fill="#F59E0B"/>
+    <circle cx="75" cy="45" r="16" fill="#1F2328" stroke="#F59E0B" stroke-width="1.5"/>
+    <text x="75" y="49" fill="#F59E0B" font-family="monospace" font-size="11" font-weight="700" text-anchor="middle">05</text>
+    <text x="75" y="85" fill="#EDEDED" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif" font-size="11.5" font-weight="700" text-anchor="middle">PERMISSION</text>
+    <text x="75" y="100" fill="#EDEDED" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif" font-size="11.5" font-weight="700" text-anchor="middle">GATING</text>
+    <path d="M 20 115 L 130 115" stroke="#24272A" stroke-width="1"/>
+    <text x="75" y="135" fill="#8A9096" font-family="monospace" font-size="9" text-anchor="middle">Default-Deny policy</text>
+    <text x="75" y="150" fill="#8A9096" font-family="monospace" font-size="9" text-anchor="middle">`ALWAYS_ALLOW`</text>
+    <text x="75" y="165" fill="#8A9096" font-family="monospace" font-size="9" text-anchor="middle">`ALLOW_ONCE` / `DENY`</text>
+    <rect x="25" y="180" width="100" height="18" rx="3" fill="#1F2328"/>
+    <text x="75" y="192" fill="#F59E0B" font-family="monospace" font-size="8.5" text-anchor="middle">Audit Ledger</text>
+  </g>
+
+  <!-- Stage 6 -->
+  <g transform="translate(840, 95)">
+    <rect width="150" height="210" rx="6" fill="url(#cardGrad)" stroke="#2E3236" stroke-width="1"/>
+    <rect x="0" y="0" width="150" height="5" rx="2" fill="#3FB950"/>
+    <circle cx="75" cy="45" r="16" fill="#1F2328" stroke="#3FB950" stroke-width="1.5"/>
+    <text x="75" y="49" fill="#3FB950" font-family="monospace" font-size="11" font-weight="700" text-anchor="middle">06</text>
+    <text x="75" y="85" fill="#EDEDED" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif" font-size="11.5" font-weight="700" text-anchor="middle">SANDBOXED</text>
+    <text x="75" y="100" fill="#EDEDED" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif" font-size="11.5" font-weight="700" text-anchor="middle">EXECUTION</text>
+    <path d="M 20 115 L 130 115" stroke="#24272A" stroke-width="1"/>
+    <text x="75" y="135" fill="#8A9096" font-family="monospace" font-size="9" text-anchor="middle">spawnSync (shell: false)</text>
+    <text x="75" y="150" fill="#8A9096" font-family="monospace" font-size="9" text-anchor="middle">Git diffs &amp; tests run</text>
+    <text x="75" y="165" fill="#8A9096" font-family="monospace" font-size="9" text-anchor="middle">Secret scrubbing</text>
+    <rect x="25" y="180" width="100" height="18" rx="3" fill="#1F2328"/>
+    <text x="75" y="192" fill="#3FB950" font-family="monospace" font-size="8.5" text-anchor="middle">Traversal-Proof</text>
+  </g>
+
+  <!-- Stage 7 -->
+  <g transform="translate(1000, 95)">
+    <rect width="160" height="210" rx="6" fill="url(#cardGrad)" stroke="#2E3236" stroke-width="1"/>
+    <rect x="0" y="0" width="160" height="5" rx="2" fill="#E54D2E"/>
+    <circle cx="80" cy="45" r="16" fill="#1F2328" stroke="#E54D2E" stroke-width="1.5"/>
+    <text x="80" y="49" fill="#E54D2E" font-family="monospace" font-size="11" font-weight="700" text-anchor="middle">07</text>
+    <text x="80" y="85" fill="#EDEDED" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif" font-size="11.5" font-weight="700" text-anchor="middle">EVIDENCE &amp;</text>
+    <text x="80" y="100" fill="#EDEDED" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif" font-size="11.5" font-weight="700" text-anchor="middle">SYNTHESIS</text>
+    <path d="M 20 115 L 140 115" stroke="#24272A" stroke-width="1"/>
+    <text x="80" y="135" fill="#EDEDED" font-family="monospace" font-size="9" font-weight="600" text-anchor="middle">5 Verification States</text>
+    <text x="80" y="150" fill="#8A9096" font-family="monospace" font-size="9" text-anchor="middle">Confidence % scored</text>
+    <text x="80" y="165" fill="#8A9096" font-family="monospace" font-size="9" text-anchor="middle">Limitations disclosed</text>
+    <rect x="20" y="180" width="120" height="18" rx="3" fill="#1F2328"/>
+    <text x="80" y="192" fill="#E54D2E" font-family="monospace" font-size="8.5" text-anchor="middle">Ground-Truth Report</text>
+  </g>
+
+  <!-- Bottom Subtitle Bar -->
+  <g transform="translate(40, 325)">
+    <text x="0" y="14" fill="#8A9096" font-family="monospace" font-size="10">EVIDENCE VERIFICATION STATES:</text>
+    <rect x="210" y="2" width="80" height="18" rx="3" fill="#1A1D20" stroke="#3A3E44" stroke-width="0.75"/>
+    <text x="250" y="14" fill="#8A9096" font-family="monospace" font-size="8.5" font-weight="600" text-anchor="middle">OBSERVED</text>
+    <rect x="300" y="2" width="80" height="18" rx="3" fill="#1A1D20" stroke="#3A3E44" stroke-width="0.75"/>
+    <text x="340" y="14" fill="#58A6FF" font-family="monospace" font-size="8.5" font-weight="600" text-anchor="middle">INFERRED</text>
+    <rect x="390" y="2" width="105" height="18" rx="3" fill="#1A1D20" stroke="#3A3E44" stroke-width="0.75"/>
+    <text x="442" y="14" fill="#F59E0B" font-family="monospace" font-size="8.5" font-weight="600" text-anchor="middle">HYPOTHESIZED</text>
+    <rect x="505" y="2" width="85" height="18" rx="3" fill="#142C1D" stroke="#2EA043" stroke-width="0.75"/>
+    <text x="547" y="14" fill="#3FB950" font-family="monospace" font-size="8.5" font-weight="700" text-anchor="middle">VERIFIED</text>
+    <rect x="600" y="2" width="115" height="18" rx="3" fill="#2E1815" stroke="#F85149" stroke-width="0.75"/>
+    <text x="657" y="14" fill="#F85149" font-family="monospace" font-size="8.5" font-weight="700" text-anchor="middle">CONTRADICTED</text>
+  </g>
+</svg>

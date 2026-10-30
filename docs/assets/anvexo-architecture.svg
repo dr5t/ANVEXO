@@ -1,0 +1,181 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 620" width="100%" height="auto" fill="none">
+  <defs>
+    <linearGradient id="archBg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#141618"/>
+      <stop offset="100%" stop-color="#0E1012"/>
+    </linearGradient>
+    <linearGradient id="layerHeader" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#1E2226"/>
+      <stop offset="100%" stop-color="#141618"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Deep canvas background -->
+  <rect width="1200" height="620" rx="8" fill="#0C0D0E"/>
+  <rect width="1200" height="620" rx="8" stroke="#24272A" stroke-width="1"/>
+
+  <!-- Diagram Title Header -->
+  <g transform="translate(40, 36)">
+    <rect x="0" y="0" width="8" height="22" rx="2" fill="#E54D2E"/>
+    <text x="18" y="17" fill="#EDEDED" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif" font-size="16" font-weight="700" letter-spacing="0.5">ANVEXO SYSTEM ARCHITECTURE</text>
+    <text x="360" y="16" fill="#8A9096" font-family="monospace" font-size="11">MULTI-TIER DETERMINISTIC EXECUTION &amp; ISOLATION BOUNDARIES</text>
+    <rect x="1000" y="-2" width="160" height="24" rx="3" fill="#181B1E" stroke="#24272A" stroke-width="0.75"/>
+    <text x="1012" y="14" fill="#E54D2E" font-family="monospace" font-size="10" font-weight="600">ZERO COVERT EGRESS</text>
+  </g>
+
+  <!-- LAYER 1: WORKSPACE & INTERFACE LAYER -->
+  <g transform="translate(40, 75)">
+    <rect width="1120" height="88" rx="6" fill="url(#archBg)" stroke="#24272A" stroke-width="1"/>
+    <rect width="1120" height="24" rx="6" fill="url(#layerHeader)"/>
+    <text x="14" y="16" fill="#8A9096" font-family="monospace" font-size="10" font-weight="600">LAYER 1 // OPERATOR INTERACTION &amp; WORKSPACES</text>
+
+    <!-- Sub-blocks -->
+    <g transform="translate(14, 32)">
+      <!-- CLI Box -->
+      <rect x="0" y="0" width="345" height="44" rx="4" fill="#181B1E" stroke="#2E3236" stroke-width="1"/>
+      <circle cx="16" cy="22" r="3" fill="#E54D2E"/>
+      <text x="28" y="20" fill="#EDEDED" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif" font-size="12" font-weight="600">CLI Binary Suite (`anvexo`)</text>
+      <text x="28" y="34" fill="#8A9096" font-family="monospace" font-size="9.5">doctor · init · investigate · discover · context · agent</text>
+
+      <!-- Workbench Box -->
+      <rect x="370" y="0" width="350" height="44" rx="4" fill="#181B1E" stroke="#2E3236" stroke-width="1"/>
+      <circle cx="386" cy="22" r="3" fill="#58A6FF"/>
+      <text x="398" y="20" fill="#EDEDED" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif" font-size="12" font-weight="600">Split IDE Canvas Workbench</text>
+      <text x="398" y="34" fill="#8A9096" font-family="monospace" font-size="9.5">Native DOM · 6 Themes · Live DAG · Custom SVG Icons</text>
+
+      <!-- REST API Box -->
+      <rect x="745" y="0" width="345" height="44" rx="4" fill="#181B1E" stroke="#2E3236" stroke-width="1"/>
+      <circle cx="761" cy="22" r="3" fill="#3FB950"/>
+      <text x="773" y="20" fill="#EDEDED" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif" font-size="12" font-weight="600">HTTP REST &amp; Docs Platform</text>
+      <text x="773" y="34" fill="#8A9096" font-family="monospace" font-size="9.5">`/api/*` JSON-RPC · `/docs` 10-Chapter Documentation</text>
+    </g>
+  </g>
+
+  <!-- Connectors Layer 1 -> Layer 2 -->
+  <g stroke="#3A3E44" stroke-width="1.25" stroke-dasharray="3 3">
+    <line x1="600" y1="163" x2="600" y2="183"/>
+  </g>
+
+  <!-- LAYER 2: SECURITY SANDBOX & PERIMETER -->
+  <g transform="translate(40, 183)">
+    <rect width="1120" height="88" rx="6" fill="url(#archBg)" stroke="#3FB950" stroke-opacity="0.4" stroke-width="1"/>
+    <rect width="1120" height="24" rx="6" fill="url(#layerHeader)"/>
+    <text x="14" y="16" fill="#3FB950" font-family="monospace" font-size="10" font-weight="700">LAYER 2 // SECURITY SANDBOX &amp; PERIMETER CONTROL</text>
+
+    <!-- Sub-blocks -->
+    <g transform="translate(14, 32)">
+      <!-- Canonical Path -->
+      <rect x="0" y="0" width="260" height="44" rx="4" fill="#181B1E" stroke="#2E3236" stroke-width="1"/>
+      <text x="14" y="19" fill="#EDEDED" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif" font-size="11.5" font-weight="600">Canonical Path Validator</text>
+      <text x="14" y="33" fill="#8A9096" font-family="monospace" font-size="9.5">fs.realpathSync · Traversal Proof</text>
+
+      <!-- Host Guard -->
+      <rect x="280" y="0" width="260" height="44" rx="4" fill="#181B1E" stroke="#2E3236" stroke-width="1"/>
+      <text x="14" y="19" fill="#EDEDED" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif" font-size="11.5" font-weight="600">Anti-DNS &amp; Host Guard</text>
+      <text x="14" y="33" fill="#8A9096" font-family="monospace" font-size="9.5">Host header check · 127.0.0.1</text>
+
+      <!-- CSRF & Origin -->
+      <rect x="560" y="0" width="260" height="44" rx="4" fill="#181B1E" stroke="#2E3236" stroke-width="1"/>
+      <text x="14" y="19" fill="#EDEDED" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif" font-size="11.5" font-weight="600">Origin &amp; CSRF Defense</text>
+      <text x="14" y="33" fill="#8A9096" font-family="monospace" font-size="9.5">Rejects untrusted foreign origins</text>
+
+      <!-- Rate Limiter -->
+      <rect x="840" y="0" width="250" height="44" rx="4" fill="#181B1E" stroke="#2E3236" stroke-width="1"/>
+      <text x="14" y="19" fill="#EDEDED" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif" font-size="11.5" font-weight="600">Rate Limiter (300 req/min)</text>
+      <text x="14" y="33" fill="#8A9096" font-family="monospace" font-size="9.5">Sliding window · Memory tracked</text>
+    </g>
+  </g>
+
+  <!-- Connectors Layer 2 -> Layer 3 -->
+  <g stroke="#3A3E44" stroke-width="1.25" stroke-dasharray="3 3">
+    <line x1="600" y1="271" x2="600" y2="291"/>
+  </g>
+
+  <!-- LAYER 3: ANVESHAN INVESTIGATION CORE -->
+  <g transform="translate(40, 291)">
+    <rect width="1120" height="96" rx="6" fill="url(#archBg)" stroke="#E54D2E" stroke-opacity="0.4" stroke-width="1"/>
+    <rect width="1120" height="24" rx="6" fill="url(#layerHeader)"/>
+    <text x="14" y="16" fill="#E54D2E" font-family="monospace" font-size="10" font-weight="700">LAYER 3 // ANVESHAN AUTONOMOUS INVESTIGATION ENGINE</text>
+
+    <!-- Sub-blocks -->
+    <g transform="translate(14, 32)">
+      <!-- Topography -->
+      <rect x="0" y="0" width="260" height="52" rx="4" fill="#181B1E" stroke="#2E3236" stroke-width="1"/>
+      <text x="14" y="20" fill="#EDEDED" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif" font-size="11.5" font-weight="600">Topography Discovery</text>
+      <text x="14" y="34" fill="#8A9096" font-family="monospace" font-size="9.5">40+ Stacks, PMs, Test Frameworks</text>
+      <text x="14" y="45" fill="#58A6FF" font-family="monospace" font-size="8.5">Deterministic non-executing scan</text>
+
+      <!-- DAG Planner -->
+      <rect x="280" y="0" width="260" height="52" rx="4" fill="#181B1E" stroke="#2E3236" stroke-width="1"/>
+      <text x="14" y="20" fill="#EDEDED" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif" font-size="11.5" font-weight="600">Deterministic DAG Planner</text>
+      <text x="14" y="34" fill="#8A9096" font-family="monospace" font-size="9.5">Dependency-ordered step plans</text>
+      <text x="14" y="45" fill="#E54D2E" font-family="monospace" font-size="8.5">Bounded iteration count (12-15 steps)</text>
+
+      <!-- Async Loop -->
+      <rect x="560" y="0" width="260" height="52" rx="4" fill="#181B1E" stroke="#2E3236" stroke-width="1"/>
+      <text x="14" y="20" fill="#EDEDED" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif" font-size="11.5" font-weight="600">Investigation Orchestrator</text>
+      <text x="14" y="34" fill="#8A9096" font-family="monospace" font-size="9.5">Job concurrency mutex per-repo</text>
+      <text x="14" y="45" fill="#3FB950" font-family="monospace" font-size="8.5">AbortController cancellation</text>
+
+      <!-- Evidence Ledger -->
+      <rect x="840" y="0" width="250" height="52" rx="4" fill="#181B1E" stroke="#2E3236" stroke-width="1"/>
+      <text x="14" y="20" fill="#EDEDED" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif" font-size="11.5" font-weight="600">Evidence Store &amp; Redaction</text>
+      <text x="14" y="34" fill="#8A9096" font-family="monospace" font-size="9.5">Immutable UUID ledger</text>
+      <text x="14" y="45" fill="#F59E0B" font-family="monospace" font-size="8.5">Regex secret scrubbing (sk-, ghp-)</text>
+    </g>
+  </g>
+
+  <!-- Connectors Layer 3 -> Layer 4 & Layer 5 -->
+  <g stroke="#3A3E44" stroke-width="1.25" stroke-dasharray="3 3">
+    <line x1="300" y1="387" x2="300" y2="407"/>
+    <line x1="900" y1="387" x2="900" y2="407"/>
+  </g>
+
+  <!-- LAYER 4: SANDBOXED TOOL EXECUTION (LEFT) -->
+  <g transform="translate(40, 407)">
+    <rect width="545" height="180" rx="6" fill="url(#archBg)" stroke="#24272A" stroke-width="1"/>
+    <rect width="545" height="24" rx="6" fill="url(#layerHeader)"/>
+    <text x="14" y="16" fill="#8A9096" font-family="monospace" font-size="10" font-weight="600">LAYER 4 // SANDBOXED TOOL EXECUTION (shell: false)</text>
+
+    <g transform="translate(14, 34)">
+      <!-- Scope ACL -->
+      <rect x="0" y="0" width="517" height="38" rx="4" fill="#181B1E" stroke="#2E3236" stroke-width="1"/>
+      <text x="14" y="17" fill="#EDEDED" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif" font-size="11.5" font-weight="600">Permission Gate &amp; Scope ACL</text>
+      <text x="14" y="30" fill="#8A9096" font-family="monospace" font-size="9.5">`file:read` · `file:write` · `git:read` · `test:run` · `command:execute`</text>
+
+      <!-- Tool Execution Subsystem -->
+      <rect x="0" y="46" width="517" height="42" rx="4" fill="#181B1E" stroke="#2E3236" stroke-width="1"/>
+      <text x="14" y="18" fill="#EDEDED" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif" font-size="11.5" font-weight="600">Tool Registry (Direct Process Vectors)</text>
+      <text x="14" y="32" fill="#8A9096" font-family="monospace" font-size="9.5">node:child_process spawnSync · Bounded timeouts · Zero shell expansion</text>
+
+      <!-- Providers & Skills -->
+      <rect x="0" y="96" width="517" height="38" rx="4" fill="#181B1E" stroke="#2E3236" stroke-width="1"/>
+      <text x="14" y="17" fill="#EDEDED" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif" font-size="11.5" font-weight="600">Ecosystem Integrations</text>
+      <text x="14" y="30" fill="#8A9096" font-family="monospace" font-size="9.5">Offline Heuristic · Anthropic · OpenAI · Gemini · Ollama · MCP JSON-RPC</text>
+    </g>
+  </g>
+
+  <!-- LAYER 5: ECHO PERSISTENT INTELLIGENCE MATRIX (RIGHT) -->
+  <g transform="translate(615, 407)">
+    <rect width="545" height="180" rx="6" fill="url(#archBg)" stroke="#58A6FF" stroke-opacity="0.4" stroke-width="1"/>
+    <rect width="545" height="24" rx="6" fill="url(#layerHeader)"/>
+    <text x="14" y="16" fill="#58A6FF" font-family="monospace" font-size="10" font-weight="700">LAYER 5 // ECHO CODEBASE INTELLIGENCE &amp; CONTEXT MATRIX</text>
+
+    <g transform="translate(14, 34)">
+      <!-- 4 Memory Modes -->
+      <rect x="0" y="0" width="517" height="38" rx="4" fill="#181B1E" stroke="#2E3236" stroke-width="1"/>
+      <text x="14" y="17" fill="#EDEDED" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif" font-size="11.5" font-weight="600">4-Tier Memory Persistence Matrix</text>
+      <text x="14" y="30" fill="#58A6FF" font-family="monospace" font-size="9.5">Mode A (Ephemeral) · Mode B (Local .anvexo) · Mode C (Machine) · Mode D (Cloud)</text>
+
+      <!-- Dependency Graph & Drift -->
+      <rect x="0" y="46" width="517" height="42" rx="4" fill="#181B1E" stroke="#2E3236" stroke-width="1"/>
+      <text x="14" y="18" fill="#EDEDED" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif" font-size="11.5" font-weight="600">Dependency Graph &amp; Git Drift Tracking</text>
+      <text x="14" y="32" fill="#8A9096" font-family="monospace" font-size="9.5">Internal package relations · Commit hash drift warning against stale context</text>
+
+      <!-- Contradiction Detection -->
+      <rect x="0" y="96" width="517" height="38" rx="4" fill="#181B1E" stroke="#2E3236" stroke-width="1"/>
+      <text x="14" y="17" fill="#EDEDED" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif" font-size="11.5" font-weight="600">Contradiction Detection &amp; Bug Registry</text>
+      <text x="14" y="30" fill="#8A9096" font-family="monospace" font-size="9.5">Historical regression protection · Cross-validates new hypotheses</text>
+    </g>
+  </g>
+</svg>

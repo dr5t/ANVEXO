@@ -238,7 +238,7 @@ npm run build
 
 # Run linter
 npm run lint</code></pre>
-      <p>All 152 tests across 20 core test suites execute without failures (100% pass rate), validating server security, permission enforcement, memory caching, tool execution, and discovery.</p>
+      <p>All 164 tests across 20 core test suites execute without failures (100% pass rate), validating server security, permission enforcement, memory caching, tool execution, and discovery.</p>
     `,
   },
 ];
@@ -473,7 +473,7 @@ export function renderDocsHtml(activeSectionId: string = 'overview'): string {
 
   <footer>
     <span>ANVEXO Developer Ecosystem: Autonomous Investigation and Engineering Platform</span>
-    <span>152/152 Tests Verified (100% Pass)</span>
+    <span>164/164 Tests Verified (100% Pass)</span>
   </footer>
 </body>
 </html>`;

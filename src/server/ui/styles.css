@@ -34,6 +34,10 @@
   --editor-tab-size: 2;
 
   /* Motion Design Tokens */
+  --motion-dur-hover: 140ms;
+  --motion-dur-pressed: 90ms;
+  --motion-dur-icon: 160ms;
+  --motion-dur-popover: 180ms;
   --motion-dur-fast: 140ms;
   --motion-dur-normal: 180ms;
   --motion-dur-dropdown: 190ms;
@@ -396,18 +400,23 @@ body {
   border-radius: 2px;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
   transition:
-    background-color var(--motion-dur-fast) var(--motion-ease-out),
-    border-color var(--motion-dur-fast) var(--motion-ease-out),
-    color var(--motion-dur-fast) var(--motion-ease-out),
-    transform 90ms var(--motion-ease-pressed);
+    background-color var(--motion-dur-hover) var(--motion-ease-out),
+    border-color var(--motion-dur-hover) var(--motion-ease-out),
+    color var(--motion-dur-hover) var(--motion-ease-out),
+    transform var(--motion-dur-pressed) var(--motion-ease-pressed);
 }
 
 .path-scan-btn:hover {
   color: var(--text-primary);
   background: var(--bg-surface-active);
   border-color: var(--border-focus);
+}
+
+.path-scan-btn:hover .scan-icon {
+  transform: rotate(24deg);
+  transition: transform var(--motion-dur-icon) var(--motion-ease-out);
 }
 
 .path-scan-btn:active {
@@ -424,10 +433,34 @@ body {
   font-size: 9.5px;
   color: var(--text-muted);
   background: var(--bg-surface-elevated);
-  padding: 1px 6px;
+  padding: 1px 7px;
   border-radius: 2px;
   white-space: nowrap;
   margin-left: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid transparent;
+  cursor: default;
+  transition:
+    background-color var(--motion-dur-hover) var(--motion-ease-out),
+    border-color var(--motion-dur-hover) var(--motion-ease-out),
+    color var(--motion-dur-hover) var(--motion-ease-out);
+}
+
+.branch-chip:hover {
+  color: var(--text-primary);
+  background: var(--bg-surface-active);
+  border-color: var(--border-hairline);
+}
+
+.branch-chip .branch-icon {
+  color: var(--text-muted);
+  transition: color var(--motion-dur-hover) var(--motion-ease-out);
+}
+
+.branch-chip:hover .branch-icon {
+  color: var(--accent-orange);
 }
 
 .header-actions {
@@ -458,6 +491,41 @@ body {
   gap: 6px;
   height: 26px;
   padding: 0 9px;
+  cursor: default;
+  transition:
+    background-color var(--motion-dur-hover) var(--motion-ease-out),
+    border-color var(--motion-dur-hover) var(--motion-ease-out);
+}
+
+.badge-status:hover {
+  background-color: var(--bg-surface-elevated);
+  border-color: var(--border-focus);
+}
+
+#testCounterChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  cursor: default;
+  transition:
+    background-color var(--motion-dur-hover) var(--motion-ease-out),
+    border-color var(--motion-dur-hover) var(--motion-ease-out),
+    color var(--motion-dur-hover) var(--motion-ease-out);
+}
+
+#testCounterChip:hover {
+  color: var(--text-primary);
+  background: var(--bg-surface-elevated);
+  border-color: var(--status-pass-border, #238636);
+}
+
+#testCounterChip .test-icon {
+  flex-shrink: 0;
+  transition: transform var(--motion-dur-icon) var(--motion-ease-out);
+}
+
+#testCounterChip:hover .test-icon {
+  transform: scale(1.08);
 }
 
 .status-dot {
@@ -465,6 +533,9 @@ body {
   height: 6px;
   border-radius: 50%;
   display: inline-block;
+  transition:
+    background-color var(--motion-dur-normal) var(--motion-ease-out),
+    box-shadow var(--motion-dur-normal) var(--motion-ease-out);
 }
 
 .status-dot.idle {
@@ -569,22 +640,45 @@ body {
   color: #FFFFFF;
   font-weight: 600;
   box-shadow: 0 1px 2px rgba(229, 77, 46, 0.2);
+  transition:
+    background-color var(--motion-dur-hover) var(--motion-ease-out),
+    border-color var(--motion-dur-hover) var(--motion-ease-out),
+    transform var(--motion-dur-hover) var(--motion-ease-out),
+    box-shadow var(--motion-dur-hover) var(--motion-ease-out),
+    filter var(--motion-dur-hover) var(--motion-ease-out);
 }
 
-.btn-primary:hover {
+.btn-primary:hover:not(:disabled) {
   background-color: var(--accent-orange-hover);
   border-color: var(--accent-orange-hover);
   box-shadow: 0 2px 8px rgba(229, 77, 46, 0.35);
+  transform: translateY(-1px);
+  filter: brightness(1.05);
 }
 
-.btn-primary:active {
+.btn-primary:hover:not(:disabled) .play-icon {
+  transform: translateX(1.5px);
+  transition: transform var(--motion-dur-icon) var(--motion-ease-out);
+}
+
+.btn-primary:active:not(:disabled) {
   transform: translateY(0.5px) scale(0.985);
   box-shadow: 0 1px 2px rgba(229, 77, 46, 0.15);
+  filter: brightness(0.98);
+  transition-duration: var(--motion-dur-pressed);
 }
 
 .btn-primary:focus-visible {
   outline: 2px solid #FFFFFF;
-  outline-offset: 1px;
+  outline-offset: 2px;
+}
+
+.btn-primary:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+  filter: none !important;
 }
 
 .btn-danger {
@@ -632,6 +726,28 @@ body {
   height: 26px;
   padding: 0;
   justify-content: center;
+  transition:
+    background-color var(--motion-dur-hover) var(--motion-ease-out),
+    border-color var(--motion-dur-hover) var(--motion-ease-out),
+    color var(--motion-dur-hover) var(--motion-ease-out),
+    transform var(--motion-dur-pressed) var(--motion-ease-pressed);
+}
+
+.btn-icon-only:hover {
+  background-color: var(--bg-surface-active);
+  color: var(--text-primary);
+  border-color: var(--border-focus);
+}
+
+.btn-icon-only:hover .docs-icon {
+  transform: translateY(-0.75px);
+  transition: transform var(--motion-dur-icon) var(--motion-ease-out);
+}
+
+.btn-icon-only:hover .settings-gear-icon,
+#settingsBtn:hover .settings-gear-icon {
+  transform: rotate(24deg);
+  transition: transform var(--motion-dur-icon) var(--motion-ease-out);
 }
 
 .command-preset-bar {
@@ -724,10 +840,10 @@ body {
   cursor: pointer;
   position: relative;
   transition:
-    background-color var(--motion-dur-fast) var(--motion-ease-out),
-    border-color var(--motion-dur-fast) var(--motion-ease-out),
-    color var(--motion-dur-fast) var(--motion-ease-out),
-    transform 90ms var(--motion-ease-pressed);
+    background-color var(--motion-dur-hover) var(--motion-ease-out),
+    border-color var(--motion-dur-hover) var(--motion-ease-out),
+    color var(--motion-dur-hover) var(--motion-ease-out),
+    transform var(--motion-dur-pressed) var(--motion-ease-pressed);
 }
 
 .activity-btn:hover {
@@ -747,7 +863,8 @@ body {
 .activity-btn.active {
   color: var(--accent-orange);
   background: var(--accent-orange-subtle);
-  border-color: rgba(229, 77, 46, 0.2);
+  border-color: rgba(229, 77, 46, 0.25);
+  filter: brightness(1.05);
 }
 
 .activity-btn.active::before {
@@ -759,12 +876,71 @@ body {
   width: 2.5px;
   background-color: var(--accent-orange);
   border-radius: 0 1px 1px 0;
+  transition: opacity var(--motion-dur-hover) var(--motion-ease-out), transform var(--motion-dur-hover) var(--motion-ease-out);
 }
 
 .activity-icon {
   width: 16px;
   height: 16px;
   flex-shrink: 0;
+  transition: transform var(--motion-dur-icon) var(--motion-ease-out), color var(--motion-dur-hover) var(--motion-ease-out);
+}
+
+/* Individual Icon Micro-Interactions */
+.activity-btn:hover .anvexo-activity-pulse,
+.activity-btn:active .anvexo-activity-pulse {
+  stroke: var(--accent-orange);
+  animation: anvexoPulseTrace 0.55s cubic-bezier(0.16, 1, 0.3, 1) 1;
+}
+
+@keyframes anvexoPulseTrace {
+  0% { stroke-dasharray: 20; stroke-dashoffset: 20; opacity: 0.7; }
+  50% { stroke-dashoffset: 0; opacity: 1; }
+  100% { stroke-dashoffset: 0; opacity: 1; }
+}
+
+.activity-btn:hover .anvexo-folder-flap {
+  transform: translateY(-0.8px);
+  stroke: var(--accent-orange);
+  transition: transform var(--motion-dur-icon) var(--motion-ease-out), stroke var(--motion-dur-icon) var(--motion-ease-out);
+}
+
+.activity-btn.active .anvexo-folder-flap {
+  stroke: var(--accent-orange);
+}
+
+.activity-btn:hover .anvexo-help-glyph {
+  stroke: var(--text-primary);
+  transition: stroke var(--motion-dur-hover) var(--motion-ease-out);
+}
+
+.activity-btn:hover .anvexo-help-icon {
+  transform: scale(1.04);
+}
+
+.activity-btn:hover .anvexo-shield-stroke {
+  stroke: var(--status-pass, #3FB950);
+  transition: stroke var(--motion-dur-icon) var(--motion-ease-out);
+}
+
+.activity-btn:hover .anvexo-shield-icon {
+  transform: scale(1.04);
+}
+
+.activity-btn:hover .anvexo-term-prompt {
+  transform: translateX(1.5px);
+  transition: transform var(--motion-dur-icon) var(--motion-ease-out);
+}
+
+.activity-btn:hover .anvexo-term-cursor {
+  transform: translateX(1.5px);
+  stroke: var(--accent-orange);
+  transition: transform var(--motion-dur-icon) var(--motion-ease-out), stroke var(--motion-dur-icon) var(--motion-ease-out);
+}
+
+.activity-btn:hover .anvexo-gear-icon {
+  transform: rotate(24deg);
+  transition: transform var(--motion-dur-icon) var(--motion-ease-out);
 }
 
 
@@ -1834,9 +2010,12 @@ body {
 }
 
 .setting-info {
+  flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 2px;
+  padding-right: 16px;
 }
 
 .setting-label {
@@ -1854,6 +2033,8 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .setting-select {
@@ -2063,7 +2244,8 @@ body {
   }
 
   .status-dot.running,
-  .anvexo-icon-spin {
+  .anvexo-icon-spin,
+  .anvexo-activity-pulse {
     animation: none !important;
     opacity: 1 !important;
   }
@@ -2079,7 +2261,19 @@ body {
   .drawer-tab-btn:active,
   .drawer-close-btn:active,
   .settings-close-btn:active,
-  .settings-nav-btn:active {
+  .settings-nav-btn:active,
+  .btn-primary:hover:not(:disabled),
+  .btn-primary:hover:not(:disabled) .play-icon,
+  .path-scan-btn:hover .scan-icon,
+  .btn-icon-only:hover .docs-icon,
+  .btn-icon-only:hover .settings-gear-icon,
+  #settingsBtn:hover .settings-gear-icon,
+  .activity-btn:hover .anvexo-folder-flap,
+  .activity-btn:hover .anvexo-help-icon,
+  .activity-btn:hover .anvexo-shield-icon,
+  .activity-btn:hover .anvexo-term-prompt,
+  .activity-btn:hover .anvexo-term-cursor,
+  .activity-btn:hover .anvexo-gear-icon {
     transform: none !important;
   }
 }

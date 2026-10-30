@@ -1,25 +1,10 @@
-/**
- * ANVEXO Precision SVG Icon System
- * 
- * Purpose-built, original SVG icons for the ANVEXO Autonomous Software
- * Investigation and Codebase Intelligence Platform.
- * 
- * Aesthetic: Restrained, technical, precision-engineered developer tooling.
- * Coordinate Grid: 24x24 viewBox, stroke-width: 1.75, currentColor by default.
- */
+
 
 (function (global) {
   'use strict';
 
-  /**
-   * Raw SVG geometry definitions.
-   * Every icon is drawn on a 24x24 viewport with consistent line caps,
-   * joins, and optical balance.
-   */
+  
   const ICONS = {
-    // -------------------------------------------------------------------------
-    // Brand & Intelligence
-    // -------------------------------------------------------------------------
     'anvexo-symbol': `
       <polygon points="12,3 21,21 16.5,21 12,12 7.5,21 3,21" fill="currentColor" fill-opacity="0.3" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
       <polygon points="12,3 21,21 16.5,21 14.5,16 12,16 12,12" fill="var(--accent-orange, #E54D2E)" stroke="var(--accent-orange, #E54D2E)" stroke-width="1.5" stroke-linejoin="round"/>
@@ -77,16 +62,13 @@
       <circle cx="12" cy="12" r="1.5" fill="var(--accent-orange, #E54D2E)"/>
     `,
 
-    // -------------------------------------------------------------------------
-    // Navigation & Workspace
-    // -------------------------------------------------------------------------
     'workspace': `
       <path d="M3 10.5 L12 3.5 L21 10.5 V19.5 C21 20.3 20.3 21 19.5 21 H4.5 C3.7 21 3 20.3 3 19.5 Z" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" fill="none"/>
       <path d="M9 21 V13 H15 V21" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" fill="none"/>
     `,
     'explorer': `
       <path d="M3 6.5 C3 5.7 3.7 5 4.5 5 H9 L11.5 7.5 H19.5 C20.3 7.5 21 8.2 21 9 V18.5 C21 19.3 20.3 20 19.5 20 H4.5 C3.7 20 3 19.3 3 18.5 Z" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" fill="none"/>
-      <line x1="3" y1="10" x2="21" y2="10" stroke="currentColor" stroke-width="1.5"/>
+      <line class="anvexo-folder-flap" x1="3" y1="10" x2="21" y2="10" stroke="currentColor" stroke-width="1.5"/>
     `,
     'folder': `
       <path d="M3 6.5 C3 5.7 3.7 5 4.5 5 H9 L11.5 7.5 H19.5 C20.3 7.5 21 8.2 21 9 V18.5 C21 19.3 20.3 20 19.5 20 H4.5 C3.7 20 3 19.3 3 18.5 Z" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" fill="none"/>
@@ -134,7 +116,7 @@
     `,
     'settings': `
       <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.75" fill="none"/>
-      <path d="M12 2.5 L13.2 4.8 L15.7 4.5 L16.3 7 L18.8 7.6 L18.5 10.1 L20.7 11.4 L19.7 13.7 L21.3 15.6 L19.6 17.5 L20.3 20 L17.8 20.3 L16.8 22.5 L14.4 21.8 L12.8 23.7 L11.2 21.8 L8.8 22.5 L7.8 20.3 L5.3 20 L6 17.5 L4.3 15.6 L5.9 13.7 L4.9 11.4 L7.1 10.1 L6.8 7.6 L9.3 7 L9.9 4.5 L12.4 4.8 Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" fill="none"/>
+      <path class="anvexo-gear-teeth" d="M12 2.5 L13.2 4.8 L15.7 4.5 L16.3 7 L18.8 7.6 L18.5 10.1 L20.7 11.4 L19.7 13.7 L21.3 15.6 L19.6 17.5 L20.3 20 L17.8 20.3 L16.8 22.5 L14.4 21.8 L12.8 23.7 L11.2 21.8 L8.8 22.5 L7.8 20.3 L5.3 20 L6 17.5 L4.3 15.6 L5.9 13.7 L4.9 11.4 L7.1 10.1 L6.8 7.6 L9.3 7 L9.9 4.5 L12.4 4.8 Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" fill="none"/>
     `,
     'command-palette': `
       <rect x="3" y="4" width="18" height="16" rx="2.5" stroke="currentColor" stroke-width="1.75" fill="none"/>
@@ -182,13 +164,10 @@
       <line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" stroke-width="1.85" stroke-linecap="round"/>
     `,
 
-    // -------------------------------------------------------------------------
-    // Developer Tooling
-    // -------------------------------------------------------------------------
     'terminal': `
       <rect x="3" y="4" width="18" height="16" rx="2" stroke="currentColor" stroke-width="1.75" fill="none"/>
-      <polyline points="7,9 10,12 7,15" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-      <line x1="12" y1="15" x2="16.5" y2="15" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>
+      <polyline class="anvexo-term-prompt" points="7,9 10.5,12 7,15" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      <line class="anvexo-term-cursor" x1="12.5" y1="15" x2="16.5" y2="15" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>
     `,
     'code': `
       <polyline points="15.5,7 20.5,12 15.5,17" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
@@ -290,9 +269,6 @@
       <line x1="9" y1="12" x2="15" y2="16" stroke="currentColor" stroke-width="1.5"/>
     `,
 
-    // -------------------------------------------------------------------------
-    // Common Actions
-    // -------------------------------------------------------------------------
     'play': `
       <polygon points="7,4 19.5,12 7,20" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
     `,
@@ -347,9 +323,6 @@
       <line x1="8" y1="12" x2="14" y2="12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
     `,
 
-    // -------------------------------------------------------------------------
-    // Security & Permissions
-    // -------------------------------------------------------------------------
     'shield': `
       <path d="M12 2.5 L19.5 5.5 V11.5 C19.5 16.5 16 20.5 12 21.8 C8 20.5 4.5 16.5 4.5 11.5 V5.5 Z" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" fill="none"/>
     `,
@@ -374,9 +347,6 @@
       <circle cx="12" cy="15" r="1.5" fill="currentColor"/>
     `,
 
-    // -------------------------------------------------------------------------
-    // Memory & Context
-    // -------------------------------------------------------------------------
     'memory': `
       <ellipse cx="12" cy="6" rx="8" ry="3" stroke="currentColor" stroke-width="1.75" fill="none"/>
       <path d="M4 6 V12 C4 13.6 7.6 15 12 15 C16.4 15 20 13.6 20 12 V6" stroke="currentColor" stroke-width="1.75" fill="none"/>
@@ -384,9 +354,6 @@
       <circle cx="12" cy="12" r="1" fill="var(--accent-orange, #E54D2E)"/>
     `,
 
-    // -------------------------------------------------------------------------
-    // Interface States & Utilities
-    // -------------------------------------------------------------------------
     'sun': `
       <circle cx="12" cy="12" r="4.5" stroke="currentColor" stroke-width="1.75" fill="none"/>
       <line x1="12" y1="2" x2="12" y2="4.5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>
@@ -453,11 +420,51 @@
       <line x1="12" y1="12" x2="18" y2="6" stroke="var(--accent-orange, #E54D2E)" stroke-width="1.75" stroke-linecap="round"/>
       <circle cx="12" cy="12" r="1.5" fill="currentColor"/>
     `,
+    'activity': `
+      <rect x="3" y="4" width="18" height="13" rx="2" stroke="currentColor" stroke-width="1.75" fill="none"/>
+      <path class="anvexo-activity-pulse" d="M6 10.5 H8.5 L10.5 7.5 L13.5 13.5 L15.5 10.5 H18" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      <line x1="9" y1="20" x2="15" y2="20" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>
+      <line x1="12" y1="17" x2="12" y2="20" stroke="currentColor" stroke-width="1.75"/>
+    `,
+    'monitor': `
+      <rect x="3" y="4" width="18" height="13" rx="2" stroke="currentColor" stroke-width="1.75" fill="none"/>
+      <path class="anvexo-activity-pulse" d="M6 10.5 H8.5 L10.5 7.5 L13.5 13.5 L15.5 10.5 H18" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      <line x1="9" y1="20" x2="15" y2="20" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>
+      <line x1="12" y1="17" x2="12" y2="20" stroke="currentColor" stroke-width="1.75"/>
+    `,
+    'help': `
+      <circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.75" fill="none"/>
+      <path class="anvexo-help-glyph" d="M9.5 9 C9.5 7.6 10.6 6.5 12 6.5 C13.4 6.5 14.5 7.6 14.5 9 C14.5 10.6 12 11.4 12 13.5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" fill="none"/>
+      <circle cx="12" cy="16.75" r="0.75" fill="currentColor"/>
+    `,
+    'security': `
+      <path class="anvexo-shield-stroke" d="M12 2.5 L19.5 5.5 V11.5 C19.5 16.5 16 20.5 12 21.8 C8 20.5 4.5 16.5 4.5 11.5 V5.5 Z" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" fill="none"/>
+      <polyline points="8.5,11.5 11,14 15.5,9.5" stroke="var(--status-pass, #3FB950)" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    `,
+    'shield-alert': `
+      <path class="anvexo-shield-stroke" d="M12 2.5 L19.5 5.5 V11.5 C19.5 16.5 16 20.5 12 21.8 C8 20.5 4.5 16.5 4.5 11.5 V5.5 Z" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" fill="none"/>
+      <line x1="12" y1="8" x2="12" y2="12.5" stroke="var(--status-fail, #F85149)" stroke-width="1.85" stroke-linecap="round"/>
+      <circle cx="12" cy="15.5" r="0.8" fill="var(--status-fail, #F85149)"/>
+    `,
+    'scan': `
+      <circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.75" fill="none"/>
+      <circle cx="12" cy="12" r="4.5" stroke="currentColor" stroke-width="1.5" stroke-opacity="0.6" fill="none"/>
+      <line class="anvexo-scan-ray" x1="12" y1="12" x2="18" y2="6" stroke="var(--accent-orange, #E54D2E)" stroke-width="1.75" stroke-linecap="round"/>
+      <circle cx="12" cy="12" r="1.5" fill="currentColor"/>
+    `,
+    'ready': `
+      <circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.75" fill="none"/>
+      <circle cx="12" cy="12" r="3.5" fill="var(--status-pass, #3FB950)"/>
+    `,
+    'documentation': `
+      <path class="anvexo-doc-cover" d="M4 19.5 C4 18.1 5.1 17 6.5 17 H20 V3.5 H6.5 C5.1 3.5 4 4.6 4 6 Z" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" fill="none"/>
+      <path d="M4 6 V19.5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>
+      <line class="anvexo-doc-line" x1="8" y1="8" x2="16" y2="8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      <line class="anvexo-doc-line" x1="8" y1="12" x2="14" y2="12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    `,
   };
 
-  /**
-   * Helper size mapping
-   */
+  
   const SIZES = {
     xs: 12,
     sm: 14,
@@ -467,29 +474,19 @@
     empty: 36,
   };
 
-  /**
-   * Public API
-   */
+  
   const AnvexoIcons = {
-    /**
-     * Check if icon exists
-     */
+    
     has(name) {
       return Object.prototype.hasOwnProperty.call(ICONS, name);
     },
 
-    /**
-     * Get all icon names
-     */
+    
     list() {
       return Object.keys(ICONS);
     },
 
-    /**
-     * Generate SVG string for an icon
-     * @param {string} name
-     * @param {object} [opts]
-     */
+    
     getSvg(name, opts = {}) {
       const inner = ICONS[name] || ICONS['file'];
       const sizeVal = typeof opts.size === 'number'
@@ -503,21 +500,14 @@
       return `<svg class="${cls}" viewBox="0 0 24 24" width="${sizeVal}" height="${sizeVal}" fill="none" aria-hidden="${ariaHidden}"${ariaLabel}>${titleAttr}${inner.trim()}</svg>`;
     },
 
-    /**
-     * Create an SVG DOM Node
-     * @param {string} name
-     * @param {object} [opts]
-     */
+    
     create(name, opts = {}) {
       const wrapper = document.createElement('div');
       wrapper.innerHTML = this.getSvg(name, opts);
       return wrapper.firstElementChild;
     },
 
-    /**
-     * Scan and replace all [data-anvexo-icon] placeholders in a container
-     * @param {HTMLElement} [root]
-     */
+    
     hydrate(root = document) {
       const elements = root.querySelectorAll('[data-anvexo-icon]');
       elements.forEach(el => {
@@ -531,7 +521,6 @@
     },
   };
 
-  // Export to global and CommonJS/ES module environments
   if (typeof module !== 'undefined' && module.exports) {
     module.exports = AnvexoIcons;
   }

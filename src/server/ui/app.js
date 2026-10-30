@@ -41,7 +41,7 @@ let currentJobId = null;
 let pollTimer = null;
 let activeTab = 'report';
 let activeDrawerTab = 'telemetry';
-let activeActivityView = 'investigation';
+let activeActivityView = 'explorer';
 
 function escapeHtml(str) {
   if (str === null || str === undefined) return '';
@@ -516,8 +516,12 @@ function initEvents() {
     const reportText = document.getElementById('reportText');
     if (reportText && reportText.innerText) {
       navigator.clipboard.writeText(reportText.innerText);
-      copyReportBtn.innerText = 'Copied';
-      setTimeout(() => { copyReportBtn.innerText = 'Copy Report'; }, 2000);
+      const copyIcon = window.AnvexoIcons ? window.AnvexoIcons.getSvg('copy', { size: 'sm' }) : '';
+      const checkIcon = window.AnvexoIcons ? window.AnvexoIcons.getSvg('check', { size: 'sm' }) : '';
+      copyReportBtn.innerHTML = `${checkIcon} Copied`;
+      setTimeout(() => {
+        copyReportBtn.innerHTML = `${copyIcon} Copy Report`;
+      }, 2000);
     }
   });
 
@@ -717,7 +721,9 @@ function initSettingsModal() {
       const pathInput = document.getElementById('pathInput');
       const p = (pathInput && pathInput.value.trim()) || '.';
       rebuildBtn.disabled = true;
-      rebuildBtn.innerText = 'Rebuilding...';
+      const spinIcon = window.AnvexoIcons ? window.AnvexoIcons.getSvg('spinner', { size: 'sm', className: 'anvexo-icon-spin' }) : '';
+      const refreshIcon = window.AnvexoIcons ? window.AnvexoIcons.getSvg('refresh', { size: 'sm' }) : '';
+      rebuildBtn.innerHTML = `${spinIcon} Rebuilding...`;
       try {
         const res = await fetch('/api/context/rebuild', {
           method: 'POST',
@@ -730,7 +736,7 @@ function initSettingsModal() {
         appendTelemetryLog(`[CONTEXT] Rebuild failed: ${err.message}`);
       } finally {
         rebuildBtn.disabled = false;
-        rebuildBtn.innerText = 'Rebuild Index';
+        rebuildBtn.innerHTML = `${refreshIcon} Rebuild Index`;
       }
     });
   }
@@ -742,7 +748,9 @@ function initSettingsModal() {
       const pathInput = document.getElementById('pathInput');
       const p = (pathInput && pathInput.value.trim()) || '.';
       clearBtn.disabled = true;
-      clearBtn.innerText = 'Clearing...';
+      const spinIcon = window.AnvexoIcons ? window.AnvexoIcons.getSvg('spinner', { size: 'sm', className: 'anvexo-icon-spin' }) : '';
+      const trashIcon = window.AnvexoIcons ? window.AnvexoIcons.getSvg('trash', { size: 'sm' }) : '';
+      clearBtn.innerHTML = `${spinIcon} Clearing...`;
       try {
         await fetch('/api/context/clear', {
           method: 'POST',
@@ -755,7 +763,7 @@ function initSettingsModal() {
         appendTelemetryLog(`[CONTEXT] Clear failed: ${err.message}`);
       } finally {
         clearBtn.disabled = false;
-        clearBtn.innerText = 'Clear Memory';
+        clearBtn.innerHTML = `${trashIcon} Clear Memory`;
       }
     });
   }
@@ -846,7 +854,11 @@ async function loadProjectInfo(repoPath) {
       document.getElementById('pathInput').value = metadata.rootPath;
       document.getElementById('footerRepo').innerText = metadata.name;
       document.getElementById('footerStack').innerText = metadata.languages.join(', ') || 'Unknown stack';
-      document.getElementById('branchChip').innerText = metadata.hasGit ? 'git: active' : 'git: none';
+      const branchChipEl = document.getElementById('branchChip');
+      if (branchChipEl) {
+        const branchSvg = window.AnvexoIcons ? window.AnvexoIcons.getSvg('branch', { size: 11, className: 'branch-icon' }) : '';
+        branchChipEl.innerHTML = `${branchSvg}<span>${metadata.hasGit ? 'git: active' : 'git: none'}</span>`;
+      }
       populateFileTree(metadata);
       appendTelemetryLog(`[DISCOVERY] Detected: languages=[${metadata.languages.join(', ')}] test=${metadata.testRunner || 'none'}`);
     }
@@ -865,7 +877,16 @@ function populateFileTree(metadata) {
   allFiles.forEach(file => {
     const item = document.createElement('div');
     item.className = 'file-item';
-    item.innerHTML = `<span style="color: var(--status-info);">[file]</span> ${escapeHtml(file)}`;
+    let iconName = 'file';
+    if (file.endsWith('.json')) {
+      iconName = 'file-text';
+    } else if (file.endsWith('.ts') || file.endsWith('.js') || file.endsWith('.mjs')) {
+      iconName = 'file-code';
+    } else if (file.includes('config') || file.endsWith('.yml') || file.endsWith('.yaml') || file.endsWith('.toml')) {
+      iconName = 'settings';
+    }
+    const iconSvg = window.AnvexoIcons ? window.AnvexoIcons.getSvg(iconName, { size: 'sm', className: 'file-type-icon' }) : '';
+    item.innerHTML = `<span class="file-icon-wrapper" aria-hidden="true">${iconSvg}</span><span class="file-name">${escapeHtml(file)}</span>`;
     item.addEventListener('click', () => {
       document.querySelectorAll('.file-item').forEach(f => f.classList.remove('active'));
       item.classList.add('active');
@@ -928,6 +949,8 @@ async function triggerInvestigation() {
   }
 
   runBtn.disabled = true;
+  const spinIcon = window.AnvexoIcons ? window.AnvexoIcons.getSvg('spinner', { className: 'anvexo-icon-spin btn-icon' }) : '';
+  runBtn.innerHTML = `${spinIcon}<span>Investigating...</span>`;
   cancelBtn.style.display = 'inline-flex';
   statusDot.className = 'status-dot running';
   statusText.innerText = 'RUNNING';
@@ -1003,9 +1026,16 @@ function renderPlanSteps(steps) {
     const card = document.createElement('div');
     card.className = 'step-card';
 
+    let iconName = 'clock';
+    if (step.status === 'completed' || step.status === 'passed') iconName = 'check';
+    else if (step.status === 'failed' || step.status === 'error') iconName = 'error';
+    else if (step.status === 'running') iconName = 'spinner';
+
+    const iconSvg = window.AnvexoIcons ? window.AnvexoIcons.getSvg(iconName, { size: 'sm', className: step.status === 'running' ? 'anvexo-icon-spin' : '' }) : '';
+
     const badge = document.createElement('span');
     badge.className = `step-badge ${step.status}`;
-    badge.innerText = step.status.toUpperCase();
+    badge.innerHTML = `<span class="step-badge-icon" aria-hidden="true">${iconSvg}</span><span>${step.status.toUpperCase()}</span>`;
 
     const content = document.createElement('div');
     content.className = 'step-content';
@@ -1055,17 +1085,23 @@ function onJobFailed(job) {
 
   appendTelemetryLog(`[JOB] Job ${job.id} failed: ${job.error || 'Unknown error'}`);
 
+  const errIcon = window.AnvexoIcons ? window.AnvexoIcons.getSvg('error', { size: 'sm', className: 'anvexo-icon-accent' }) : '';
   const container = document.getElementById('reportContainer');
   container.innerHTML = `
     <div class="report-card">
-      <div class="report-card-title" style="color: var(--status-fail);">Investigation Failed</div>
+      <div class="report-card-title" style="color: var(--status-fail); display: flex; align-items: center; gap: 6px;">
+        ${errIcon} Investigation Failed
+      </div>
       <div style="font-family: var(--editor-font); font-size: 11px;">${job.error || 'Unknown execution error'}</div>
     </div>
   `;
 }
 
 function resetRunState() {
-  document.getElementById('runBtn').disabled = false;
+  const runBtn = document.getElementById('runBtn');
+  runBtn.disabled = false;
+  const playIcon = window.AnvexoIcons ? window.AnvexoIcons.getSvg('play', { className: 'play-icon btn-icon' }) : '';
+  runBtn.innerHTML = `${playIcon}<span>Investigate</span>`;
   document.getElementById('cancelBtn').style.display = 'none';
 }
 
@@ -1117,10 +1153,23 @@ function renderReport(report) {
       const item = document.createElement('div');
       const statusClass = finding.verificationStatus === 'verified' ? 'pass' : (finding.verificationStatus === 'contradicted' ? 'fail' : 'pending');
       item.className = `finding-item ${statusClass}`;
+
+      let iconName = 'warning';
+      if (finding.verificationStatus === 'verified') iconName = 'test-pass';
+      else if (finding.verificationStatus === 'contradicted') iconName = 'test-fail';
+
+      const iconSvg = window.AnvexoIcons ? window.AnvexoIcons.getSvg(iconName, { size: 'sm' }) : '';
+
       item.innerHTML = `
         <div class="finding-claim">${escapeHtml(finding.claim)}</div>
-        <div class="finding-details">Status: [${escapeHtml(finding.verificationStatus.toUpperCase())}] | Confidence: ${(finding.confidence * 100).toFixed(0)}%</div>
-        <div class="finding-details">${escapeHtml(finding.details || '')}</div>
+        <div class="finding-details" style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
+          <span class="finding-badge ${statusClass}">
+            <span class="finding-badge-icon" aria-hidden="true">${iconSvg}</span>
+            <span>${escapeHtml(finding.verificationStatus.toUpperCase())}</span>
+          </span>
+          <span>Confidence: ${(finding.confidence * 100).toFixed(0)}%</span>
+        </div>
+        <div class="finding-details" style="margin-top: 4px;">${escapeHtml(finding.details || '')}</div>
       `;
       findingsCard.appendChild(item);
     });
@@ -1328,19 +1377,23 @@ function renderAuditLog(logs) {
 
   if (logs.length === 0) {
     container.innerHTML = '<div class="empty-state">No permission events recorded.</div>';
-    drawerAudit.innerHTML = '<div class="log-entry">[AUDIT] Zero security violations or denials.</div>';
+    const shieldCheckIcon = window.AnvexoIcons ? window.AnvexoIcons.getSvg('shield-check', { size: 'sm' }) : '';
+    drawerAudit.innerHTML = `<div class="log-entry pass" style="display: flex; align-items: center; gap: 6px;">${shieldCheckIcon} Zero security violations or denials.</div>`;
     return;
   }
 
   logs.forEach(log => {
+    const isDeny = log.decision === 'deny';
     const entry = document.createElement('div');
-    entry.className = `log-entry ${log.decision === 'deny' ? 'error' : 'pass'}`;
-    entry.innerText = `[${log.timestamp}] [${log.decision.toUpperCase()}] scope: ${log.scope} on ${log.resource}`;
+    entry.className = `log-entry ${isDeny ? 'error' : 'pass'}`;
+    const logIcon = window.AnvexoIcons ? window.AnvexoIcons.getSvg(isDeny ? 'shield-alert' : 'shield-check', { size: 'sm' }) : '';
+    entry.innerHTML = `<span>[${log.timestamp}]</span> <span style="display: inline-flex; align-items: center; gap: 4px; font-weight: 600;">${logIcon} ${log.decision.toUpperCase()}</span> <span>scope: ${escapeHtml(log.scope)} on ${escapeHtml(log.resource)}</span>`;
     drawerAudit.appendChild(entry);
 
     const sideItem = document.createElement('div');
     sideItem.className = 'file-item';
-    sideItem.innerHTML = `<span style="color: ${log.decision === 'deny' ? 'var(--status-fail)' : 'var(--status-pass)'};">[${escapeHtml(log.decision.toUpperCase())}]</span> ${escapeHtml(log.scope)} (${escapeHtml(log.resource)})`;
+    const sideIcon = window.AnvexoIcons ? window.AnvexoIcons.getSvg(isDeny ? 'shield-alert' : 'shield-check', { size: 'sm' }) : '';
+    sideItem.innerHTML = `<span class="badge ${isDeny ? 'badge-danger' : 'badge-pass'}" style="display: inline-flex; align-items: center; gap: 4px; margin-right: 6px;">${sideIcon} ${escapeHtml(log.decision.toUpperCase())}</span><span style="font-family: var(--font-mono); font-size: 10.5px;">${escapeHtml(log.scope)} (${escapeHtml(log.resource)})</span>`;
     container.appendChild(sideItem);
   });
 }

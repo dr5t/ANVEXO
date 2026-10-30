@@ -1,7 +1,7 @@
 # ANVEXO Developer Ecosystem Implementation Checklist
 
 ## P0: Shared Core and Infrastructure
-- [x] Baseline repository and test verification (152/152 tests passing across 20 suites)
+- [x] Baseline repository and test verification (164/164 tests passing across 20 suites)
 - [x] User and project configuration engine (src/core/config.ts)
 - [x] Model provider abstraction layer (src/providers/)
   - [x] ModelProvider interface and types

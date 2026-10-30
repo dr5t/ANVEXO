@@ -1,6 +1,4 @@
-/**
- * ANVEXO Icon System TypeScript Definitions
- */
+
 
 export type AnvexoIconName =
   | 'anvexo-symbol'
@@ -80,7 +78,15 @@ export type AnvexoIconName =
   | 'clock'
   | 'empty-dag'
   | 'empty-report'
-  | 'radar-scan';
+  | 'radar-scan'
+  | 'activity'
+  | 'monitor'
+  | 'help'
+  | 'security'
+  | 'shield-alert'
+  | 'scan'
+  | 'ready'
+  | 'documentation';
 
 export interface AnvexoIconOptions {
   size?: number | 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'empty';

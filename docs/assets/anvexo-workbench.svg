@@ -1,0 +1,151 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 540" width="920" height="540" fill="none">
+  <defs>
+    <linearGradient id="wbBg" x1="0" y1="0" x2="920" y2="540" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0C0D0E"/>
+      <stop offset="100%" stop-color="#141618"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="920" height="540" rx="8" fill="url(#wbBg)" stroke="#24272A" stroke-width="1.5"/>
+
+  <g transform="translate(16, 14)">
+    <rect width="888" height="46" rx="6" fill="#141618" stroke="#24272A" stroke-width="1"/>
+    
+    <g transform="translate(16, 12)">
+      <g transform="scale(0.22)">
+        <polygon points="52,10 20,52 12,82 32,84" fill="#2D323A"/>
+        <polygon points="52,10 32,84 38,72 50,46" fill="#4F5664"/>
+        <polygon points="12,82 32,84 26,88" fill="#101114"/>
+        <polygon points="52,10 50,46 62,68 76,84" fill="#FF7A38"/>
+        <polygon points="52,10 76,84 94,74 78,44" fill="#D63A12"/>
+        <polygon points="76,84 94,74 86,84" fill="#7C1602"/>
+      </g>
+      <text x="26" y="16" fill="#EDEDED" font-family="-apple-system, BlinkMacSystemFont, Arial, sans-serif" font-size="13" font-weight="700" letter-spacing="1.5">ANVEXO</text>
+    </g>
+
+    <g transform="translate(180, 8)">
+      <rect width="400" height="30" rx="4" fill="#0C0D0E" stroke="#24272A" stroke-width="1"/>
+      <text x="14" y="20" fill="#58A6FF" font-family="ui-monospace, Menlo, monospace" font-size="11">repo: /Users/developer/ANVEXO</text>
+    </g>
+
+    <g transform="translate(680, 8)">
+      <rect width="84" height="30" rx="4" fill="#1A2E1F" stroke="#238636" stroke-width="1"/>
+      <circle cx="700" cy="23" r="3.5" fill="#3FB950"/>
+      <text x="735" y="27" fill="#3FB950" font-family="ui-monospace, Menlo, monospace" font-size="10" font-weight="600" text-anchor="middle">COMPLETED</text>
+      
+      <rect x="96" y="0" width="96" height="30" rx="4" fill="#E54D2E"/>
+      <text x="144" y="19" fill="#FFFFFF" font-family="-apple-system, BlinkMacSystemFont, Arial, sans-serif" font-size="11" font-weight="600" text-anchor="middle">Investigate</text>
+    </g>
+  </g>
+
+  <g transform="translate(16, 72)">
+    <rect width="360" height="450" rx="6" fill="#141618" stroke="#24272A" stroke-width="1"/>
+
+    <g transform="translate(12, 12)">
+      <rect width="336" height="80" rx="4" fill="#0C0D0E" stroke="#24272A" stroke-width="1"/>
+      <text x="12" y="22" fill="#EDEDED" font-family="ui-monospace, Menlo, monospace" font-size="10.5">Audit project health &amp; security</text>
+      <text x="12" y="38" fill="#8A9096" font-family="ui-monospace, Menlo, monospace" font-size="10">boundaries</text>
+      <line x1="12" y1="52" x2="324" y2="52" stroke="#1E2227" stroke-width="1"/>
+      <text x="12" y="68" fill="#8A9096" font-family="ui-monospace, Menlo, monospace" font-size="9">Cmd+Enter to trigger</text>
+      <text x="240" y="68" fill="#E54D2E" font-family="ui-monospace, Menlo, monospace" font-size="9" font-weight="600">ECHO MODE B</text>
+    </g>
+
+    <text x="16" y="118" fill="#8A9096" font-family="ui-monospace, Menlo, monospace" font-size="10" font-weight="600" letter-spacing="1">INVESTIGATION PLAN (13 STEPS)</text>
+
+    <g transform="translate(12, 130)">
+      <rect width="336" height="34" rx="4" fill="#1B1E22" stroke="#238636" stroke-width="1"/>
+      <circle cx="20" cy="17" r="4" fill="#3FB950"/>
+      <text x="34" y="21" fill="#EDEDED" font-family="-apple-system, BlinkMacSystemFont, Arial, sans-serif" font-size="11">List project files and directory structure</text>
+    </g>
+
+    <g transform="translate(12, 172)">
+      <rect width="336" height="34" rx="4" fill="#1B1E22" stroke="#238636" stroke-width="1"/>
+      <circle cx="20" cy="17" r="4" fill="#3FB950"/>
+      <text x="34" y="21" fill="#EDEDED" font-family="-apple-system, BlinkMacSystemFont, Arial, sans-serif" font-size="11">Check Git status for uncommitted changes</text>
+    </g>
+
+    <g transform="translate(12, 214)">
+      <rect width="336" height="34" rx="4" fill="#1B1E22" stroke="#238636" stroke-width="1"/>
+      <circle cx="20" cy="17" r="4" fill="#3FB950"/>
+      <text x="34" y="21" fill="#EDEDED" font-family="-apple-system, BlinkMacSystemFont, Arial, sans-serif" font-size="11">Review recent Git commit history</text>
+    </g>
+
+    <g transform="translate(12, 256)">
+      <rect width="336" height="34" rx="4" fill="#1B1E22" stroke="#238636" stroke-width="1"/>
+      <circle cx="20" cy="17" r="4" fill="#3FB950"/>
+      <text x="34" y="21" fill="#EDEDED" font-family="-apple-system, BlinkMacSystemFont, Arial, sans-serif" font-size="11">Read configuration file: package.json</text>
+    </g>
+
+    <g transform="translate(12, 298)">
+      <rect width="336" height="34" rx="4" fill="#1B1E22" stroke="#238636" stroke-width="1"/>
+      <circle cx="20" cy="17" r="4" fill="#3FB950"/>
+      <text x="34" y="21" fill="#EDEDED" font-family="-apple-system, BlinkMacSystemFont, Arial, sans-serif" font-size="11">Search codebase for: audit</text>
+    </g>
+
+    <g transform="translate(12, 340)">
+      <rect width="336" height="34" rx="4" fill="#1B1E22" stroke="#238636" stroke-width="1"/>
+      <circle cx="20" cy="17" r="4" fill="#3FB950"/>
+      <text x="34" y="21" fill="#EDEDED" font-family="-apple-system, BlinkMacSystemFont, Arial, sans-serif" font-size="11">Search codebase for: health</text>
+    </g>
+
+    <g transform="translate(12, 382)">
+      <rect width="336" height="34" rx="4" fill="#1B1E22" stroke="#238636" stroke-width="1"/>
+      <circle cx="20" cy="17" r="4" fill="#3FB950"/>
+      <text x="34" y="21" fill="#EDEDED" font-family="-apple-system, BlinkMacSystemFont, Arial, sans-serif" font-size="11">Run existing tests using vitest</text>
+    </g>
+  </g>
+
+  <g transform="translate(388, 72)">
+    <rect width="516" height="450" rx="6" fill="#141618" stroke="#24272A" stroke-width="1"/>
+
+    <g transform="translate(12, 10)">
+      <rect width="130" height="26" rx="4" fill="#1E2227" stroke="#32363B" stroke-width="1"/>
+      <text x="77" y="27" fill="#EDEDED" font-family="ui-monospace, Menlo, monospace" font-size="10" font-weight="600" text-anchor="middle">Evidence (14)</text>
+
+      <rect x="136" y="0" width="130" height="26" rx="4" fill="#141618"/>
+      <text x="201" y="17" fill="#8A9096" font-family="ui-monospace, Menlo, monospace" font-size="10" text-anchor="middle">Topography</text>
+
+      <rect x="272" y="0" width="130" height="26" rx="4" fill="#141618"/>
+      <text x="337" y="17" fill="#8A9096" font-family="ui-monospace, Menlo, monospace" font-size="10" text-anchor="middle">Findings (4)</text>
+    </g>
+
+    <g transform="translate(12, 48)">
+      <rect width="492" height="110" rx="4" fill="#0C0D0E" stroke="#24272A" stroke-width="1"/>
+      <rect x="12" y="10" width="60" height="18" rx="3" fill="#1A2E1F"/>
+      <text x="42" y="23" fill="#3FB950" font-family="ui-monospace, Menlo, monospace" font-size="9" font-weight="700" text-anchor="middle">VERIFIED</text>
+      <text x="82" y="23" fill="#EDEDED" font-family="ui-monospace, Menlo, monospace" font-size="10" font-weight="600">run_command: vitest run</text>
+      <text x="410" y="23" fill="#8A9096" font-family="ui-monospace, Menlo, monospace" font-size="9">2381ms</text>
+
+      <rect x="12" y="36" width="468" height="60" rx="3" fill="#141618" stroke="#1E2227" stroke-width="1"/>
+      <text x="20" y="52" fill="#8A9096" font-family="ui-monospace, Menlo, monospace" font-size="9.5">Tests: 80 passed (80 total)</text>
+      <text x="20" y="68" fill="#8A9096" font-family="ui-monospace, Menlo, monospace" font-size="9.5">Duration: 973ms | Line Coverage: 75.23%</text>
+      <text x="20" y="84" fill="#3FB950" font-family="ui-monospace, Menlo, monospace" font-size="9.5">Verdict: Pass (All 8 test suites successful)</text>
+    </g>
+
+    <g transform="translate(12, 168)">
+      <rect width="492" height="110" rx="4" fill="#0C0D0E" stroke="#24272A" stroke-width="1"/>
+      <rect x="12" y="10" width="60" height="18" rx="3" fill="#2E1A16"/>
+      <text x="42" y="23" fill="#E54D2E" font-family="ui-monospace, Menlo, monospace" font-size="9" font-weight="700" text-anchor="middle">OBSERVED</text>
+      <text x="82" y="23" fill="#EDEDED" font-family="ui-monospace, Menlo, monospace" font-size="10" font-weight="600">file_read: src/server/security.ts</text>
+      <text x="430" y="23" fill="#8A9096" font-family="ui-monospace, Menlo, monospace" font-size="9">1ms</text>
+
+      <rect x="12" y="36" width="468" height="60" rx="3" fill="#141618" stroke="#1E2227" stroke-width="1"/>
+      <text x="20" y="52" fill="#EDEDED" font-family="ui-monospace, Menlo, monospace" font-size="9.5">canonicalRoot = fs.realpathSync(resolvedRoot);</text>
+      <text x="20" y="68" fill="#EDEDED" font-family="ui-monospace, Menlo, monospace" font-size="9.5">canonicalTarget = fs.realpathSync(resolvedTarget);</text>
+      <text x="20" y="84" fill="#58A6FF" font-family="ui-monospace, Menlo, monospace" font-size="9.5">Verified: Symlink traversal escape prevented</text>
+    </g>
+
+    <g transform="translate(12, 288)">
+      <rect width="492" height="145" rx="4" fill="#0C0D0E" stroke="#24272A" stroke-width="1"/>
+      <text x="16" y="24" fill="#E54D2E" font-family="ui-monospace, Menlo, monospace" font-size="11" font-weight="700">SYNTHESIZED FINDING: REPOSITORY HEALTH VERIFIED</text>
+      <line x1="16" y1="34" x2="476" y2="34" stroke="#1E2227" stroke-width="1"/>
+      <text x="16" y="52" fill="#EDEDED" font-family="-apple-system, BlinkMacSystemFont, Arial, sans-serif" font-size="11">Confidence: 94% | Evidence Citations: 14 | Contradictions: 0</text>
+      <text x="16" y="70" fill="#8A9096" font-family="-apple-system, BlinkMacSystemFont, Arial, sans-serif" font-size="10.5">Automated test suites pass across all 8 modules. Symlink boundary escapes</text>
+      <text x="16" y="86" fill="#8A9096" font-family="-apple-system, BlinkMacSystemFont, Arial, sans-serif" font-size="10.5">and command injection vectors have been neutralized with regression tests.</text>
+      <text x="16" y="104" fill="#8A9096" font-family="-apple-system, BlinkMacSystemFont, Arial, sans-serif" font-size="10.5">Local HTTP server enforces Host/Origin validation and 300 req/min limits.</text>
+      
+      <rect x="16" y="114" width="130" height="22" rx="3" fill="#1B1E22" stroke="#32363B" stroke-width="1"/>
+      <text x="81" y="129" fill="#58A6FF" font-family="ui-monospace, Menlo, monospace" font-size="9.5" text-anchor="middle">Copy Full Report</text>
+    </g>
+  </g>
+</svg>
