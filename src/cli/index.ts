@@ -607,7 +607,7 @@ program
   .option('-d, --diff', 'Include git diff of active uncommitted changes', false)
   .option('-m, --model <model>', 'Gemma model identifier (e.g. gemma-4-31b-it, gemma4:latest)')
   .option('-r, --route <route>', 'Inference route (gemini-api or local)')
-  .option('--base-url <url>', 'Base URL for local Ollama/vLLM daemon')
+  .option('--base-url <url>', 'Base URL for the local Ollama-compatible endpoint')
   .option('--json', 'Output investigation result as JSON', false)
   .action(async (objective: string, opts: {
     path?: string;

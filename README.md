@@ -30,6 +30,7 @@
 - [Developer Workbench (Split IDE Canvas)](#developer-workbench-split-ide-canvas)
 - [Default-Deny Permission &amp; Safety Model](#default-deny-permission--safety-model)
 - [Getting Started](#getting-started)
+- [Contributing](#contributing)
 - [CLI Reference](#cli-reference)
 - [HTTP API &amp; Server Endpoints](#http-api--server-endpoints)
 - [Security Audits &amp; Defensive Controls](#security-audits--defensive-controls)
@@ -53,7 +54,7 @@ Unlike statistical coding assistants that hallucinate fixes based on token proba
 4. Redacts secrets and stamps observations into an immutable evidence ledger.
 5. Employs cross-run contradiction detection to prevent reintroducing known regressions.
 
-All processing occurs strictly on your machine (`127.0.0.1:4173`) with zero covert network egress.
+Repository analysis and stored project data run locally by default. Hosted model providers and configured integrations may send request data to external services. The local HTTP workbench binds to `127.0.0.1:4173` by default.
 
 ---
 
@@ -229,9 +230,39 @@ npm install
 npm run build
 ```
 
+### <img src="docs/assets/icons/storage.svg" width="18" height="18" alt="" valign="middle" /> Environment Configuration
+
+Copy the example environment template to create a local `.env` file:
+
+```bash
+cp .env.example .env
+```
+
+Configure your Google AI credentials and model preferences:
+
+- `GEMINI_API_KEY`: Required for Google-hosted Gemini API inference. Obtain your key from Google AI Studio.
+- `GEMINI_MODEL`: Model identifier (defaults to `gemini-2.5-flash`; verified models: `gemini-2.5-flash`, `gemini-2.5-pro`, `gemini-1.5-flash`, `gemini-1.5-pro`).
+- `GEMINI_BASE_URL`: Optional custom API endpoint (defaults to `https://generativelanguage.googleapis.com`).
+- `OLLAMA_BASE_URL`: Optional local endpoint for offline Gemma inference (`http://localhost:11434`).
+
+To configure the environment variable locally in your shell:
+
+```bash
+export GEMINI_API_KEY="your-google-ai-api-key"
+```
+
+Restart ANVEXO (or your terminal session) after changing environment variables for changes to take effect. No cloud deployment or DigitalOcean droplet is required for local development or testing.
+
+#### Verified Gemini API Specifications & Limitations:
+- **Base Endpoint**: `https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent`
+- **Supported Models**: `gemini-2.5-flash`, `gemini-2.5-pro`, `gemini-1.5-flash`, `gemini-1.5-pro`
+- **Multimodal Payloads**: Inline image data with maximum payload size of 20MB
+- **Supported Image Formats**: `image/png`, `image/jpeg`, `image/webp`, `image/heic`, `image/heif`
+- **Authentication**: Sent via `x-goog-api-key` header and query parameter `?key=`
+
 ### <img src="docs/assets/icons/test.svg" width="18" height="18" alt="" valign="middle" /> Running Test Verification
 
-Verify all 164 unit and integration tests across 20 test suites:
+Verify all unit and offline integration tests (uses mocks for API requests, requires zero cloud spend or credentials):
 
 ```bash
 npm test
@@ -243,11 +274,40 @@ Run TypeScript strict type checking:
 npm run lint
 ```
 
+Run live Google Gemini API smoke test (opt-in; requires real `GEMINI_API_KEY` configured locally in the environment):
+
+```bash
+npm run test:gemini
+```
+
+> **Testing Verification Model**:
+> - `npm test` runs 29 test suites (289 tests, including `tests/unit/gemini.test.ts`) entirely using offline mocks. No API key or remote connection is needed.
+> - `npm run test:gemini` runs `tests/integration/gemini.test.ts`. If `GEMINI_API_KEY` is unset, the test skips cleanly with a diagnostic notice and is marked as skipped. When a valid key is set, it performs a real inference request against Google's Gemini API.
+
 Generate test coverage report:
 
 ```bash
 npm run test:coverage
 ```
+
+---
+
+<a id="contributing"></a>
+## Contributing
+
+The default branch is `main`. Contributions for the Hacktoberfest workstream must use an independent feature branch based on the latest `origin/pr-for-hacktoberrfest` and open a pull request targeting `pr-for-hacktoberrfest`. Do not push directly to either shared branch, reuse another contributor's branch, combine unrelated tasks, or merge a pull request. Shaurya Tiwari makes the final merge decision.
+
+```bash
+git status --short --branch
+git fetch origin
+git switch --create feat/<contributor>-<task> origin/pr-for-hacktoberrfest
+npm ci
+npm test
+npm run lint
+npm run build
+```
+
+Before creating a PR, verify the commits and complete diff against the target branch, push only your feature branch, and report actual test results in the PR description. See the [contribution workflow](docs/contributing/PR_WORKFLOW.md) for branch examples, the full PR checklist, review instructions, and administrator protection recommendations.
 
 ---
 
@@ -297,6 +357,8 @@ npx anvexo config list
 npx anvexo config get model.default_provider
 npx anvexo config set model.default_provider anthropic
 ```
+
+Gemma uses the local Ollama-compatible endpoint by default. Setting `GEMMA_API_KEY` or `GEMINI_API_KEY` selects the hosted Gemini API route. `GEMMA_MODEL` and `GEMMA_BASE_URL` configure the model and endpoint; see the [Gemma configuration guide](docs/providers/GEMMA_CONFIGURATION.md). Hosted requests send the supplied prompt and investigation context to the configured service.
 
 ---
 

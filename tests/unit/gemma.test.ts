@@ -10,6 +10,8 @@ describe('GemmaProvider', () => {
     vi.restoreAllMocks();
     vi.stubEnv('GEMMA_API_KEY', '');
     vi.stubEnv('GEMINI_API_KEY', '');
+    vi.stubEnv('GEMMA_BASE_URL', '');
+    vi.stubEnv('GEMMA_MODEL', '');
   });
 
   afterEach(() => {
@@ -30,6 +32,57 @@ describe('GemmaProvider', () => {
       const provider = new GemmaProvider({ apiKey: 'test-api-key' });
       expect(provider.getRoute()).toBe('gemini-api');
       expect(provider.getBaseUrl()).toBe('https://generativelanguage.googleapis.com');
+    });
+
+    it('uses Gemma model and base URL environment configuration', async () => {
+      vi.stubEnv('GEMMA_BASE_URL', ' http://127.0.0.1:11435/ ');
+      vi.stubEnv('GEMMA_MODEL', ' gemma4:custom ');
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ response: 'configured response' }),
+      });
+      globalThis.fetch = mockFetch as unknown as typeof fetch;
+
+      const provider = new GemmaProvider({ route: 'local' });
+      const response = await provider.complete({
+        messages: [{ role: 'user', content: 'hello' }],
+      });
+      const body = JSON.parse(mockFetch.mock.calls[0][1].body as string);
+
+      expect(provider.getBaseUrl()).toBe('http://127.0.0.1:11435');
+      expect(mockFetch).toHaveBeenCalledWith(
+        'http://127.0.0.1:11435/api/generate',
+        expect.objectContaining({ method: 'POST' }),
+      );
+      expect(body.model).toBe('gemma4:custom');
+      expect(response.content).toBe('configured response');
+    });
+
+    it('prefers explicit provider options over environment configuration', async () => {
+      vi.stubEnv('GEMMA_BASE_URL', 'http://127.0.0.1:11435');
+      vi.stubEnv('GEMMA_MODEL', 'gemma4:environment');
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ response: 'configured response' }),
+      });
+      globalThis.fetch = mockFetch as unknown as typeof fetch;
+
+      const provider = new GemmaProvider({
+        route: 'local',
+        baseUrl: 'http://127.0.0.1:11436',
+        defaultModel: 'gemma4:option',
+      });
+      await provider.complete({
+        messages: [{ role: 'user', content: 'hello' }],
+      });
+      const body = JSON.parse(mockFetch.mock.calls[0][1].body as string);
+
+      expect(provider.getBaseUrl()).toBe('http://127.0.0.1:11436');
+      expect(mockFetch).toHaveBeenCalledWith(
+        'http://127.0.0.1:11436/api/generate',
+        expect.objectContaining({ method: 'POST' }),
+      );
+      expect(body.model).toBe('gemma4:option');
     });
 
     it('switches route and updates default base URL', () => {
@@ -518,7 +571,7 @@ describe('GemmaProvider', () => {
       expect(result.evidenceRecords[0].verificationStatus).toBe(VerificationStatus.UNVERIFIED);
     });
 
-    it('attaches verified visual evidence record when screenshot is supplied', async () => {
+    it('keeps model-generated visual observations unverified when a screenshot is supplied', async () => {
       const mockFetch = vi.fn().mockResolvedValue({
         ok: true,
         json: async () => ({
@@ -557,7 +610,7 @@ describe('GemmaProvider', () => {
       expect(result.evidenceRecords).toHaveLength(2);
       const visualRecord = result.evidenceRecords.find(e => e.toolName === 'gemma_vision_parser');
       expect(visualRecord).toBeDefined();
-      expect(visualRecord?.verificationStatus).toBe(VerificationStatus.VERIFIED);
+      expect(visualRecord?.verificationStatus).toBe(VerificationStatus.UNVERIFIED);
       expect(visualRecord?.metadata?.mimeType).toBe('image/png');
     });
   });
