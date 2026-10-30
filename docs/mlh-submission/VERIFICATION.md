@@ -4,7 +4,7 @@ This guide separates checks that run offline from checks that require a live mod
 
 ## Verification environment
 
-The repository was checked on the `pr-for-hacktoberrfest` branch at commit `74b3063` using Windows, Node.js 26.13.0, and the repository's installed dependencies.
+The repository was checked on the `pr-for-hacktoberrfest` branch at commit `c7dea55` using Windows, Node.js 26.13.0, and the repository's installed dependencies.
 
 | Command | Result |
 | :--- | :--- |
